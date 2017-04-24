@@ -1,6 +1,7 @@
 package uk.ac.bbk.dcs.stypes
 
-import fr.lirmm.graphik.graal.api.core.Atom
+import fr.lirmm.graphik.graal.api.core.{Atom, Term}
+
 import scala.collection.JavaConverters._
 
 /**
@@ -11,5 +12,5 @@ import scala.collection.JavaConverters._
   * on 27/03/2017.
   */
 case class Bag( atoms:Set[Atom]  ) {
-  val variables = atoms.flatMap( p=> p.getTerms.asScala)
+  val variables: Set[Term] = atoms.flatMap(p=> p.getTerms.asScala)
 }
