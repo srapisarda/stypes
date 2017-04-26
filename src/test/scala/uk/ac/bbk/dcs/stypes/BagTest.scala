@@ -29,14 +29,14 @@ class BagTest extends FunSpec {
 
   val b: Bag = Bag(Set(r, s))
 
-  describe("Bag basic test") {
+  describe("The Bag basic test") {
 
     it("should create a new instance of bag") {
       print(b)
       assert(b.variables.size == 3)
     }
 
-    it ("to string returned as expected") {
+    it ("method toString should returned as expected") {
       assert(b.toString === "atoms: Set(r[2](X,Y), s[2](Y,Z))), variables: Set(X, Y, Z)")
     }
   }
