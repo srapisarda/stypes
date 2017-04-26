@@ -24,9 +24,9 @@ case class Type(genAtoms: Map[Term, Atom], homomorphism: Substitution) {
   def getVar2:List[Term] = {
 
     @tailrec
-    def visitAtomsTems (atoms:List[Atom], acc:List[Variable]   ) : List[Variable]  =  atoms match {
+    def visitAtomsTerms (atoms:List[Atom], acc:List[Variable]   ) : List[Variable]  =  atoms match {
       case List() => acc
-      case x::xs => visitAtomsTems( xs, acc ::: getTerms(x.getTerms.asScala.toList, List()) )
+      case x::xs => visitAtomsTerms( xs, acc ::: getTerms(x.getTerms.asScala.toList, List()) )
     }
 
     @tailrec
@@ -40,7 +40,7 @@ case class Type(genAtoms: Map[Term, Atom], homomorphism: Substitution) {
         homomorphism.createImageOf(t).getLabel.startsWith("EE")).toList
 
     if (ee.nonEmpty)
-      visitAtomsTems( genAtoms.values.toSet.toList, List())
+      visitAtomsTerms( genAtoms.values.toSet.toList, List())
     else
       List()
 
