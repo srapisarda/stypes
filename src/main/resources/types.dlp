@@ -1,0 +1,21 @@
+
+%% TGDs RULES
+p(X, Y) :- a(X).
+r(X, Y) :- p(X, Y).
+s(X, Y) :- p(X, Y).
+
+q(X, Y) :- b(X).
+q(X, Y) :- s(Y, X).
+q(X, Y) :- r(Y, X).
+
+s(X, Y) :- u(X, Y).
+s(X, Y, Z) :- r(X, Y).
+s(X, Y, Z) :- r(Z, Y).
+
+
+%% Atoms
+r(X, Y).
+s(X, Y).
+
+%% Facts
+

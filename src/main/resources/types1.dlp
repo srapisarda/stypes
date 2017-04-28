@@ -1,0 +1,5 @@
+
+%% TGDs RULES
+p(X, Y) :- a(X).
+r(X, Y) :- p(X, Y).
+s(Y, X) :- p(X, Y).
