@@ -48,12 +48,12 @@ class TypeTest extends FunSpec with BeforeAndAfter {
 
   describe("The Typse basic test") {
     it("should have a domain contained 3 terms after union"){
-      println("union test")
-      println(s"type1:  $type1")
-      println(s"type2:  $type2")
+//      println("union test")
+//      println(s"type1:  $type1")
+//      println(s"type2:  $type2")
 
       val actual = type1.union(type2)
-      println(s"union: type1 U type2: $actual")
+//      println(s"union: type1 U type2: $actual")
       assert(actual.getVar1.size==1)
       assert(actual.getVar2.size==2)
       assert(actual.getDomain.size == 3)
@@ -61,14 +61,14 @@ class TypeTest extends FunSpec with BeforeAndAfter {
     }
 
     it ("should have a domain of 2 terms after projection "){
-      println("projection test")
-      println("type1: " + type1)
-      println("type2: " + type2)
+//      println("projection test")
+//      println("type1: " + type1)
+//      println("type2: " + type2)
 
       val actual = type1.union(type2).projection(Set(tx, ty))
       assert(actual.getVar1.size==1)
       assert(actual.getVar1.size==1)
-      println("projection : proj(x, y) from (type1 U type2): " + actual)
+//      println("projection : proj(x, y) from (type1 U type2): " + actual)
 
       assert(actual.getDomain.size == 2)
     }

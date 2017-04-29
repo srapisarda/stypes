@@ -50,7 +50,7 @@ class TreeDecompositionTest extends FunSpec {
       val t: TreeDecomposition = new TreeDecomposition(atoms, graph, null)
       Assert.assertNotNull(t)
       assert(Set("X2", "X3") == t.getRoot.variables.map(_.getIdentifier))
-      System.out.println("root: " + t.getRoot.variables)
+//      System.out.println("root: " + t.getRoot.variables)
       Assert.assertEquals(2, t.getChildes.size)
       Assert.assertEquals(7, t.getSize)
       //      // assert splitter atoms's terms
@@ -61,7 +61,7 @@ class TreeDecompositionTest extends FunSpec {
       //
       val splitter: Splitter = new Splitter(t)
 
-      print(splitter)
+//      print(splitter)
 
     }
 
