@@ -108,9 +108,9 @@ class TreeDecomposition {
     getSizeH(this)
   }
 
-  def getRoot = root
+  def getRoot: Bag = root
 
-  def getChildes = childes
+  def getChildes: List[TreeDecomposition] = childes
 
 
   def  getSplitter : TreeDecomposition = getSplitter(this, this.getSize)
@@ -134,8 +134,6 @@ class TreeDecomposition {
 
   def remove(s: TreeDecomposition): TreeDecomposition = {
 
-
-
 //    def removeH(s: TreeDecomposition, childes:List[TreeDecomposition],
 //                acc:List[TreeDecomposition]): List[TreeDecomposition] = childes match {
 //      case List() => acc
@@ -154,5 +152,8 @@ class TreeDecomposition {
     new TreeDecomposition(mapCqAtoms, root, ret.toList )
   }
 
+  override def toString= {
+    s"(mapCqAtoms: $mapCqAtoms, root: $root, childes: $childes)"
+  }
 
 }

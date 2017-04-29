@@ -9,30 +9,30 @@ import scala.collection.JavaConverters._
 
 /**
   * Created by
-  *   Salvatore Rapisarda
-  *   Stanislav Kikot
+  * Salvatore Rapisarda
+  * Stanislav Kikot
   *
-  *   on 26/04/2017.
+  * on 26/04/2017.
   */
 case class Type(genAtoms: Map[Term, Atom], homomorphism: Substitution) {
 
-   def getVar1: List[Term] =
+  def getVar1: List[Term] =
     homomorphism.getTerms.asScala
       .filter((t: Term) =>
         homomorphism.createImageOf(t).getLabel.startsWith("epsilon")).toList
 
-  def getVar2:List[Term] = {
+  def getVar2: List[Term] = {
 
     @tailrec
-    def visitAtomsTerms (atoms:List[Atom], acc:List[Variable]   ) : List[Variable]  =  atoms match {
+    def visitAtomsTerms(atoms: List[Atom], acc: List[Variable]): List[Variable] = atoms match {
       case List() => acc
-      case x::xs => visitAtomsTerms( xs, acc ::: getTerms(x.getTerms.asScala.toList, List()) )
+      case x :: xs => visitAtomsTerms(xs, acc ::: getTerms(x.getTerms.asScala.toList, List()))
     }
 
     @tailrec
-    def getTerms ( terms: List[Term], acc:List[Variable] ) : List[Variable]  = terms match  {
+    def getTerms(terms: List[Term], acc: List[Variable]): List[Variable] = terms match {
       case List() => acc.reverse
-      case x::xs => getTerms( xs, DefaultTermFactory.instance.createVariable("v" + x.getLabel) :: acc)
+      case x :: xs => getTerms(xs, DefaultTermFactory.instance.createVariable("v" + x.getLabel) :: acc)
     }
 
     val ee = homomorphism.getTerms.asScala
@@ -40,7 +40,7 @@ case class Type(genAtoms: Map[Term, Atom], homomorphism: Substitution) {
         homomorphism.createImageOf(t).getLabel.startsWith("EE")).toList
 
     if (ee.nonEmpty)
-      visitAtomsTerms( genAtoms.values.toSet.toList, List())
+      visitAtomsTerms(genAtoms.values.toSet.toList, List())
     else
       List()
 
@@ -66,9 +66,9 @@ case class Type(genAtoms: Map[Term, Atom], homomorphism: Substitution) {
     */
   def union(t: Type): Type = {
     if (t == null)
-        Type(this.genAtoms, this.homomorphism)
+      Type(this.genAtoms, this.homomorphism)
 
-    val genAtoms =  this.genAtoms  ++   t.genAtoms //  genAtomBuilder.build
+    val genAtoms = this.genAtoms ++ t.genAtoms //  genAtomBuilder.build
 
     val substitution = new TreeMapSubstitution(homomorphism)
     substitution.put(t.homomorphism)
@@ -85,21 +85,21 @@ case class Type(genAtoms: Map[Term, Atom], homomorphism: Substitution) {
     */
   def projection(dest: Set[Term]): Type = {
     val homomorphismProj = new TreeMapSubstitution
-    homomorphism.getTerms.asScala.foreach( term => {
-      val varialbe =  homomorphism.createImageOf(term)
+    homomorphism.getTerms.asScala.foreach(term => {
+      val varialbe = homomorphism.createImageOf(term)
       if (dest.contains(term))
         homomorphismProj.put(term, varialbe)
     })
 
     val genAtomProj =
-      genAtoms.filter( entry => dest.contains(entry._1))
+      genAtoms.filter(entry => dest.contains(entry._1))
 
     Type(genAtomProj, homomorphismProj)
   }
 
 
   override def toString: String = {
-    s"atoms: $genAtoms, homomorphism: $homomorphism, var1: $getVar1, var2: $getVar2"
+    s"(atoms: $genAtoms, homomorphism: $homomorphism, var1: $getVar1, var2: $getVar2)"
   }
 
 }

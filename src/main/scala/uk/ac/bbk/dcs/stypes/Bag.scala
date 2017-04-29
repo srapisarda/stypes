@@ -15,6 +15,6 @@ case class Bag( atoms:Set[Atom]  ) {
   val variables: Set[Term] = atoms.flatMap(p=> p.getTerms.asScala)
 
   override def toString= {
-    s"atoms: $atoms), variables: $variables"
+    s"(atoms: $atoms, variables: $variables)"
   }
 }
