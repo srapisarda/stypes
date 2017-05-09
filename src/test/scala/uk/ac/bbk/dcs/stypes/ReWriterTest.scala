@@ -10,7 +10,12 @@ import fr.lirmm.graphik.graal.store.rdbms.driver.HSQLDBDriver
 import org.scalatest.FunSpec
 
 /**
-  * Created by rapissal on 09/05/2017.
+  * Created by
+  *   Salvatore Rapisarda
+  *   Stanislav Kikot
+  *
+  *
+  *   on 09/05/2017.
   */
 class ReWriterTest extends FunSpec{
 
@@ -34,8 +39,6 @@ class ReWriterTest extends FunSpec{
 
 
 
-
-
   describe("ReWriter test cases") {
 
     it("should contains at least 2 atoms") {
@@ -45,5 +48,14 @@ class ReWriterTest extends FunSpec{
 
     }
 
+    it("should create the canonical models from 2 atoms") {
+        val canonicalModels = ReWriter.canonicalModelList(ontology)
+        println(canonicalModels)
+    }
+
+
   }
+
+
+
 }

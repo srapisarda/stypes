@@ -1,6 +1,8 @@
 package uk.ac.bbk.dcs.stypes
 
-import fr.lirmm.graphik.graal.api.core.{Atom, Rule, RuleSet, Term}
+import fr.lirmm.graphik.graal.api.core._
+import fr.lirmm.graphik.graal.forward_chaining.DefaultChase
+import fr.lirmm.graphik.graal.core.atomset.graph.DefaultInMemoryGraphAtomSet
 
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
@@ -13,7 +15,12 @@ import scala.collection.JavaConverters._
   */
 object ReWriter {
 
-  def generateAtoms(ruleSet:RuleSet):List[Atom] = {
+  /**
+    * Generates a set of generating atoms
+    * @param ontology a RuleSet
+    * @return List[Atom]
+    */
+  def generateAtoms(ontology:RuleSet):List[Atom] = {
 
     @tailrec
     def visitRuleSet(rules: List[Rule], acc: List[Atom]): List[Atom] = rules match {
@@ -39,8 +46,40 @@ object ReWriter {
 
     }
 
-    visitRuleSet(ruleSet.asScala.toList, List())
+    visitRuleSet(ontology.asScala.toList, List())
 
   }
+
+  /**
+    * Generates canonical models for each of the generating atoms
+    * @param ontology a RuleSet
+    * @return a List[AtomSet]
+    */
+  def canonicalModelList( ontology:RuleSet): List[AtomSet] =
+    canonicalModelList( ontology, generateAtoms (ontology) )
+
+  private def canonicalModelList( ontology:RuleSet, generatingAtomList:List[Atom]  ):List[AtomSet]  = {
+
+    @tailrec
+    def canonicalModelList( generatingAtomList: List[Atom], acc: List[AtomSet]): List[AtomSet] = generatingAtomList match {
+      case List() => acc
+      case x::xs => canonicalModelList(  xs, buildChase(x)::acc )
+    }
+
+    def buildChase( atom:Atom ) :AtomSet  = {
+      val store:AtomSet = new DefaultInMemoryGraphAtomSet
+      store.add(atom)
+      val chase = new DefaultChase (ontology, store)
+      chase.execute()
+
+      store
+    }
+
+
+    canonicalModelList(generatingAtomList, List())
+  }
+
+
+
 
 }
