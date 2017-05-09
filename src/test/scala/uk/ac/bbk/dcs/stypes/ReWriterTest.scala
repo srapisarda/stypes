@@ -2,12 +2,14 @@ package uk.ac.bbk.dcs.stypes
 
 import java.io.File
 
-import fr.lirmm.graphik.graal.api.core.{Atom, AtomSet, Rule, RuleSet}
+import fr.lirmm.graphik.graal.api.core.{Atom, Rule}
 import fr.lirmm.graphik.graal.core.ruleset.LinkedListRuleSet
 import fr.lirmm.graphik.graal.io.dlp.{DlgpParser, DlgpWriter}
 import fr.lirmm.graphik.graal.store.rdbms.DefaultRdbmsStore
 import fr.lirmm.graphik.graal.store.rdbms.driver.HSQLDBDriver
 import org.scalatest.FunSpec
+
+import scala.collection.JavaConverters._
 
 /**
   * Created by
@@ -30,13 +32,12 @@ class ReWriterTest extends FunSpec{
   // 2 - Parse Animals.dlp (A Dlgp file with rules and facts)
   val dlgpParser = new DlgpParser(new File("src/main/resources/ont-1.dlp" ))
   while (dlgpParser.hasNext) {
-    val o = dlgpParser.next
-    if (o.isInstanceOf[Atom])
-        store.add(o.asInstanceOf[Atom])
-    if (o.isInstanceOf[Rule])
-        ontology.add(o.asInstanceOf[Rule])
+     dlgpParser.next match {
+      case atom: Atom => store.add(atom)
+      case rule: Rule => ontology.add(rule)
+      case  _ =>  // println("do nothing")
+    }
   }
-
 
 
   describe("ReWriter test cases") {
@@ -44,13 +45,15 @@ class ReWriterTest extends FunSpec{
     it("should contains at least 2 atoms") {
        val atoms =  ReWriter.generateAtoms( ontology)
         assert(atoms.size == 2)
-       println (atoms)
+//       println (atoms)
 
     }
 
     it("should create the canonical models from 2 atoms") {
         val canonicalModels = ReWriter.canonicalModelList(ontology)
-        println(canonicalModels)
+        assert(canonicalModels.length == 2)
+        canonicalModels.foreach( atomSet => assert(atomSet.asScala.size == 4))
+//        println(canonicalModels)
     }
 
 
