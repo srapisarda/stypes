@@ -10,7 +10,7 @@ import org.scalatest._
 
 
 /**
-  * Created by rapissal on 24/04/2017.
+  * Created by Salvatore Rapisarda on 24/04/2017.
   */
 class BagTest extends FunSpec {
 

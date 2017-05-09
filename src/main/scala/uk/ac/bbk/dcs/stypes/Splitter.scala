@@ -1,9 +1,10 @@
 package uk.ac.bbk.dcs.stypes
 
-import scala.collection.mutable
-
 /**
-  * Created by rapissal on 28/04/2017.
+  * Created by
+  *   Salvatore Rapisarda
+  *   Stanislav Kikot
+  *  on 28/04/2017.
   */
 class Splitter() {
 
@@ -14,7 +15,7 @@ class Splitter() {
     this()
     root = t
     val splitter = root.getSplitter
-    this.children = splitter.getChildes.map(new Splitter(_)) //.  .size // .map(  t-> new Splitter(t))
+    this.children = splitter.getChildes.map(new Splitter(_))
     if (splitter != root) {
       val secondChildren: TreeDecomposition = t.remove(splitter)
       children = new Splitter(secondChildren) :: children

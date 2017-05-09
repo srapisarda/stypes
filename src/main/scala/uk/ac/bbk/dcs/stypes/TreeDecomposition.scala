@@ -153,7 +153,7 @@ class TreeDecomposition {
   }
 
   override def toString= {
-    s"(mapCqAtoms: $mapCqAtoms, root: $root, childes: $childes)"
+    s"(root: $root, childes: $childes, mapCqAtoms: $mapCqAtoms, )"
   }
 
 }

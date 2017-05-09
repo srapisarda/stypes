@@ -4,7 +4,7 @@ package uk.ac.bbk.dcs.stypes
 import com.tinkerpop.blueprints.Graph
 import com.tinkerpop.blueprints.impls.tg.TinkerGraph
 import com.tinkerpop.blueprints.util.io.gml.GMLReader
-import fr.lirmm.graphik.graal.api.core.{Atom, Predicate, Term}
+import fr.lirmm.graphik.graal.api.core.{Atom, Predicate}
 import fr.lirmm.graphik.graal.api.factory.TermFactory
 import fr.lirmm.graphik.graal.core.DefaultAtom
 import fr.lirmm.graphik.graal.core.term.DefaultTermFactory
@@ -59,9 +59,9 @@ class TreeDecompositionTest extends FunSpec {
         assert(Set("X3", "X4").contains(term.getIdentifier.asInstanceOf[String])))
 
       //
-      val splitter: Splitter = new Splitter(t)
+      val s =  new  Splitter(t)
 
-//      print(splitter)
+      println(s)
 
     }
 
