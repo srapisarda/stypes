@@ -16,13 +16,13 @@ class TypeTest extends FunSpec with BeforeAndAfter {
   private var tx:Variable = _
   private var ty:Variable = _
 
-
+  // todo: this test should be reviewed using ConstantType instead of using string (for example "epsilon")
   def setUp(): Unit = {
     val s1 = new TreeMapSubstitution
     tx = DefaultTermFactory.instance.createVariable("X")
-    val ee0 = DefaultTermFactory.instance.createConstant("EE0")
+    val ee0 =  DefaultTermFactory.instance.createConstant("EE0")
     s1.put(tx, ee0)
-    ty = DefaultTermFactory.instance.createVariable("Y")
+    ty = DefaultTermFactory.instance.createVariable( "Y")
     val epsilon = DefaultTermFactory.instance.createConstant("epsilon")
     s1.put(ty, epsilon)
     val atom1 = new DefaultAtom(new Predicate("A", 1))

@@ -19,35 +19,40 @@ import scala.reflect.io.File
   */
 class TreeDecompositionTest extends FunSpec {
 
+  def buildTestTreeDecomposition: TreeDecomposition= {
+    val pt = Map(
+      "r1" -> List("X2", "X3"),
+      "s1" -> List("X3", "X4"),
+      "s2" -> List("X4", "X5"),
+      "r2" -> List("X5", "X6"),
+      "s3" -> List("X6", "X7"),
+      "r0" -> List("X1", "X2"),
+      "s0" -> List("X0", "X1")
+    )
+
+
+    val tf: TermFactory = DefaultTermFactory.instance
+    val atoms: Set[Atom] = pt.map(entry => {
+      val predicate: Predicate = new Predicate(entry._1, entry._2.size)
+      val terms = entry._2.map(tf.createVariable(_)) // getValue.stream.map(tf.createVariable).collect(Collectors.toList)
+      new DefaultAtom(predicate, terms: _*)
+
+    }).toSet
+
+    val graph: Graph = new TinkerGraph
+    val in = File("src/main/resources/Q7.gml").inputStream()
+
+    GMLReader.inputGraph(graph, in)
+    new  TreeDecomposition(atoms, graph, null)
+
+
+  }
 
   describe("Tree decomposition commons ") {
     it("should make common operation correctly") {
 
+      val t = buildTestTreeDecomposition
 
-      val pt = Map(
-        "r1" -> List("X2", "X3"),
-        "s1" -> List("X3", "X4"),
-        "s2" -> List("X4", "X5"),
-        "r2" -> List("X5", "X6"),
-        "s3" -> List("X6", "X7"),
-        "r0" -> List("X1", "X2"),
-        "s0" -> List("X0", "X1")
-      )
-
-
-      val tf: TermFactory = DefaultTermFactory.instance
-      val atoms: Set[Atom] = pt.map(entry => {
-        val predicate: Predicate = new Predicate(entry._1, entry._2.size)
-        val terms = entry._2.map(tf.createVariable(_)) // getValue.stream.map(tf.createVariable).collect(Collectors.toList)
-        new DefaultAtom(predicate, terms: _*)
-
-      }).toSet
-
-      val graph: Graph = new TinkerGraph
-      val in = File("src/main/resources/Q7.gml").inputStream()
-
-      GMLReader.inputGraph(graph, in)
-      val t: TreeDecomposition = new TreeDecomposition(atoms, graph, null)
       Assert.assertNotNull(t)
       assert(Set("X2", "X3") == t.getRoot.variables.map(_.getIdentifier))
 //      System.out.println("root: " + t.getRoot.variables)

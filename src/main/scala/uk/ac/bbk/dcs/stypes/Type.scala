@@ -3,6 +3,7 @@ package uk.ac.bbk.dcs.stypes
 import fr.lirmm.graphik.graal.api.core.{Atom, Substitution, Term, Variable}
 import fr.lirmm.graphik.graal.core.TreeMapSubstitution
 import fr.lirmm.graphik.graal.core.term.DefaultTermFactory
+import uk.ac.bbk.dcs.stypes.ConstantType.EPSILON
 
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
@@ -16,10 +17,11 @@ import scala.collection.JavaConverters._
   */
 case class Type(genAtoms: Map[Term, Atom], homomorphism: Substitution) {
 
+
   def getVar1: List[Term] =
     homomorphism.getTerms.asScala
       .filter((t: Term) =>
-        homomorphism.createImageOf(t).getLabel.startsWith("epsilon")).toList
+        homomorphism.createImageOf(t).getLabel.startsWith("epsilon")).toList // todo: The epsilon should refer to the ConstantType EPSILON
 
   def getVar2: List[Term] = {
 
@@ -32,12 +34,12 @@ case class Type(genAtoms: Map[Term, Atom], homomorphism: Substitution) {
     @tailrec
     def getTerms(terms: List[Term], acc: List[Variable]): List[Variable] = terms match {
       case List() => acc.reverse
-      case x :: xs => getTerms(xs, DefaultTermFactory.instance.createVariable("v" + x.getLabel) :: acc)
+      case x :: xs => getTerms(xs, DefaultTermFactory.instance.createVariable("v" + x.getLabel) :: acc) // todo: this should be identified by a ConstantType
     }
 
     val ee = homomorphism.getTerms.asScala
       .filter((t: Term) =>
-        homomorphism.createImageOf(t).getLabel.startsWith("EE")).toList
+        homomorphism.createImageOf(t).getLabel.startsWith("EE")).toList // todo: this should be identified by a ConstantType
 
     if (ee.nonEmpty)
       visitAtomsTerms(genAtoms.values.toSet.toList, List())
@@ -95,6 +97,26 @@ case class Type(genAtoms: Map[Term, Atom], homomorphism: Substitution) {
       genAtoms.filter(entry => dest.contains(entry._1))
 
     Type(genAtomProj, homomorphismProj)
+  }
+
+  /**
+    * It check that all the terms of the atom are ConstantType EPSILONs
+    *
+    * @param atom is the atom to check
+    * @return true or false
+    */
+  def  areAllEpsilon(atom:Atom):Boolean = {
+    @tailrec
+    def visitBagAtoms(terms: List[Term]): Boolean = terms match {
+      case List() => true
+      case x::xs =>
+          if ( ! EPSILON.equals( homomorphism.createImageOf(x).asInstanceOf[Any] )  )  false
+          else  visitBagAtoms(xs)
+
+    }
+
+    visitBagAtoms(atom.getTerms.asScala.toList)
+
   }
 
 
