@@ -43,7 +43,7 @@ class ReWriterTest extends FunSpec{
 
 
 
-  def getMockType: Type = {
+  def getMockTypeEpsilon: Type = {
     val s1 = new TreeMapSubstitution
     val tx = DefaultTermFactory.instance.createVariable("X2")
     val epsilon  =  ConstantType.EPSILON
@@ -51,6 +51,37 @@ class ReWriterTest extends FunSpec{
     val ty = DefaultTermFactory.instance.createVariable( "X3")
     s1.put(ty, epsilon)
     Type(null, s1 )
+  }
+
+
+  def getMockTypeAnonymous: Type = {
+    val s1 = new TreeMapSubstitution
+    val tx = DefaultTermFactory.instance.createVariable("X2")
+    val ee0  =  DefaultTermFactory.instance.createConstant("EE0")
+    s1.put(tx, ee0)
+    val ty = DefaultTermFactory.instance.createVariable( "X3")
+    s1.put(ty, ee0)
+
+    val atom = new DefaultAtom(new Predicate("u1", 2))
+    atom.setTerm(0, DefaultTermFactory.instance.createConstant("a0"))
+    atom.setTerm(1, DefaultTermFactory.instance.createConstant("a1"))
+
+    Type(Map(tx-> atom, ty-> atom), s1 )
+  }
+
+  def getMockTypeMixed: Type = {
+    val s1 = new TreeMapSubstitution
+    val tx = DefaultTermFactory.instance.createVariable("X2")
+    val ee0  =  DefaultTermFactory.instance.createConstant("EE0")
+    s1.put(tx, ee0)
+    val ty = DefaultTermFactory.instance.createVariable( "X3")
+    s1.put(ty, ConstantType.EPSILON)
+
+    val atom = new DefaultAtom(new Predicate("u1", 2))
+    atom.setTerm(0, DefaultTermFactory.instance.createConstant("a0"))
+    atom.setTerm(1, DefaultTermFactory.instance.createConstant("a1"))
+
+    Type(Map(tx-> atom, ty-> atom), s1 )
   }
 
 
@@ -75,10 +106,30 @@ class ReWriterTest extends FunSpec{
     it("should get the epsilon "){
       val test:TreeDecompositionTest  = new TreeDecompositionTest
       val t:TreeDecomposition= test.buildTestTreeDecomposition
-      val s = getMockType
+      val s = getMockTypeEpsilon
       val atoms = ReWriter.makeAtoms( t.getRoot,s)
       println(atoms)
+      assert( atoms.length==1 )
+    }
 
+    it("should get the anonymous "){
+      val test:TreeDecompositionTest  = new TreeDecompositionTest
+      val t:TreeDecomposition= test.buildTestTreeDecomposition
+      val s = getMockTypeAnonymous
+      val atoms = ReWriter.makeAtoms( t.getRoot,s)
+      println(atoms)
+      assert( atoms.length==1 )
+
+    }
+
+
+    it("should get the empty set for mixed type   "){
+      val test:TreeDecompositionTest  = new TreeDecompositionTest
+      val t:TreeDecomposition= test.buildTestTreeDecomposition
+      val s = getMockTypeMixed
+      val atoms = ReWriter.makeAtoms( t.getRoot,s)
+      println(atoms)
+      assert( atoms.length==0 )
     }
 
 

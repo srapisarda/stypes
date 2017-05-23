@@ -86,15 +86,23 @@ object ReWriter {
 
   /**
     * Given a type t defined on a bag, it computes the formula At(t)
+    *
     * @param bag a Bag
-    * @param t a Type
+    * @param t   a Type
     * @return a List[Atom]
     */
   def makeAtoms(bag: Bag, t: Type): List[Atom] = {
     @tailrec
     def visitBagAtoms(atoms: List[Atom], acc: List[Atom]): List[Atom] = atoms match {
       case List() => acc.reverse
-      case x :: xs => if (t.areAllEpsilon(x)) visitBagAtoms(xs, x :: acc) else visitBagAtoms(xs, acc)
+      case x :: xs =>
+        if (t.areAllEpsilon(x)) visitBagAtoms(xs, x :: acc)
+        else if (t.areAllAnonymous(x)) {
+          val atom: Option[Atom] = t.genAtoms.get(x.getTerm(0))
+          if (atom.isDefined) visitBagAtoms(xs, atom.get :: acc)
+          else visitBagAtoms(xs, acc)
+        }
+        else visitBagAtoms(xs, acc)
 
     }
 

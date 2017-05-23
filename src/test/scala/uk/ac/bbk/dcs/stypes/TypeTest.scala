@@ -22,6 +22,8 @@ class TypeTest extends FunSpec with BeforeAndAfter {
     tx = DefaultTermFactory.instance.createVariable("X")
     val ee0 =  DefaultTermFactory.instance.createConstant("EE0")
     s1.put(tx, ee0)
+
+
     ty = DefaultTermFactory.instance.createVariable( "Y")
     val epsilon = DefaultTermFactory.instance.createConstant("epsilon")
     s1.put(ty, epsilon)
@@ -29,8 +31,10 @@ class TypeTest extends FunSpec with BeforeAndAfter {
     atom1.setTerm(0, DefaultTermFactory.instance.createConstant("a0"))
 
 
-
+    //type1
     type1 = Type(Map( tx -> atom1), s1)
+
+
     // type2
     val s2 = new TreeMapSubstitution
     s2.put(ty, epsilon)
@@ -39,6 +43,8 @@ class TypeTest extends FunSpec with BeforeAndAfter {
     val atom2 = new DefaultAtom(new Predicate("B", 1))
     atom2.setTerm(0, DefaultTermFactory.instance.createConstant("a0"))
     type2 = Type(Map(tz -> atom2), s2)
+
+
   }
 
 
@@ -72,6 +78,12 @@ class TypeTest extends FunSpec with BeforeAndAfter {
 
       assert(actual.getDomain.size == 2)
     }
+
+    it("should ensure that areAllAnonymous is working "){
+
+
+    }
+
 
   }
 

@@ -120,6 +120,31 @@ case class Type(genAtoms: Map[Term, Atom], homomorphism: Substitution) {
   }
 
 
+  /**
+    * It check that all the terms of the atom are ConstantType
+    *  Anonymous individuals or ar not epsilon
+    *
+    *
+    * @param atom is the atom to check
+    * @return true or false
+    */
+  def  areAllAnonymous(atom:Atom):Boolean = {
+    @tailrec
+    def visitBagAtoms(terms: List[Term]): Boolean = terms match {
+      case List() => true
+      case x::xs =>
+        if ( EPSILON.equals( homomorphism.createImageOf(x).asInstanceOf[Any] )  )  false
+        else  visitBagAtoms(xs)
+
+    }
+
+    visitBagAtoms(atom.getTerms.asScala.toList)
+
+  }
+
+
+
+
   override def toString: String = {
     s"(atoms: $genAtoms, homomorphism: $homomorphism, var1: $getVar1, var2: $getVar2)"
   }
