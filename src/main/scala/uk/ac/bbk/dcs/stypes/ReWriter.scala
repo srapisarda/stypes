@@ -66,7 +66,7 @@ object ReWriter {
 
     @tailrec
     def canonicalModelList(generatingAtomList: List[Atom], acc: List[AtomSet]): List[AtomSet] = generatingAtomList match {
-      case List() => acc
+      case List() => acc.reverse
       case x :: xs => canonicalModelList(xs, buildChase(x) :: acc)
     }
 
@@ -84,6 +84,16 @@ object ReWriter {
   }
 
 
+
+
+
+}
+
+
+class ReWriter ( ontology: RuleSet ) {
+
+  val canonicalModels: List[AtomSet] =  ReWriter.canonicalModelList(ontology)
+
   /**
     * Given a type t defined on a bag, it computes the formula At(t)
     *
@@ -91,24 +101,55 @@ object ReWriter {
     * @param t   a Type
     * @return a List[Atom]
     */
-  def makeAtoms(bag: Bag, t: Type): List[Atom] = {
+  def makeAtoms(bag: Bag, t: Type): List[Any] = {
+
+
+    def isMixed(terms: List[Term]): Boolean =
+      anonymous(terms, x => x.getLabel.toLowerCase.startsWith("ec")) &&
+        anonymous(terms, x => !x.getLabel.toLowerCase.startsWith("ec"))
+
+    def anonymous(terms: List[Term], f: Term => Boolean): Boolean = terms match {
+      case List() => false
+      case x :: xs => if (f.apply(x)) true else anonymous(xs, f)
+    }
+
+
+
     @tailrec
-    def visitBagAtoms(atoms: List[Atom], acc: List[Atom]): List[Atom] = atoms match {
+    def visitBagAtoms(atoms: List[Atom], acc: List[Atom]): List[Any] = atoms match {
       case List() => acc.reverse
       case x :: xs =>
+        // All epsilon
         if (t.areAllEpsilon(x)) visitBagAtoms(xs, x :: acc)
+        // All anonymous
         else if (t.areAllAnonymous(x)) {
           val atom: Option[Atom] = t.genAtoms.get(x.getTerm(0))
           if (atom.isDefined) visitBagAtoms(xs, atom.get :: acc)
           else visitBagAtoms(xs, acc)
         }
-        else visitBagAtoms(xs, acc)
+        // mixing case
+        else {
+          val index= t.getFirstAnonymousIndex(x)
+          if ( index < 0 )
+            throw new Exception("Can't get first anonymous individual!!")
+
+          val canonicalModel:AtomSet = canonicalModels.toArray.apply(index)
+
+
+//          canonicalModel.asScala.foreach( atom=> {
+//            if ( atom.getPredicate.equals(x.getPredicate) &&  isMixed( atom.getTerms().asScala.toList )
+//
+//          )
+
+          visitBagAtoms(xs, acc)
+        }
 
     }
 
     visitBagAtoms(bag.atoms.toList, List())
 
   }
+
 
 
 }

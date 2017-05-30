@@ -3,12 +3,18 @@ package uk.ac.bbk.dcs.stypes
 
 import fr.lirmm.graphik.graal.api.core.{AbstractTerm, Term}
 
+
 /**
+  * /**
   * Created by :
   *   Salvatore Rapisarda
   *   Stanislav Kikot
   *
   * <p> on 12/05/2017.
+  */
+  * @param identifier is a tuple (a, b) where:
+  *   a - is an integer value index to the generating atom
+  *   b - is an identifier of the point in the chase or canonical model
   */
 class ConstantType( identifier: (Int, String) ) extends AbstractTerm {
 

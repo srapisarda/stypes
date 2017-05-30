@@ -105,20 +105,9 @@ case class Type(genAtoms: Map[Term, Atom], homomorphism: Substitution) {
     * @param atom is the atom to check
     * @return true or false
     */
-  def  areAllEpsilon(atom:Atom):Boolean = {
-    @tailrec
-    def visitBagAtoms(terms: List[Term]): Boolean = terms match {
-      case List() => true
-      case x::xs =>
-          if ( ! EPSILON.equals( homomorphism.createImageOf(x).asInstanceOf[Any] )  )  false
-          else  visitBagAtoms(xs)
-
-    }
-
-    visitBagAtoms(atom.getTerms.asScala.toList)
-
-  }
-
+  def  areAllEpsilon(atom:Atom):Boolean =
+    visitBagAtoms(atom.getTerms.asScala.toList,
+      x =>  ! EPSILON.equals( homomorphism.createImageOf(x).asInstanceOf[Any] ))
 
   /**
     * It check that all the terms of the atom are ConstantType
@@ -128,20 +117,39 @@ case class Type(genAtoms: Map[Term, Atom], homomorphism: Substitution) {
     * @param atom is the atom to check
     * @return true or false
     */
-  def  areAllAnonymous(atom:Atom):Boolean = {
-    @tailrec
-    def visitBagAtoms(terms: List[Term]): Boolean = terms match {
-      case List() => true
-      case x::xs =>
-        if ( EPSILON.equals( homomorphism.createImageOf(x).asInstanceOf[Any] )  )  false
-        else  visitBagAtoms(xs)
+  def  areAllAnonymous(atom:Atom):Boolean =
+    visitBagAtoms(atom.getTerms.asScala.toList,
+      (x) => EPSILON.equals( homomorphism.createImageOf(x).asInstanceOf[Any] ) )
 
-    }
 
-    visitBagAtoms(atom.getTerms.asScala.toList)
+
+  @tailrec
+  private def visitBagAtoms(terms: List[Term], f: Term => Boolean  ): Boolean = terms match {
+    case List() => true
+    case x::xs => if (f(x)) false else visitBagAtoms(xs, f)
 
   }
 
+
+
+  def getFirstAnonymousIndex(atom:Atom): Int ={
+
+
+    @tailrec
+    def visitBagAtoms(terms: List[Term] ): Int = terms match {
+      case List() => -1
+      case x::xs =>
+        if (  EPSILON.equals( homomorphism.createImageOf(x).asInstanceOf[Any] )  )  visitBagAtoms(xs)
+        else  homomorphism.createImageOf(x) match  {
+          case el:ConstantType => el.getIdentifier._1
+          case _ => -1
+        }
+
+    }
+
+    visitBagAtoms( atom.getTerms.asScala.toList )
+
+  }
 
 
 
