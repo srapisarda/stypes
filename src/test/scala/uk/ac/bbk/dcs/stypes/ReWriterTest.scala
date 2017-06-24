@@ -72,7 +72,7 @@ class ReWriterTest extends FunSpec{
   def getMockTypeMixed: Type = {
     val s1 = new TreeMapSubstitution
     val tx = DefaultTermFactory.instance.createVariable("X2")
-    val ee0  =  DefaultTermFactory.instance.createConstant("EE0")
+    val ee0  =   new ConstantType(0, "EE0") // DefaultTermFactory.instance.createConstant( )
     s1.put(tx, ee0)
     val ty = DefaultTermFactory.instance.createVariable( "X3")
     s1.put(ty, ConstantType.EPSILON)
@@ -126,9 +126,9 @@ class ReWriterTest extends FunSpec{
       val test:TreeDecompositionTest  = new TreeDecompositionTest
       val t:TreeDecomposition= test.buildTestTreeDecomposition
       val s = getMockTypeMixed
-     // assertThrows[Exception] { new ReWriter(ontology).makeAtoms( t.getRoot,s) }
-      //println(atoms)
-     // assert( atoms.length==0 )
+      val atoms = new ReWriter(ontology).makeAtoms( t.getRoot,s)
+      println(atoms)
+      assert( atoms.length==1 )
     }
 
 

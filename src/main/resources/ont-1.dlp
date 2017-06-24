@@ -5,12 +5,12 @@
 
 s1(X,Y,V) :- u1(X,Y).
 
-r(Y,V) :- s1(X,Y,V).
+r1(Y,V) :- s1(X,Y,V).
 
-r(V,X) :- s1(X,Y,V).
+r1(V,X) :- s1(X,Y,V).
 
 s2(X,Y,V) :- u2(X,Y).
 
-r(V,Y) :- s2(X,Y,V).
+r1(V,Y) :- s2(X,Y,V).
 
-r(X,V) :- s2(X,Y,V).
+r1(X,V) :- s2(X,Y,V).

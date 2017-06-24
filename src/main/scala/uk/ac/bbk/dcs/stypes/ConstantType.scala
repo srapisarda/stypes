@@ -16,7 +16,11 @@ import fr.lirmm.graphik.graal.api.core.{AbstractTerm, Term}
   *   a - is an integer value index to the generating atom
   *   b - is an identifier of the point in the chase or canonical model
   */
-class ConstantType( identifier: (Int, String) ) extends AbstractTerm {
+class ConstantType(var identifier: (Int, String) ) extends AbstractTerm {
+
+  def this( term: Term  ) = {
+    this(term.asInstanceOf[ConstantType].getIdentifier )
+  }
 
   // PUBLIC METHODS
   override def isConstant: Boolean = true
@@ -24,6 +28,8 @@ class ConstantType( identifier: (Int, String) ) extends AbstractTerm {
   override def getType: Term.Type = Term.Type.LITERAL
 
   override def getIdentifier: (Int, String)  = identifier
+
+  override def getLabel: String = getIdentifier._2
 
   override def equals (o: Any): Boolean = {
       if ( super.equals(o) ) true

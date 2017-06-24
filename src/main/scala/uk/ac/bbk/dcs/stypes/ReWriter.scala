@@ -83,16 +83,16 @@ object ReWriter {
     canonicalModelList(generatingAtomList, List())
   }
 
-
-
+  def isAnonymous(x: Term) =
+    x.getLabel.toLowerCase.startsWith("ee")
 
 
 }
 
 
-class ReWriter ( ontology: RuleSet ) {
+class ReWriter(ontology: RuleSet) {
 
-  val canonicalModels: List[AtomSet] =  ReWriter.canonicalModelList(ontology)
+  val canonicalModels: List[AtomSet] = ReWriter.canonicalModelList(ontology)
 
   /**
     * Given a type t defined on a bag, it computes the formula At(t)
@@ -104,19 +104,26 @@ class ReWriter ( ontology: RuleSet ) {
   def makeAtoms(bag: Bag, t: Type): List[Any] = {
 
 
-    def isMixed(terms: List[Term]): Boolean =
-      anonymous(terms, x => x.getLabel.toLowerCase.startsWith("ec")) &&
-        anonymous(terms, x => !x.getLabel.toLowerCase.startsWith("ec"))
+    def getEqualities(variables: List[Term], constants: List[Term], acc: List[(Term, Term)]): List[(Term, Term)] = constants match {
+      case List() => acc
+      case x :: xs =>
+        if (ReWriter.isAnonymous(x)) getEqualities(variables.tail, xs, acc)
+        else getEqualities(variables.tail, xs, (variables.head, x) :: acc)
 
-    def anonymous(terms: List[Term], f: Term => Boolean): Boolean = terms match {
-      case List() => false
-      case x :: xs => if (f.apply(x)) true else anonymous(xs, f)
     }
 
 
+    def isMixed(terms: List[Term]): Boolean =
+      atLeastOneTerm(terms, x => ReWriter.isAnonymous(x)) && atLeastOneTerm(terms, x => !ReWriter.isAnonymous(x))
+
+    def atLeastOneTerm(terms: List[Term], f: Term => Boolean): Boolean = terms match {
+      case List() => false
+      case x :: xs => if (f.apply(x)) true else atLeastOneTerm(xs, f)
+    }
+
 
     @tailrec
-    def visitBagAtoms(atoms: List[Atom], acc: List[Atom]): List[Any] = atoms match {
+    def visitBagAtoms(atoms: List[Atom], acc: List[Any]): List[Any] = atoms match {
       case List() => acc.reverse
       case x :: xs =>
         // All epsilon
@@ -129,25 +136,26 @@ class ReWriter ( ontology: RuleSet ) {
         }
         // mixing case
         else {
-          val index= t.getFirstAnonymousIndex(x)
-          if ( index < 0 )
+          val index = t.getFirstAnonymousIndex(x)
+          if (index < 0)
             throw new Exception("Can't get first anonymous individual!!")
 
-          val canonicalModel:AtomSet = canonicalModels.toArray.apply(index)
+          val canonicalModel: AtomSet = canonicalModels.toArray.apply(index)
+
+          val sameAreEqual = canonicalModel.asScala.toList.map(atom => isMixed(atom.getTerms().asScala.toList) )
+
+          val expression: List[List[(Term, Term)]] = canonicalModel.asScala.toList
+            .filter(atom => atom.getPredicate.equals(x.getPredicate) && isMixed(atom.getTerms().asScala.toList))
+            .map(atom => getEqualities(x.getTerms.asScala.toList, atom.getTerms.asScala.toList, List())).toList
 
 
-//          canonicalModel.asScala.foreach( atom=> {
-//            if ( atom.getPredicate.equals(x.getPredicate) &&  isMixed( atom.getTerms().asScala.toList )
-//
-//          )
+          visitBagAtoms(xs, expression :: acc)
 
-          visitBagAtoms(xs, acc)
         }
-
     }
 
+    // makeAtoms
     visitBagAtoms(bag.atoms.toList, List())
-
   }
 
 

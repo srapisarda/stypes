@@ -15,7 +15,7 @@ import scala.collection.JavaConverters._
   *
   * on 26/04/2017.
   */
-case class Type(genAtoms: Map[Term, Atom], homomorphism: Substitution) {
+case class Type(genAtoms: Map[Term, Atom], homomorphism: Substitution ){
 
 
   def getVar1: List[Term] =
@@ -122,7 +122,6 @@ case class Type(genAtoms: Map[Term, Atom], homomorphism: Substitution) {
       (x) => EPSILON.equals( homomorphism.createImageOf(x).asInstanceOf[Any] ) )
 
 
-
   @tailrec
   private def visitBagAtoms(terms: List[Term], f: Term => Boolean  ): Boolean = terms match {
     case List() => true
@@ -133,7 +132,6 @@ case class Type(genAtoms: Map[Term, Atom], homomorphism: Substitution) {
 
 
   def getFirstAnonymousIndex(atom:Atom): Int ={
-
 
     @tailrec
     def visitBagAtoms(terms: List[Term] ): Int = terms match {
