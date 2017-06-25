@@ -15,13 +15,17 @@ import scala.collection.JavaConverters._
 class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[AtomSet], atomsToBeMapped: List[Atom]) {
 // todo:  hom: Substitution must be something like  hom: Substitution[Term, ConstantType]
 
-  private def getAtomSet(atom: Atom): Option[AtomSet] = {
+  type AtomSetWithCanonicalModelIndex = (AtomSet, Int)
+
+
+  private def getAtomSetWithCanonicalModelIndex(atom: Atom): Option[AtomSetWithCanonicalModelIndex] = {
     val intersection: Set[Term] = getKnownVariables(atom)
     if (intersection.nonEmpty) {
       val term: Option[Term] = intersection.find(p => !hom.createImageOf(p).equals(ConstantType.EPSILON))
       if (term.isDefined) {
+        val canonicalModelIndex = hom.createImageOf(term.get).asInstanceOf[ConstantType].getIdentifier._1
         val cm: AtomSet = canonicalModels(hom.createImageOf(term.get).asInstanceOf[ConstantType].getIdentifier._1)
-        Some(cm)
+        Some(cm, canonicalModelIndex)
       } else None
     } else None
   }
@@ -56,7 +60,7 @@ class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[AtomSet],
 
   }
 
-  private def extend( atom: Atom, answers: List[Substitution], canonicalModelIndex: Int): List[TypeExtender] = {
+  private def extend( atom: Atom,  answers: List[Substitution], canonicalModelIndex:Int, atomsToBeMapped: List[Atom]): List[TypeExtender] = {
     // atomsToBeMapped
 
     def extendH( answers: List[Substitution], canonicalModelIndex: Int, acc: List[TypeExtender], atomsToBeMapped:List[Atom] )
@@ -64,7 +68,7 @@ class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[AtomSet],
       case List() => acc
       case head::tail => {
         val substitution= extendSubstitution( atom, head,canonicalModelIndex )
-        //val t = new TypeExtender( bag, substitution, canonicalModels,  )
+        val t = new TypeExtender( bag, substitution, canonicalModels, atomsToBeMapped  )
         // extendH(tail, canonicalModelIndex, acc :: extendSubstitution( , head))
         acc
       }
@@ -98,21 +102,22 @@ class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[AtomSet],
 
 
 
+   var children =
+     if (atomsToBeMapped.nonEmpty) {
+       val currentAtom = atomsToBeMapped.head
+       val atomSet = getAtomSetWithCanonicalModelIndex(currentAtom)
+       // If the atom set is defined then the atom is connected
+       if (atomSet.isDefined) {
 
+         val cq = ConjunctiveQueryFactory.instance.create(new LinkedListAtomSet(currentAtom))
+         val result: List[Substitution] = StaticHomomorphism.instance.execute(cq, atomSet.get._1).asScala.toList
+         val goodSubstitutions: List[Substitution] = result.filter(isGood(_, currentAtom))
+         extend(currentAtom, goodSubstitutions, atomSet.get._2, atomsToBeMapped.tail)
 
-  if (atomsToBeMapped.nonEmpty) {
-    val currentAtom = atomsToBeMapped.head
-    val atomSet = getAtomSet(currentAtom)
-    // If the atom set is defined then the atom is connected
-    if (atomSet.isDefined) {
+       }
+//       else
+//         extend(atomsToBeMapped.tail.head, goodSubstitutions, atomSet.get._2, atomsToBeMapped.tail.tail)
 
-      val cq = ConjunctiveQueryFactory.instance.create(new LinkedListAtomSet(currentAtom))
-      val result: List[Substitution] = StaticHomomorphism.instance.execute(cq, atomSet.get).asScala.toList
-      val goodSubstitutions: List[Substitution] =  result.filter(   isGood( _, currentAtom ) )
-      // val childrens = extend(currentAtom,  goodSubstitutions, atomSet.get)
-    }
-
-  }
-
+     }
 
 }
