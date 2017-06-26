@@ -61,28 +61,35 @@ class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[AtomSet],
   }
 
   private def extend( atom: Atom,  answers: List[Substitution], canonicalModelIndex:Int, atoms: List[Atom]): List[TypeExtender] = {
-    // atomsToBeMapped
-    @tailrec
-    def extendH( answers: List[Substitution], canonicalModelIndex: Int, acc: List[TypeExtender], atoms:List[Atom] )
-    : List[TypeExtender] = answers match {
+     @tailrec
+    def extendH( answers: List[Substitution], acc: List[TypeExtender]): List[TypeExtender] = answers match {
       case List() => acc
-      case x::xs => {
+      case x::xs =>
         val substitution= extendSubstitution( atom, x,canonicalModelIndex )
         val t = new TypeExtender( bag, substitution, canonicalModels, atoms )
-        extendH(xs, canonicalModelIndex, t::acc, atoms  )
+        extendH(xs, t::acc)
 
-      }
     }
-    List()
-    //extendH(answers, canonicalModel, List())
+    extendH(answers, List())
   }
 
   private def extendSubstitution (atom:Atom, answer :Substitution, canonicalModelIndex: Int):Substitution ={
 
+    def extendVariable(term:Term, answer :Substitution, canonicalModelIndex: Int, modifiedHom: Substitution):Substitution = {
+      if ( ! ReWriter.isAnonymous( answer.createImageOf( term) ) ) {
+        modifiedHom.put( term, new  ConstantType( (canonicalModelIndex, answer.createImageOf(term).getLabel ) )  )
+      }else{
+        modifiedHom.put( term, ConstantType.EPSILON )
+      }
+      modifiedHom
+    }
+
+    @tailrec
     def extendToTheSetOfVariables ( terms:List[Term], modifiedHom: Substitution  ) :Substitution = terms match {
-      case List()=>  modifiedHom
+      case List() =>  modifiedHom
       case  x :: xs => extendToTheSetOfVariables( xs,  extendVariable ( x, answer, canonicalModelIndex, modifiedHom ) )
     }
+
 
     val modifiedHom: Substitution  = new TreeMapSubstitution(hom)
     val unknownVariables: List[Term] = getKnownVariables( atom).toList
@@ -90,30 +97,19 @@ class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[AtomSet],
 
   }
 
-
-  private def extendVariable(term:Term, answer :Substitution, canonicalModelIndex: Int, modifiedHom: Substitution):Substitution = {
-    if ( ! ReWriter.isAnonymous( answer.createImageOf( term) ) ) {
-      modifiedHom.put( term, new  ConstantType( (canonicalModelIndex, answer.createImageOf(term).getLabel ) )  )
-    }else{
-      modifiedHom.put( term, ConstantType.EPSILON )
-    }
-    modifiedHom
-  }
-
-
   private def  getTypesExtension(atoms: List[Atom] ): List[TypeExtender] =   {
     @tailrec
     def getTypesExtensionH(atoms: List[Atom], acc:List[TypeExtender] ) : List[TypeExtender] = atoms match {
       case List() => acc
       case x :: xs  =>
         // getting the tuple of atomSet and CanonicalModelIndex
-        val atomSetAndCanMod: Option[(AtomSet, Int)] = getAtomSetWithCanonicalModelIndex(x)
+        val atomSetAndCanModIndex: Option[AtomSetWithCanonicalModelIndex] = getAtomSetWithCanonicalModelIndex(x)
         // If the atom set is defined then the atom is connected
-        if (atomSetAndCanMod.isDefined) {
+        if (atomSetAndCanModIndex.isDefined) {
           val cq = ConjunctiveQueryFactory.instance.create(new LinkedListAtomSet(x))
-          val result: List[Substitution] = StaticHomomorphism.instance.execute(cq, atomSetAndCanMod.get._1).asScala.toList
+          val result: List[Substitution] = StaticHomomorphism.instance.execute(cq, atomSetAndCanModIndex.get._1).asScala.toList
           val goodSubstitutions: List[Substitution] = result.filter(isGood(_, x))
-          val extension = extend(x, goodSubstitutions, atomSetAndCanMod.get._2, atomsToBeMapped.tail)
+          val extension = extend(x, goodSubstitutions, atomSetAndCanModIndex.get._2, atomsToBeMapped.tail)
           getTypesExtensionH(xs, acc:::extension)
         }else
           getTypesExtensionH(xs, acc)
