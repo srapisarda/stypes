@@ -6,6 +6,7 @@ import fr.lirmm.graphik.graal.core.atomset.LinkedListAtomSet
 import fr.lirmm.graphik.graal.core.factory.ConjunctiveQueryFactory
 import fr.lirmm.graphik.graal.homomorphism.StaticHomomorphism
 
+import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 
 /**
@@ -16,7 +17,6 @@ class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[AtomSet],
 // todo:  hom: Substitution must be something like  hom: Substitution[Term, ConstantType]
 
   type AtomSetWithCanonicalModelIndex = (AtomSet, Int)
-
 
   private def getAtomSetWithCanonicalModelIndex(atom: Atom): Option[AtomSetWithCanonicalModelIndex] = {
     val intersection: Set[Term] = getKnownVariables(atom)
@@ -60,17 +60,17 @@ class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[AtomSet],
 
   }
 
-  private def extend( atom: Atom,  answers: List[Substitution], canonicalModelIndex:Int, atomsToBeMapped: List[Atom]): List[TypeExtender] = {
+  private def extend( atom: Atom,  answers: List[Substitution], canonicalModelIndex:Int, atoms: List[Atom]): List[TypeExtender] = {
     // atomsToBeMapped
-
-    def extendH( answers: List[Substitution], canonicalModelIndex: Int, acc: List[TypeExtender], atomsToBeMapped:List[Atom] )
+    @tailrec
+    def extendH( answers: List[Substitution], canonicalModelIndex: Int, acc: List[TypeExtender], atoms:List[Atom] )
     : List[TypeExtender] = answers match {
       case List() => acc
-      case head::tail => {
-        val substitution= extendSubstitution( atom, head,canonicalModelIndex )
-        val t = new TypeExtender( bag, substitution, canonicalModels, atomsToBeMapped  )
-        // extendH(tail, canonicalModelIndex, acc :: extendSubstitution( , head))
-        acc
+      case x::xs => {
+        val substitution= extendSubstitution( atom, x,canonicalModelIndex )
+        val t = new TypeExtender( bag, substitution, canonicalModels, atoms )
+        extendH(xs, canonicalModelIndex, t::acc, atoms  )
+
       }
     }
     List()
@@ -81,7 +81,7 @@ class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[AtomSet],
 
     def extendToTheSetOfVariables ( terms:List[Term], modifiedHom: Substitution  ) :Substitution = terms match {
       case List()=>  modifiedHom
-      case  head :: tail => extendToTheSetOfVariables( tail,  extendVariable ( head, answer, canonicalModelIndex, modifiedHom ) )
+      case  x :: xs => extendToTheSetOfVariables( xs,  extendVariable ( x, answer, canonicalModelIndex, modifiedHom ) )
     }
 
     val modifiedHom: Substitution  = new TreeMapSubstitution(hom)
@@ -101,23 +101,29 @@ class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[AtomSet],
   }
 
 
+  private def  getTypesExtension(atoms: List[Atom] ): List[TypeExtender] =   {
+    @tailrec
+    def getTypesExtensionH(atoms: List[Atom], acc:List[TypeExtender] ) : List[TypeExtender] = atoms match {
+      case List() => acc
+      case x::xs  =>
+        val currentAtom = atomsToBeMapped.head
+        // getting the tuple of atomSet and CanonicalModelIndex
+        val atomSetAndCanMod: Option[(AtomSet, Int)] = getAtomSetWithCanonicalModelIndex(currentAtom)
+        // If the atom set is defined then the atom is connected
+        if (atomSetAndCanMod.isDefined) {
+          val cq = ConjunctiveQueryFactory.instance.create(new LinkedListAtomSet(currentAtom))
+          val result: List[Substitution] = StaticHomomorphism.instance.execute(cq, atomSetAndCanMod.get._1).asScala.toList
+          val goodSubstitutions: List[Substitution] = result.filter(isGood(_, currentAtom))
+          val extension = extend(currentAtom, goodSubstitutions, atomSetAndCanMod.get._2, atomsToBeMapped.tail)
+          getTypesExtensionH(xs, acc:::extension)
+        }else
+          getTypesExtensionH(xs, acc)
 
-   var children =
-     if (atomsToBeMapped.nonEmpty) {
-       val currentAtom = atomsToBeMapped.head
-       val atomSet = getAtomSetWithCanonicalModelIndex(currentAtom)
-       // If the atom set is defined then the atom is connected
-       if (atomSet.isDefined) {
+    }
+    getTypesExtensionH(atoms, List())
+  }
 
-         val cq = ConjunctiveQueryFactory.instance.create(new LinkedListAtomSet(currentAtom))
-         val result: List[Substitution] = StaticHomomorphism.instance.execute(cq, atomSet.get._1).asScala.toList
-         val goodSubstitutions: List[Substitution] = result.filter(isGood(_, currentAtom))
-         extend(currentAtom, goodSubstitutions, atomSet.get._2, atomsToBeMapped.tail)
 
-       }
-//       else
-//         extend(atomsToBeMapped.tail.head, goodSubstitutions, atomSet.get._2, atomsToBeMapped.tail.tail)
-
-     }
+   var children: List[TypeExtender] = getTypesExtension(atomsToBeMapped)
 
 }
