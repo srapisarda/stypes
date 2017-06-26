@@ -60,7 +60,7 @@ class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[AtomSet],
     }
 
     val knownVariables: Set[Term] = getKnownVariables(atom)
-    knownVariables.collectFirst { case _ => isBadTerm(_) }.isEmpty
+    knownVariables.collectFirst { case t:Term => isBadTerm(t) }.isEmpty
 
   }
 
@@ -109,17 +109,17 @@ class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[AtomSet],
         // getting the tuple of atomSet and CanonicalModelIndex
         val atomSetAndCanModIndex: Option[AtomSetWithCanonicalModelIndex] = getAtomSetWithCanonicalModelIndex(x)
         // If the atom set is defined then the atom is connected
-        if (atomSetAndCanModIndex.isDefined) {
+          if (atomSetAndCanModIndex.isDefined) {
           val cq = ConjunctiveQueryFactory.instance.create(new LinkedListAtomSet(x))
           val result: List[Substitution] = StaticHomomorphism.instance.execute(cq, atomSetAndCanModIndex.get._1).asScala.toList
-          val goodSubstitutions: List[Substitution] = result.filter(isGood(_, x))
+          val goodSubstitutions: List[Substitution] = result.filter( s => isGood( s, x))
           val extension = extend(x, goodSubstitutions, atomSetAndCanModIndex.get._2, atomsToBeMapped.tail)
           getTypesExtensionH(xs, acc:::extension)
         }else
           getTypesExtensionH(xs, acc)
 
     }
-    getTypesExtensionH(atoms, List())
+      getTypesExtensionH(atoms, List())
   }
 
 

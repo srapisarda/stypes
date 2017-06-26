@@ -83,7 +83,7 @@ object ReWriter {
     canonicalModelList(generatingAtomList, List())
   }
 
-  def isAnonymous(x: Term) =
+  def isAnonymous(x: Term): Boolean =
     x.getLabel.toLowerCase.startsWith("ee")
 
 
@@ -118,7 +118,7 @@ class ReWriter(ontology: RuleSet) {
 
     def atLeastOneTerm(terms: List[Term], f: Term => Boolean): Boolean = terms match {
       case List() => false
-      case x :: xs => if (f.apply(x)) true else atLeastOneTerm(xs, f)
+      case x :: xs => if (f(x)) true else atLeastOneTerm(xs, f)
     }
 
 
@@ -142,11 +142,11 @@ class ReWriter(ontology: RuleSet) {
 
           val canonicalModel: AtomSet = canonicalModels.toArray.apply(index)
 
-          val sameAreEqual = canonicalModel.asScala.toList.map(atom => isMixed(atom.getTerms().asScala.toList) )
+          //val sameAreEqual = canonicalModel.asScala.toList.map(atom => isMixed(atom.getTerms().asScala.toList) )
 
           val expression: List[List[(Term, Term)]] = canonicalModel.asScala.toList
             .filter(atom => atom.getPredicate.equals(x.getPredicate) && isMixed(atom.getTerms().asScala.toList))
-            .map(atom => getEqualities(x.getTerms.asScala.toList, atom.getTerms.asScala.toList, List())).toList
+            .map(atom => getEqualities(x.getTerms.asScala.toList, atom.getTerms.asScala.toList, List()))
 
 
           visitBagAtoms(xs, expression :: acc)
