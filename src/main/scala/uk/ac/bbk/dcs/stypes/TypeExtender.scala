@@ -105,16 +105,15 @@ class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[AtomSet],
     @tailrec
     def getTypesExtensionH(atoms: List[Atom], acc:List[TypeExtender] ) : List[TypeExtender] = atoms match {
       case List() => acc
-      case x::xs  =>
-        val currentAtom = atomsToBeMapped.head
+      case x :: xs  =>
         // getting the tuple of atomSet and CanonicalModelIndex
-        val atomSetAndCanMod: Option[(AtomSet, Int)] = getAtomSetWithCanonicalModelIndex(currentAtom)
+        val atomSetAndCanMod: Option[(AtomSet, Int)] = getAtomSetWithCanonicalModelIndex(x)
         // If the atom set is defined then the atom is connected
         if (atomSetAndCanMod.isDefined) {
-          val cq = ConjunctiveQueryFactory.instance.create(new LinkedListAtomSet(currentAtom))
+          val cq = ConjunctiveQueryFactory.instance.create(new LinkedListAtomSet(x))
           val result: List[Substitution] = StaticHomomorphism.instance.execute(cq, atomSetAndCanMod.get._1).asScala.toList
-          val goodSubstitutions: List[Substitution] = result.filter(isGood(_, currentAtom))
-          val extension = extend(currentAtom, goodSubstitutions, atomSetAndCanMod.get._2, atomsToBeMapped.tail)
+          val goodSubstitutions: List[Substitution] = result.filter(isGood(_, x))
+          val extension = extend(x, goodSubstitutions, atomSetAndCanMod.get._2, atomsToBeMapped.tail)
           getTypesExtensionH(xs, acc:::extension)
         }else
           getTypesExtensionH(xs, acc)
