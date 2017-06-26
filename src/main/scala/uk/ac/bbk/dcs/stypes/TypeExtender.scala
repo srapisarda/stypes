@@ -10,7 +10,11 @@ import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 
 /**
-  * Created by rapissal on 24/06/2017.
+  * Created by
+  *   Salvatore Rapisarda
+  *   Stanislav Kikot
+  *
+  * on 24/06/2017.
   *
   */
 class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[AtomSet], atomsToBeMapped: List[Atom]) {
