@@ -55,7 +55,7 @@ class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[AtomSet],
     def isBadTerm(term: Term) = {
       val homTerm: Term = hom.createImageOf(term)
       val subTerm = substitution.createImageOf(term)
-      (!(subTerm.equals(homTerm) || homTerm.equals(ConstantType.EPSILON))
+      (!(subTerm.getLabel.equals(homTerm.getLabel) || homTerm.equals(ConstantType.EPSILON))
         || homTerm.equals(ConstantType.EPSILON) && !ReWriter.isAnonymous(subTerm))
     }
 
