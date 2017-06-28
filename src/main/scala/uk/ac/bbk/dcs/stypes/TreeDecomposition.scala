@@ -5,8 +5,8 @@ import com.tinkerpop.blueprints.impls.tg.TinkerGraph
 import com.tinkerpop.blueprints.{Edge, Graph, Vertex}
 import fr.lirmm.graphik.graal.api.core.{Atom, Predicate}
 
+import scala.annotation.tailrec
 import scala.collection.JavaConverters._
-import scala.collection.mutable
 
 /**
   * Created by :
@@ -57,12 +57,12 @@ class TreeDecomposition {
   }
 
 
-  def getSubGraph(graph: Graph, vertex: Vertex, edge: Edge) = {
+  def getSubGraph(graph: Graph, vertex: Vertex, edge: Edge): TinkerGraph = {
     val g = new TinkerGraph
     graph.getVertices.asScala.foreach(
       v => {
         if (!vertex.equals(v) ) {
-          var vertex1 = g.addVertex(v.getId)
+          val vertex1 = g.addVertex(v.getId)
           vertex1.setProperty("label", v.getProperty("label"))
         }
     })
@@ -112,47 +112,34 @@ class TreeDecomposition {
 
   def getChildes: List[TreeDecomposition] = childes
 
-
   def  getSplitter : TreeDecomposition = getSplitter(this, this.getSize)
 
-  // todo: make it tailrec
-  private def getSplitter(t: TreeDecomposition, rootSize: Int) : TreeDecomposition =
+  @tailrec
+  private def getSplitter(t: TreeDecomposition, rootSize: Int) : TreeDecomposition = {
+
+    @tailrec
+    def visitChildes( maxsize:Int, childes:List[TreeDecomposition], child:TreeDecomposition  ): TreeDecomposition = childes match {
+      case  List() => child
+      case  x :: xs =>
+        val size = x.getSize
+        if (size > maxsize) visitChildes(size, xs, x )
+        else visitChildes(maxsize, xs, child)
+    }
+
     if (t.getSize <= (rootSize / 2) + 1) t
     else {
-      var maxsize = -1
-      var child: TreeDecomposition = null
-      for (c <- t.getChildes) {
-        val size = c.getSize
-        if (size > maxsize) {
-          child = c
-          maxsize = size
-        }
-      }
+      val child: TreeDecomposition = visitChildes(-1, t.childes, null)
       getSplitter(child, rootSize)
     }
 
-
-  def remove(s: TreeDecomposition): TreeDecomposition = {
-
-//    def removeH(s: TreeDecomposition, childes:List[TreeDecomposition],
-//                acc:List[TreeDecomposition]): List[TreeDecomposition] = childes match {
-//      case List() => acc
-//      case x::xs => if ( x !=  s) removeH(s, xs, x::acc ) else  removeH(s, xs, acc )
-//    }
-
- //    removeH(s, this.childes )
-
-    val ret:mutable.MutableList[TreeDecomposition] = new mutable.MutableList[TreeDecomposition]
-    for (c <- this.getChildes) {
-      if (c != s)  ret += c.remove(s)
-    }
-
-
-
-    new TreeDecomposition(mapCqAtoms, root, ret.toList )
   }
 
-  override def toString= {
+  def remove(s: TreeDecomposition): TreeDecomposition = {
+    val childes = this.childes.filter( c => c != s ).map( c => c.remove(s)  )
+    new TreeDecomposition(mapCqAtoms, root, childes )
+  }
+
+  override def toString : String = {
     s"(root: $root, childes: $childes, mapCqAtoms: $mapCqAtoms, )"
   }
 
