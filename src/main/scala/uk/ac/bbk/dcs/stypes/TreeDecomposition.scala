@@ -3,7 +3,7 @@ package uk.ac.bbk.dcs.stypes
 import com.tinkerpop.blueprints.Direction.{IN, OUT}
 import com.tinkerpop.blueprints.impls.tg.TinkerGraph
 import com.tinkerpop.blueprints.{Edge, Graph, Vertex}
-import fr.lirmm.graphik.graal.api.core.{Atom, Predicate}
+import fr.lirmm.graphik.graal.api.core.{Atom, Predicate, Term}
 
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
@@ -88,8 +88,8 @@ class TreeDecomposition {
     val predicates: List[String] = getSpittedItems(split(0)).map(_.toLowerCase)
     val atoms: Set[Atom] =
       mapCqAtoms.filter(entry => predicates.contains(entry._1.getIdentifier.toString)).values.toSet
-
-    Bag(atoms)
+    val terms: Set[Term] = atoms.flatMap(a=> a.getTerms.asScala)
+    Bag(atoms, terms)
   }
 
 

@@ -101,28 +101,46 @@ class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[AtomSet],
 
   }
 
-  private def  getTypesExtension(atoms: List[Atom] ): List[TypeExtender] =   {
+  private def  getTypesExtension(atoms: List[Atom], variables:List[Term] ): List[TypeExtender] =   {
     @tailrec
-    def getTypesExtensionH(atoms: List[Atom], acc:List[TypeExtender] ) : List[TypeExtender] = atoms match {
+    def getPossibleConnectedTypesExtensions(atoms: List[Atom], acc: (Boolean,  List[TypeExtender] ) ) :
+    ( Boolean,List[TypeExtender]) = atoms match {
       case List() => acc
       case x :: xs  =>
         // getting the tuple of atomSet and CanonicalModelIndex
         val atomSetAndCanModIndex: Option[AtomSetWithCanonicalModelIndex] = getAtomSetWithCanonicalModelIndex(x)
         // If the atom set is defined then the atom is connected
-          if (atomSetAndCanModIndex.isDefined) {
+        if (atomSetAndCanModIndex.isDefined) {
           val cq = ConjunctiveQueryFactory.instance.create(new LinkedListAtomSet(x))
           val result: List[Substitution] = StaticHomomorphism.instance.execute(cq, atomSetAndCanModIndex.get._1).asScala.toList
           val goodSubstitutions: List[Substitution] = result.filter( s => isGood( s, x))
           val extension = extend(x, goodSubstitutions, atomSetAndCanModIndex.get._2, atomsToBeMapped.tail)
-          getTypesExtensionH(xs, acc:::extension)
+          getPossibleConnectedTypesExtensions(xs,  ( true, acc._2:::extension))
         }else
-          getTypesExtensionH(xs, acc)
+          getPossibleConnectedTypesExtensions(xs, acc)
 
     }
-      getTypesExtensionH(atoms, List())
+
+    def extendToATerm( variable:Term ) : List[TypeExtender] = {
+      List()
+    }
+
+    def filterThroughAtoms(atoms:List[Atom]):  List[TypeExtender] ={
+      List()
+    }
+
+    val possibleConnectedExtensions = getPossibleConnectedTypesExtensions(atoms, (false, List()) )
+    if ( possibleConnectedExtensions._1 )
+      possibleConnectedExtensions._2
+    else if (variables.isEmpty)
+      filterThroughAtoms(atoms)
+    else
+      extendToATerm( variables(0) )
+
+
   }
 
 
-   var children: List[TypeExtender] = getTypesExtension(atomsToBeMapped)
+   var children: List[TypeExtender] =  getTypesExtension(atomsToBeMapped, bag.variables.toList)
 
 }

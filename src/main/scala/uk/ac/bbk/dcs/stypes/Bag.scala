@@ -11,8 +11,8 @@ import scala.collection.JavaConverters._
   *
   * on 27/03/2017.
   */
-case class Bag( atoms:Set[Atom]  ) {
-  val variables: Set[Term] = atoms.flatMap(p=> p.getTerms.asScala)
+case class Bag( atoms:Set[Atom], variables: Set[Term]  ) {
+  // val variables: List[Term] = atoms.flatMap(p=> p.getTerms.asScala)
 
   override def toString:String= {
     s"(atoms: $atoms, variables: $variables)"

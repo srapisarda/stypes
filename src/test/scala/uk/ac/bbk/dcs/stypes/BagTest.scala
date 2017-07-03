@@ -16,18 +16,24 @@ class BagTest extends FunSpec {
 
   val tf: TermFactory = DefaultTermFactory.instance
   val rterms: util.List[Term] = new util.ArrayList[Term]
-  rterms.add(tf.createVariable("X"))
-  rterms.add(tf.createVariable("Y"))
+
+  val x = tf.createVariable("X")
+  val y = tf.createVariable("Y")
+  val z =tf.createVariable("Z")
+
+
+  rterms.add(x)
+  rterms.add(y)
   val rPredicate: Predicate = new Predicate("r", 2)
   val r: Atom = new DefaultAtom(rPredicate, rterms)
 
   val sterms: util.List[Term] = new util.ArrayList[Term]
-  sterms.add(tf.createVariable("Y"))
-  sterms.add(tf.createVariable("Z"))
+  sterms.add(y)
+  sterms.add(z)
   val sPredicate: Predicate = new Predicate("s", 2)
   val s: Atom = new DefaultAtom(sPredicate, sterms)
 
-  val b: Bag = Bag(Set(r, s))
+  val b: Bag = Bag(Set(r, s), Set(x, y, z ) )
 
   describe("The Bag basic test") {
 
