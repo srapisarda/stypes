@@ -60,8 +60,8 @@ class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[AtomSet],
     }
 
     val knownVariables: Set[Term] = getKnownVariables(atom)
-    knownVariables.collectFirst { case t:Term => isBadTerm(t) }.isEmpty
-
+    val collection = knownVariables.filter(isBadTerm)
+    collection.isEmpty
   }
 
   private def extend( atom: Atom,  answers: List[Substitution], canonicalModelIndex:Int, atoms: List[Atom]): List[TypeExtender] = {
@@ -80,7 +80,7 @@ class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[AtomSet],
   private def extendSubstitution (atom:Atom, answer :Substitution, canonicalModelIndex: Int):Substitution ={
 
     def extendVariable(term:Term, answer :Substitution, canonicalModelIndex: Int, modifiedHom: Substitution):Substitution = {
-      if ( ! ReWriter.isAnonymous( answer.createImageOf( term) ) ) {
+      if (ReWriter.isAnonymous( answer.createImageOf( term) ) ) {
         modifiedHom.put( term, new  ConstantType( (canonicalModelIndex, answer.createImageOf(term).getLabel ) )  )
       }else{
         modifiedHom.put( term, ConstantType.EPSILON )
@@ -96,7 +96,7 @@ class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[AtomSet],
 
 
     val modifiedHom: Substitution  = new TreeMapSubstitution(hom)
-    val unknownVariables: List[Term] = getKnownVariables( atom).toList
+    val unknownVariables: List[Term] = getUnknownVariables(atom).toList
     extendToTheSetOfVariables(unknownVariables , modifiedHom  )
 
   }
