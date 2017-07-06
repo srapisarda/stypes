@@ -17,7 +17,16 @@ import scala.collection.JavaConverters._
   * on 24/06/2017.
   *
   */
-class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[AtomSet], atomsToBeMapped: List[Atom]) {
+class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[AtomSet],
+                   atomsToBeMapped: List[Atom], variableToBeMapped:List[Term] ) {
+
+  var children: List[TypeExtender] =  getTypesExtension
+
+  def this(bag: Bag, hom: Substitution, canonicalModels: Array[AtomSet] ) =
+      this(bag, hom, canonicalModels, bag.atoms.toList, bag.variables.filter( p=> ! hom.getTerms.contains(p) ).toList )
+
+
+
 // todo:  hom: Substitution must be something like  hom: Substitution[Term, ConstantType]
 
   type AtomSetWithCanonicalModelIndex = (AtomSet, Int)
@@ -64,13 +73,14 @@ class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[AtomSet],
     collection.isEmpty
   }
 
-  private def extend( atom: Atom,  answers: List[Substitution], canonicalModelIndex:Int, atoms: List[Atom]): List[TypeExtender] = {
+  private def extend( atom: Atom,  answers: List[Substitution], canonicalModelIndex:Int, atoms: List[Atom] ): List[TypeExtender] = {
      @tailrec
     def extendH( answers: List[Substitution], acc: List[TypeExtender]): List[TypeExtender] = answers match {
       case List() => acc
       case x::xs =>
         val substitution= extendSubstitution( atom, x,canonicalModelIndex )
-        val t = new TypeExtender( bag, substitution, canonicalModels, atoms )
+        val unknownVariables=  getUnknownVariables(atom)
+        val t = new TypeExtender( bag, substitution, canonicalModels, atoms, variableToBeMapped.filter( v => ! unknownVariables.contains(v) ) )
         extendH(xs, t::acc)
 
     }
@@ -101,7 +111,8 @@ class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[AtomSet],
 
   }
 
-  private def  getTypesExtension(atoms: List[Atom], variables:List[Term] ): List[TypeExtender] =   {
+  private def  getTypesExtension: List[TypeExtender] =   {
+
     @tailrec
     def getPossibleConnectedTypesExtensions(atoms: List[Atom], acc: (Boolean,  List[TypeExtender] ) ) :
     ( Boolean,List[TypeExtender]) = atoms match {
@@ -122,25 +133,49 @@ class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[AtomSet],
     }
 
     def extendToATerm( variable:Term ) : List[TypeExtender] = {
-      List()
+      //
+      def extend( canonicalModelIndex: Int, maxIndex:Int,  acc:List[TypeExtender] ) : List[TypeExtender] = {
+        //
+        def extenderInsideM( terms:List[Term], acc:List[TypeExtender]  ) :List[TypeExtender]  =  terms match {
+          case List() => acc
+          case head::tail =>
+            if ( ReWriter.isAnonymous(head) ) extenderInsideM(tail, buildExtender( new ConstantType(canonicalModelIndex,  head.getLabel))::acc)
+            else extenderInsideM(tail, acc )
+        }
+
+        //
+        if  ( maxIndex == canonicalModelIndex)  acc
+        else {
+          val extendedTerms =   extenderInsideM( canonicalModels(canonicalModelIndex).getTerms.asScala.toList, List() )
+          extend(canonicalModelIndex + 1, maxIndex, extendedTerms:::acc  )
+        }
+      }
+
+      def buildExtender( term: ConstantType ) : TypeExtender = {
+        val h = new TreeMapSubstitution(hom)
+        h.put(variable, term)
+        new TypeExtender(bag, h, canonicalModels, atomsToBeMapped, variableToBeMapped.tail )
+      }
+
+      extend( 0, canonicalModels.length,  List(buildExtender(ConstantType.EPSILON)))
     }
 
     def filterThroughAtoms(atoms:List[Atom]):  List[TypeExtender] ={
       List()
     }
 
-    val possibleConnectedExtensions = getPossibleConnectedTypesExtensions(atoms, (false, List()) )
+    val possibleConnectedExtensions = getPossibleConnectedTypesExtensions(atomsToBeMapped, (false, List()) )
     if ( possibleConnectedExtensions._1 )
       possibleConnectedExtensions._2
-    else if (variables.isEmpty)
-      filterThroughAtoms(atoms)
+    else if (variableToBeMapped.isEmpty)
+      filterThroughAtoms(atomsToBeMapped)
     else
-      extendToATerm( variables(0) )
+      extendToATerm( variableToBeMapped(0) )
 
 
   }
 
 
-   var children: List[TypeExtender] =  getTypesExtension(atomsToBeMapped, bag.variables.toList)
+
 
 }

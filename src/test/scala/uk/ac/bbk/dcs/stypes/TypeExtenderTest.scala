@@ -14,6 +14,26 @@ import org.scalatest.FunSpec
   */
 class TypeExtenderTest extends FunSpec {
 
+  describe("TypeExtender  decomposition commons ") {
+
+    it("should  create the children property on anonymous individual ") {
+      val te = testExtension(getMockAnonymousType)
+      assert(te!=null)
+      assert(te.children.nonEmpty)
+      assert(te.children.head.children.isEmpty)
+    }
+
+    it("should  create the children property on EPSILON individual ") {
+      val te = testExtension(getMockEpsilonType)
+      assert(te!=null)
+      assert(te.children.length == 3)
+      assert(te.children.head.children.isEmpty)
+    }
+
+
+  }
+
+
   // 0 - Create a Dlgp writer and a structure to store rules.
   private val writer = new DlgpWriter
   private val ontology = new LinkedListRuleSet
@@ -49,26 +69,9 @@ class TypeExtenderTest extends FunSpec {
     val t:TreeDecomposition= test.buildTestTreeDecomposition
     val reWriter  = new ReWriter(ontology)
     val canonicalModels =  reWriter.canonicalModels
-    new TypeExtender(t.getRoot,  s.homomorphism , canonicalModels.toArray, t.getRoot.atoms.toList )
+    new TypeExtender(t.getRoot,  s.homomorphism , canonicalModels.toArray )
   }
 
-  describe("TypeExtender  decomposition commons ") {
 
-    it("should  create the children property on anonymous individual ") {
-      val te = testExtension(getMockAnonymousType)
-      assert(te!=null)
-      assert(te.children.nonEmpty)
-      assert(te.children.head.children.isEmpty)
-    }
-
-    it("should  create the children property on EPSILON individual ") {
-      val te = testExtension(getMockEpsilonType)
-      assert(te!=null)
-      assert(te.children.nonEmpty)
-      assert(te.children.head.children.isEmpty)
-    }
-
-
-  }
 
 }
