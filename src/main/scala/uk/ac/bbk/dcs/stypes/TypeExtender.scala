@@ -20,7 +20,9 @@ import scala.collection.JavaConverters._
 class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[AtomSet],
                    atomsToBeMapped: List[Atom], variableToBeMapped:List[Term] ) {
 
-  var children: List[TypeExtender] =  getTypesExtension
+  private val typesExtended =  getTypesExtension
+  var children: List[TypeExtender] = typesExtended._2
+  var isValid:Boolean = typesExtended._1
 
   def this(bag: Bag, hom: Substitution, canonicalModels: Array[AtomSet] ) =
       this(bag, hom, canonicalModels, bag.atoms.toList, bag.variables.filter( p=> ! hom.getTerms.contains(p) ).toList )
@@ -60,7 +62,7 @@ class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[AtomSet],
 
   }
 
-  private def isGood(substitution: Substitution, atom: Atom): Boolean = {
+  private def isGoodWithRespectToSubstitution(substitution: Substitution, atom: Atom): Boolean = {
     def isBadTerm(term: Term) = {
       val homTerm: Term = hom.createImageOf(term)
       val subTerm = substitution.createImageOf(term)
@@ -111,7 +113,7 @@ class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[AtomSet],
 
   }
 
-  private def  getTypesExtension: List[TypeExtender] =   {
+  private def  getTypesExtension: (Boolean, List[TypeExtender]) =   {
 
     @tailrec
     def getPossibleConnectedTypesExtensions(atoms: List[Atom], acc: (Boolean,  List[TypeExtender] ) ) :
@@ -124,7 +126,7 @@ class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[AtomSet],
         if (atomSetAndCanModIndex.isDefined) {
           val cq = ConjunctiveQueryFactory.instance.create(new LinkedListAtomSet(x))
           val result: List[Substitution] = StaticHomomorphism.instance.execute(cq, atomSetAndCanModIndex.get._1).asScala.toList
-          val goodSubstitutions: List[Substitution] = result.filter( s => isGood( s, x))
+          val goodSubstitutions: List[Substitution] = result.filter( s => isGoodWithRespectToSubstitution( s, x))
           val extension = extend(x, goodSubstitutions, atomSetAndCanModIndex.get._2, atomsToBeMapped.tail)
           getPossibleConnectedTypesExtensions(xs,  ( true, acc._2:::extension))
         }else
@@ -160,17 +162,49 @@ class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[AtomSet],
       extend( 0, canonicalModels.length,  List(buildExtender(ConstantType.EPSILON)))
     }
 
-    def filterThroughAtoms(atoms:List[Atom]):  List[TypeExtender] ={
-      List()
+    def filterThroughAtoms(atoms:List[Atom]): Boolean ={
+
+      def isGoodRespectToCanonicalModel(atom: Atom): Boolean = {
+
+        def areAllEqualCanonicalModelIndex(canonicalModelIndex:Int, terms:Seq[Term]): Boolean = terms match {
+          case List()=> true
+          case x::xs =>
+            if ( x.asInstanceOf[ConstantType].identifier._1==canonicalModelIndex)
+                              areAllEqualCanonicalModelIndex(canonicalModelIndex, xs )
+            else false
+
+        }
+
+        val notEpsilon = atom.getTerms.asScala.map(hom.createImageOf ).filter(t => t.equals(ConstantType.EPSILON))
+        if ( notEpsilon.isEmpty)
+          true
+        else {
+          val canonicalModelIndex =  notEpsilon.head.asInstanceOf[ConstantType].identifier._1
+          val res = areAllEqualCanonicalModelIndex(canonicalModelIndex, notEpsilon.tail)
+          if ( !res) false
+          else {
+            true
+          }
+
+        }
+
+
+
+
+      }
+
+
+      false
     }
 
     val possibleConnectedExtensions = getPossibleConnectedTypesExtensions(atomsToBeMapped, (false, List()) )
+
     if ( possibleConnectedExtensions._1 )
-      possibleConnectedExtensions._2
+      (true, possibleConnectedExtensions._2)
     else if (variableToBeMapped.isEmpty)
-      filterThroughAtoms(atomsToBeMapped)
+      (filterThroughAtoms(atomsToBeMapped), List())
     else
-      extendToATerm( variableToBeMapped(0) )
+      (true,  extendToATerm( variableToBeMapped(0) ) )
 
 
   }
