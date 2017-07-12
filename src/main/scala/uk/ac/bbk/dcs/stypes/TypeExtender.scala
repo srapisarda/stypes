@@ -138,6 +138,7 @@ class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[AtomSet],
       //
       def extend( canonicalModelIndex: Int, maxIndex:Int,  acc:List[TypeExtender] ) : List[TypeExtender] = {
         //
+        @tailrec
         def extenderInsideM( terms:List[Term], acc:List[TypeExtender]  ) :List[TypeExtender]  =  terms match {
           case List() => acc
           case head::tail =>
@@ -183,7 +184,12 @@ class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[AtomSet],
           val res = areAllEqualCanonicalModelIndex(canonicalModelIndex, notEpsilon.tail)
           if ( !res) false
           else {
-            true
+            val cm = canonicalModels(canonicalModelIndex)
+            val generatingTerms = cm.getTerms().asScala.filter( p=> ! ReWriter.isAnonymous( p ) )
+            val s = new TreeMapSubstitution()
+            generatingTerms.foreach( p => s.put(p, ConstantType.EPSILON ) )
+            val image =  s.createImageOf(cm)
+            image.contains(atom)
           }
 
         }
