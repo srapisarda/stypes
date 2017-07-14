@@ -128,7 +128,7 @@ class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[AtomSet],
           val result: List[Substitution] = StaticHomomorphism.instance.execute(cq, atomSetAndCanModIndex.get._1).asScala.toList
           val goodSubstitutions: List[Substitution] = result.filter( s => isGoodWithRespectToSubstitution( s, x))
           val extension = extend(x, goodSubstitutions, atomSetAndCanModIndex.get._2, atomsToBeMapped.tail)
-          getPossibleConnectedTypesExtensions(xs,  ( true, acc._2:::extension))
+          getPossibleConnectedTypesExtensions(List(),  ( true, acc._2:::extension))
         }else
           getPossibleConnectedTypesExtensions(xs, acc)
 
@@ -163,55 +163,58 @@ class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[AtomSet],
       extend( 0, canonicalModels.length,  List(buildExtender(ConstantType.EPSILON)))
     }
 
-    def filterThroughAtoms(atoms:List[Atom]): Boolean ={
+    def filterThroughAtoms(atoms:List[Atom]): Boolean = atoms match  {
+      case List() => true
+      case x::xs => {
+        if (isGoodRespectToCanonicalModel(x))
+          filterThroughAtoms(xs)
+        else
+          false
+      }
+    }
 
-      def isGoodRespectToCanonicalModel(atom: Atom): Boolean = {
+    def isGoodRespectToCanonicalModel(atom: Atom): Boolean = {
 
-        def areAllEqualCanonicalModelIndex(canonicalModelIndex:Int, terms:Seq[Term]): Boolean = terms match {
-          case List()=> true
-          case x::xs =>
-            if ( x.asInstanceOf[ConstantType].identifier._1==canonicalModelIndex)
-                              areAllEqualCanonicalModelIndex(canonicalModelIndex, xs )
-            else false
-
-        }
-
-        val notEpsilon = atom.getTerms.asScala.map(hom.createImageOf ).filter(t => t.equals(ConstantType.EPSILON))
-        if ( notEpsilon.isEmpty)
-          true
-        else {
-          val canonicalModelIndex =  notEpsilon.head.asInstanceOf[ConstantType].identifier._1
-          val res = areAllEqualCanonicalModelIndex(canonicalModelIndex, notEpsilon.tail)
-          if ( !res) false
-          else {
-            val cm = canonicalModels(canonicalModelIndex)
-            val generatingTerms = cm.getTerms().asScala.filter( p=> ! ReWriter.isAnonymous( p ) )
-            val s = new TreeMapSubstitution()
-            generatingTerms.foreach( p => s.put(p, ConstantType.EPSILON ) )
-            val image =  s.createImageOf(cm)
-            image.contains(atom)
-          }
-
-        }
-
-
-
+      def areAllEqualCanonicalModelIndex(canonicalModelIndex:Int, terms:Seq[Term]): Boolean = terms match {
+        case Nil=> true
+        case x::xs =>
+          if ( x.asInstanceOf[ConstantType].identifier._1==canonicalModelIndex)
+            areAllEqualCanonicalModelIndex(canonicalModelIndex, xs )
+          else false
 
       }
 
+      val notEpsilon = atom.getTerms.asScala.map(hom.createImageOf ).filter(t => ! t.equals(ConstantType.EPSILON))
+      if ( notEpsilon.isEmpty)
+        true
+      else {
+        val canonicalModelIndex =  notEpsilon.head.asInstanceOf[ConstantType].identifier._1
+        val res = areAllEqualCanonicalModelIndex(canonicalModelIndex, notEpsilon.tail)
+        if ( !res) false
+        else {
+          val cm = canonicalModels(canonicalModelIndex)
+          val generatingTerms = cm.getTerms().asScala.filter( p=> ! ReWriter.isAnonymous( p ) )
+          val s = new TreeMapSubstitution()
+          generatingTerms.foreach( p => s.put(p, ConstantType.EPSILON ) )
+          val image =  s.createImageOf(cm)
+          image.contains(atom)
+        }
 
-      false
+      }
+
     }
 
-    val possibleConnectedExtensions = getPossibleConnectedTypesExtensions(atomsToBeMapped, (false, List()) )
 
-    if ( possibleConnectedExtensions._1 )
-      (true, possibleConnectedExtensions._2)
-    else if (variableToBeMapped.isEmpty)
+    if (variableToBeMapped.isEmpty)
       (filterThroughAtoms(atomsToBeMapped), List())
-    else
-      (true,  extendToATerm( variableToBeMapped(0) ) )
+    else {
+      val possibleConnectedExtensions = getPossibleConnectedTypesExtensions(atomsToBeMapped, (false, List()))
 
+      if (possibleConnectedExtensions._1)
+        (true, possibleConnectedExtensions._2)
+      else
+        (true, extendToATerm(variableToBeMapped(0)))
+    }
 
   }
 
