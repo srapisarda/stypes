@@ -152,7 +152,7 @@ case class Type(genAtoms: Map[Term, Atom], homomorphism: Substitution ){
 
 
   override def toString: String = {
-    s"(atoms: $genAtoms, homomorphism: $homomorphism, var1: $getVar1, var2: $getVar2)"
+    s"(homomorphism: $homomorphism)"
   }
 
 }

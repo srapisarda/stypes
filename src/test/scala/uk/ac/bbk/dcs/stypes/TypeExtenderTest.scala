@@ -21,6 +21,8 @@ class TypeExtenderTest extends FunSpec {
       assert(te!=null)
       assert(te.children.nonEmpty)
       assert(te.children.head.children.isEmpty)
+      assert(te.types.size==1)
+      assert(te.children.head.types==Nil)
     }
 
     it("should  create the children property on EPSILON individual ") {
@@ -28,6 +30,8 @@ class TypeExtenderTest extends FunSpec {
       assert(te!=null)
       assert(te.children.length == 3)
       assert(te.children.head.children.isEmpty)
+      assert(te.types.size==3)
+      assert(te.children.head.types==Nil)
     }
 
 
@@ -35,12 +39,16 @@ class TypeExtenderTest extends FunSpec {
       val ret = getMockFileterAtoms(true)
       val te = testExtension(ret._1, Some(ret._2))
       assert(te.isValid)
+      assert(te.types.size==1)
+      assert(te.children.head.types==Nil)
     }
 
     it ( "should filter the atoms and return false ") {
       val ret = getMockFileterAtoms(false)
       val te = testExtension(ret._1, Some(ret._2))
       assert(!te.children.head.isValid)
+      assert(te.types.size==1)
+      assert(te.children.head.types==Nil)
     }
 
   }

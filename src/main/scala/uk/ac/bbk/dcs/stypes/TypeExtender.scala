@@ -17,19 +17,16 @@ import scala.collection.JavaConverters._
   * on 24/06/2017.
   *
   */
-class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[AtomSet],
+case class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[AtomSet],
                    atomsToBeMapped: List[Atom], variableToBeMapped:List[Term] ) {
 
-  private val typesExtended =  getTypesExtension
-  var children: List[TypeExtender] = typesExtended._2
-  var isValid:Boolean = typesExtended._1
-
   def this(bag: Bag, hom: Substitution, canonicalModels: Array[AtomSet] ) =
-      this(bag, hom, canonicalModels, bag.atoms.toList, bag.variables.filter( p=> ! hom.getTerms.contains(p) ).toList )
+    this(bag, hom, canonicalModels, bag.atoms.toList, bag.variables.filter( p=> ! hom.getTerms.contains(p) ).toList )
 
-
-
-// todo:  hom: Substitution must be something like  hom: Substitution[Term, ConstantType]
+  private val typesExtended =  getTypesExtension
+  val children: List[TypeExtender] = typesExtended._2
+  val isValid:Boolean = typesExtended._1
+  val types: List[Type] = collectTypes( children )
 
   type AtomSetWithCanonicalModelIndex = (AtomSet, Int)
 
@@ -62,6 +59,25 @@ class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[AtomSet],
 
   }
 
+  /**
+    * Collect homomorphisms from valid leaves
+    * @param children to visit
+    * @return a List of Type
+    */
+  def collectTypes( children: List[TypeExtender]) : List[Type] = {
+
+    @tailrec
+    def collectTypesH(children: List[TypeExtender], acc: List[Type]): List[Type] = children match {
+      case List() => acc
+      case x :: xs =>
+        if (x.children.isEmpty  ) collectTypesH(xs, Type(null, x.hom) :: acc)
+        else collectTypesH(xs, acc:::collectTypes(xs) )
+    }
+
+    collectTypesH(children, List())
+
+  }
+
   private def isGoodWithRespectToSubstitution(substitution: Substitution, atom: Atom): Boolean = {
     def isBadTerm(term: Term) = {
       val homTerm: Term = hom.createImageOf(term)
@@ -82,7 +98,7 @@ class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[AtomSet],
       case x::xs =>
         val substitution= extendSubstitution( atom, x,canonicalModelIndex )
         val unknownVariables=  getUnknownVariables(atom)
-        val t = new TypeExtender( bag, substitution, canonicalModels, atoms, variableToBeMapped.filter( v => ! unknownVariables.contains(v) ) )
+        val t = TypeExtender( bag, substitution, canonicalModels, atoms, variableToBeMapped.filter( v => ! unknownVariables.contains(v) ) )
         extendH(xs, t::acc)
 
     }
@@ -157,7 +173,7 @@ class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[AtomSet],
       def buildExtender( term: ConstantType ) : TypeExtender = {
         val h = new TreeMapSubstitution(hom)
         h.put(variable, term)
-        new TypeExtender(bag, h, canonicalModels, atomsToBeMapped, variableToBeMapped.tail )
+        TypeExtender(bag, h, canonicalModels, atomsToBeMapped, variableToBeMapped.tail )
       }
 
       extend( 0, canonicalModels.length,  List(buildExtender(ConstantType.EPSILON)))
@@ -165,12 +181,12 @@ class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[AtomSet],
 
     def filterThroughAtoms(atoms:List[Atom]): Boolean = atoms match  {
       case List() => true
-      case x::xs => {
+      case x::xs =>
         if (isGoodRespectToCanonicalModel(x))
           filterThroughAtoms(xs)
         else
           false
-      }
+
     }
 
     def isGoodRespectToCanonicalModel(atom: Atom): Boolean = {
@@ -204,7 +220,6 @@ class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[AtomSet],
 
     }
 
-
     if (variableToBeMapped.isEmpty)
       (filterThroughAtoms(atomsToBeMapped), List())
     else {
@@ -213,12 +228,9 @@ class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[AtomSet],
       if (possibleConnectedExtensions._1)
         (true, possibleConnectedExtensions._2)
       else
-        (true, extendToATerm(variableToBeMapped(0)))
+        (true, extendToATerm(variableToBeMapped.head))
     }
 
   }
-
-
-
 
 }
