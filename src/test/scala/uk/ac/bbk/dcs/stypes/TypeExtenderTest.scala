@@ -71,7 +71,7 @@ class TypeExtenderTest extends FunSpec {
     val s1 = new TreeMapSubstitution
     val tx = DefaultTermFactory.instance.createVariable("X2")
     s1.put(tx, ConstantType.EPSILON)
-    Type(null, s1 )
+    Type( s1 )
   }
 
   def getMockAnonymousType: Type = {
@@ -80,7 +80,7 @@ class TypeExtenderTest extends FunSpec {
     val ee0  =   new ConstantType(0, "EE0") // DefaultTermFactory.instance.createConstant( )
     s1.put(tx, ee0)
 
-    Type(null, s1 )
+    Type( s1 )
   }
 
 

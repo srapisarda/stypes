@@ -32,7 +32,7 @@ class TypeTest extends FunSpec with BeforeAndAfter {
 
 
     //type1
-    type1 = Type(Map( tx -> atom1), s1)
+    type1 = Type(s1)
 
 
     // type2
@@ -42,7 +42,7 @@ class TypeTest extends FunSpec with BeforeAndAfter {
     s2.put(tz, ee0)
     val atom2 = new DefaultAtom(new Predicate("B", 1))
     atom2.setTerm(0, DefaultTermFactory.instance.createConstant("a0"))
-    type2 = Type(Map(tz -> atom2), s2)
+    type2 = Type(s2)
 
 
   }
@@ -61,7 +61,7 @@ class TypeTest extends FunSpec with BeforeAndAfter {
       val actual = type1.union(type2)
 //      println(s"union: type1 U type2: $actual")
       assert(actual.getVar1.size==1)
-      assert(actual.getVar2.size==2)
+     //  assert(actual.getVar2().size==2)
       assert(actual.getDomain.size == 3)
 
     }

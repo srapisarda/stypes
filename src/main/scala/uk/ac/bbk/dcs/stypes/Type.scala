@@ -15,7 +15,7 @@ import scala.collection.JavaConverters._
   *
   * on 26/04/2017.
   */
-case class Type(genAtoms: Map[Term, Atom], homomorphism: Substitution ){
+case class Type( homomorphism: Substitution ){
 
 
   def getVar1: List[Term] =
@@ -23,7 +23,7 @@ case class Type(genAtoms: Map[Term, Atom], homomorphism: Substitution ){
       .filter((t: Term) =>
         homomorphism.createImageOf(t).getLabel.startsWith("epsilon")).toList // todo: The epsilon should refer to the ConstantType EPSILON
 
-  def getVar2: List[Term] = {
+  def getVar2 (atoms: List[Atom]): List[Term] = {
 
     @tailrec
     def visitAtomsTerms(atoms: List[Atom], acc: List[Variable]): List[Variable] = atoms match {
@@ -42,7 +42,7 @@ case class Type(genAtoms: Map[Term, Atom], homomorphism: Substitution ){
         homomorphism.createImageOf(t).getLabel.startsWith("EE")).toList // todo: this should be identified by a ConstantType
 
     if (ee.nonEmpty)
-      visitAtomsTerms(genAtoms.values.toSet.toList, List())
+      visitAtomsTerms(atoms, List())
     else
       List()
 
@@ -68,14 +68,14 @@ case class Type(genAtoms: Map[Term, Atom], homomorphism: Substitution ){
     */
   def union(t: Type): Type = {
     if (t == null)
-      Type(this.genAtoms, this.homomorphism)
+      Type(this.homomorphism)
 
-    val genAtoms = this.genAtoms ++ t.genAtoms //  genAtomBuilder.build
+   // val genAtoms = this.genAtoms ++ t.genAtoms //  genAtomBuilder.build
 
     val substitution = new TreeMapSubstitution(homomorphism)
     substitution.put(t.homomorphism)
 
-    Type(genAtoms, substitution)
+    Type(substitution)
   }
 
 
@@ -93,10 +93,10 @@ case class Type(genAtoms: Map[Term, Atom], homomorphism: Substitution ){
         homomorphismProj.put(term, varialbe)
     })
 
-    val genAtomProj =
-      genAtoms.filter(entry => dest.contains(entry._1))
+//    val genAtomProj =
+//      genAtoms.filter(entry => dest.contains(entry._1))
 
-    Type(genAtomProj, homomorphismProj)
+    Type( homomorphismProj)
   }
 
   /**

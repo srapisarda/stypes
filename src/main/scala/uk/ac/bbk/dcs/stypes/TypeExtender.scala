@@ -70,7 +70,7 @@ case class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[Atom
     def collectTypesH(children: List[TypeExtender], acc: List[Type]): List[Type] = children match {
       case List() => acc
       case x :: xs =>
-        if (x.children.isEmpty  ) collectTypesH(xs, Type(null, x.hom) :: acc)
+        if (x.children.isEmpty  ) collectTypesH(xs, Type(x.hom) :: acc)
         else collectTypesH(xs, acc:::collectTypes(xs) )
     }
 
@@ -122,10 +122,9 @@ case class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[Atom
       case  x :: xs => extendToTheSetOfVariables( xs,  extendVariable ( x, answer, canonicalModelIndex, modifiedHom ) )
     }
 
-
     val modifiedHom: Substitution  = new TreeMapSubstitution(hom)
     val unknownVariables: List[Term] = getUnknownVariables(atom).toList
-    extendToTheSetOfVariables(unknownVariables , modifiedHom  )
+    extendToTheSetOfVariables(unknownVariables, modifiedHom  )
 
   }
 

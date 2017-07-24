@@ -92,16 +92,17 @@ object ReWriter {
 
 class ReWriter(ontology: RuleSet) {
 
-  val canonicalModels: List[AtomSet] = ReWriter.canonicalModelList(ontology)
-
+  val generatingAtoms: List[Atom] = ReWriter.makeGeneratingAtoms(ontology)
+  val canonicalModels: List[AtomSet] = ReWriter.canonicalModelList(ontology, generatingAtoms)
+  val arrayGeneratingAtoms = generatingAtoms.toArray
   /**
     * Given a type t defined on a bag, it computes the formula At(t)
     *
     * @param bag a Bag
-    * @param t   a Type
+    * @param theType   a Type
     * @return a List[Atom]
     */
-  def makeAtoms(bag: Bag, t: Type): List[Any] = {
+  def makeAtoms(bag: Bag, theType: Type): List[Any] = {
 
 
     def getEqualities(variables: List[Term], constants: List[Term], acc: List[(Term, Term)]): List[(Term, Term)] = constants match {
@@ -125,18 +126,33 @@ class ReWriter(ontology: RuleSet) {
     @tailrec
     def visitBagAtoms(atoms: List[Atom], acc: List[Any]): List[Any] = atoms match {
       case List() => acc.reverse
-      case x :: xs =>
+      case currentAtom :: xs =>
         // All epsilon
-        if (t.areAllEpsilon(x)) visitBagAtoms(xs, x :: acc)
+        if (theType.areAllEpsilon(currentAtom)) visitBagAtoms(xs, currentAtom :: acc)
         // All anonymous
-        else if (t.areAllAnonymous(x)) {
-          val atom: Option[Atom] = t.genAtoms.get(x.getTerm(0))
-          if (atom.isDefined) visitBagAtoms(xs, atom.get :: acc)
-          else visitBagAtoms(xs, acc)
+        else if (theType.areAllAnonymous(currentAtom)) {
+          theType.homomorphism.createImageOf(currentAtom.getTerm(0)) match {
+            case constantType:ConstantType =>
+               val index = constantType.identifier._1
+               if ( index < arrayGeneratingAtoms.length ) {
+                 val atom = arrayGeneratingAtoms(index)
+                 visitBagAtoms(xs, atom :: acc)
+               }else {
+                 visitBagAtoms(xs, acc)
+               }
+
+            case _ =>  visitBagAtoms(xs, new Exception ("It must be a constant type!!!") :: acc)
+
+          }
+
+         //val atom: Option[Atom] =   // theType.genAtoms.get(currentAtom.getTerm(0))
+
+          //if (atom.isDefined) visitBagAtoms(xs, atom.get :: acc)
+          //else visitBagAtoms(xs, acc)
         }
         // mixing case
         else {
-          val index = t.getFirstAnonymousIndex(x)
+          val index = theType.getFirstAnonymousIndex(currentAtom)
           if (index < 0)
             throw new Exception("Can't get first anonymous individual!!")
 
@@ -145,8 +161,8 @@ class ReWriter(ontology: RuleSet) {
           //val sameAreEqual = canonicalModel.asScala.toList.map(atom => isMixed(atom.getTerms().asScala.toList) )
 
           val expression: List[List[(Term, Term)]] = canonicalModel.asScala.toList
-            .filter(atom => atom.getPredicate.equals(x.getPredicate) && isMixed(atom.getTerms().asScala.toList))
-            .map(atom => getEqualities(x.getTerms.asScala.toList, atom.getTerms.asScala.toList, List()))
+            .filter(atom => atom.getPredicate.equals(currentAtom.getPredicate) && isMixed(atom.getTerms().asScala.toList))
+            .map(atom => getEqualities(currentAtom.getTerms.asScala.toList, atom.getTerms.asScala.toList, List()))
 
 
           visitBagAtoms(xs, expression :: acc)

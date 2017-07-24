@@ -50,14 +50,14 @@ class ReWriterTest extends FunSpec{
     s1.put(tx, epsilon)
     val ty = DefaultTermFactory.instance.createVariable( "X3")
     s1.put(ty, epsilon)
-    Type(null, s1 )
+    Type(s1 )
   }
 
 
   def getMockTypeAnonymous: Type = {
     val s1 = new TreeMapSubstitution
     val tx = DefaultTermFactory.instance.createVariable("X2")
-    val ee0  =  DefaultTermFactory.instance.createConstant("EE0")
+    val ee0  =  new ConstantType(0, "EE0") // DefaultTermFactory.instance.createConstant("EE0")
     s1.put(tx, ee0)
     val ty = DefaultTermFactory.instance.createVariable( "X3")
     s1.put(ty, ee0)
@@ -66,7 +66,8 @@ class ReWriterTest extends FunSpec{
     atom.setTerm(0, DefaultTermFactory.instance.createConstant("a0"))
     atom.setTerm(1, DefaultTermFactory.instance.createConstant("a1"))
 
-    Type(Map(tx-> atom, ty-> atom), s1 )
+    //Type(Map(tx-> atom, ty-> atom), s1 )
+    Type(s1 )
   }
 
   def getMockTypeMixed: Type = {
@@ -81,7 +82,7 @@ class ReWriterTest extends FunSpec{
     atom.setTerm(0, DefaultTermFactory.instance.createConstant("a0"))
     atom.setTerm(1, DefaultTermFactory.instance.createConstant("a1"))
 
-    Type(Map(tx-> atom, ty-> atom), s1 )
+    Type( s1 )
   }
 
 
