@@ -112,7 +112,7 @@ class TreeDecomposition {
 
   def getChildes: List[TreeDecomposition] = childes
 
-  def  getSplitter : TreeDecomposition = getSplitter(this, this.getSize)
+  def  getSeparator : TreeDecomposition = getSplitter(this, this.getSize)
 
   @tailrec
   private def getSplitter(t: TreeDecomposition, rootSize: Int) : TreeDecomposition = {

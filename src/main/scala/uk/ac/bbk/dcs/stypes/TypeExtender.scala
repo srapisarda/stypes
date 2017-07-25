@@ -61,6 +61,12 @@ case class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[Atom
 
   /**
     * Collect homomorphisms from valid leaves
+    * @return a List of Type
+    */
+  def  collectTypes : List[Type] = collectTypes(children)
+
+  /**
+    * Collect homomorphisms from valid leaves
     * @param children to visit
     * @return a List of Type
     */

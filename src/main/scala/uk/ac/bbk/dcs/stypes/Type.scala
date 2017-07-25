@@ -48,6 +48,8 @@ case class Type( homomorphism: Substitution ){
 
   }
 
+  def getVar(atoms: List[Atom]):List[Term] = getVar1:::getVar2(atoms)
+
 
   /**
     * This method returns the type domain

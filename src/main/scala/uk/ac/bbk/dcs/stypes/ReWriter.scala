@@ -1,11 +1,14 @@
 package uk.ac.bbk.dcs.stypes
 
 import fr.lirmm.graphik.graal.api.core._
+import fr.lirmm.graphik.graal.core.DefaultRule
+import fr.lirmm.graphik.graal.core.atomset.LinkedListAtomSet
 import fr.lirmm.graphik.graal.forward_chaining.DefaultChase
 import fr.lirmm.graphik.graal.core.atomset.graph.DefaultInMemoryGraphAtomSet
 
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
+import scala.collection.parallel.Splitter
 
 /**
   * Created by
@@ -94,7 +97,7 @@ class ReWriter(ontology: RuleSet) {
 
   val generatingAtoms: List[Atom] = ReWriter.makeGeneratingAtoms(ontology)
   val canonicalModels: List[AtomSet] = ReWriter.canonicalModelList(ontology, generatingAtoms)
-  val arrayGeneratingAtoms = generatingAtoms.toArray
+  private val arrayGeneratingAtoms = generatingAtoms.toArray
   /**
     * Given a type t defined on a bag, it computes the formula At(t)
     *
@@ -172,6 +175,19 @@ class ReWriter(ontology: RuleSet) {
 
     // makeAtoms
     visitBagAtoms(bag.atoms.toList, List())
+  }
+
+  def generateRewriting ( borderType: Type, splitter: Splitter ) : List[Any]  ={
+    val typeExtender = new TypeExtender( splitter.getSplittingVertex, borderType.homomorphism , canonicalModels.toArray )
+    val types =  typeExtender.collectTypes
+
+    val body = new LinkedListAtomSet
+
+
+    val rule :Rule = new DefaultRule()
+
+    List()
+
   }
 
 
