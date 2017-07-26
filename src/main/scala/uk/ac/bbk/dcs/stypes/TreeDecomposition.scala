@@ -139,8 +139,26 @@ class TreeDecomposition {
     new TreeDecomposition(mapCqAtoms, root, childes )
   }
 
+  def getAllTerms() : Set[Term] =  getAllTerms(this.childes) ++ this.root.variables
+
+  private def getAllTerms(list: List[TreeDecomposition]) : Set[Term] =  {
+
+    @tailrec
+    def doUnion(  list: List[TreeDecomposition], acc: Set[Term]  ): Set[Term] = list match {
+      case List() => acc
+      case x::xs =>  doUnion( xs, x.root.variables ++ acc ++ getAllTerms( x.childes ) )
+
+    }
+
+    if ( list == List() )  Set()
+    else doUnion(list, Set() )
+
+
+  }
+
   override def toString : String = {
     s"(root: $root, childes: $childes, mapCqAtoms: $mapCqAtoms, )"
   }
+
 
 }

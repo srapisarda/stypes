@@ -11,13 +11,34 @@ import scala.collection.JavaConverters._
   *
   * on 25/07/2017.
   */
-class RuleTemplate (splitter: Splitter, borderType:Type, generatingAtoms:List [Atom]) {
+class RuleTemplate (splitter: Splitter, borderType:Type,  splittingType:Type, generatingAtoms:List [Atom], reWriter: ReWriter) {
+
+  type RulePredicate = (Splitter, Type)
 
   val terms:List[Term] = borderType.getVar(generatingAtoms)
 
-  def getNewPredicate : Predicate = new Predicate( (splitter, borderType) , terms.size )
+  def getNewPredicate ( rp: RulePredicate, arity:Int ) : Predicate = new Predicate( rp , arity  )
 
-  val head:Atom = new DefaultAtom(getNewPredicate, terms.asJava)
+  val head:Atom = new DefaultAtom(getNewPredicate((splitter, borderType), terms.size) , terms.asJava)
+
+  val body:List[Any] =
+    reWriter.makeAtoms( splitter.getSplittingVertex , splittingType) ::: splitter.children.map(generateChildPredicate)
+
+
+  def generateChildPredicate(currentSplitter: Splitter): Atom ={
+    val typeUnion = borderType.union(splittingType)
+
+    val borderTerms = typeUnion.getDomain.intersect( currentSplitter.getAllTerms )
+
+    val up: Type =  typeUnion.projection( borderTerms )
+
+    val terms:List[Term] = up.getVar(generatingAtoms)
+
+    val predicate = getNewPredicate ( (currentSplitter, up), terms.size )
+
+    new DefaultAtom( predicate, terms.asJava)
+
+  }
 
 }
 

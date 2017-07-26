@@ -1,5 +1,7 @@
 package uk.ac.bbk.dcs.stypes
 
+import fr.lirmm.graphik.graal.api.core.Term
+
 /**
   * Created by
   * Salvatore Rapisarda
@@ -22,5 +24,7 @@ case class Splitter(root: TreeDecomposition) {
   override def toString: String = {
     s"(root: $root, children: $children)"
   }
+
+  def getAllTerms : Set[Term] = root.getAllTerms()
 
 }
