@@ -2,7 +2,7 @@ package uk.ac.bbk.dcs.stypes
 
 import java.io.File
 
-import fr.lirmm.graphik.graal.api.core.{Atom, Predicate, Rule}
+import fr.lirmm.graphik.graal.api.core.{Atom, Predicate, Rule, Substitution}
 import fr.lirmm.graphik.graal.core.{DefaultAtom, TreeMapSubstitution}
 import fr.lirmm.graphik.graal.core.ruleset.LinkedListRuleSet
 import fr.lirmm.graphik.graal.core.term.DefaultTermFactory
@@ -132,6 +132,15 @@ class ReWriterTest extends FunSpec{
       assert( atoms.length==1 )
     }
 
+    it("should rewrite the query"){
+      val test:TreeDecompositionTest  = new TreeDecompositionTest
+      val t:TreeDecomposition = test.buildTestTreeDecomposition
+      
+      val result = new ReWriter(ontology).generateRewriting(new Type(new TreeMapSubstitution()) ,new Splitter(t))
+      println(result)
+      assert( 1 == 1 )
+
+    }
 
 
 
