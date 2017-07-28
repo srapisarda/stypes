@@ -25,12 +25,17 @@ class RuleTemplate (splitter: Splitter, borderType:Type,  splittingType:Type, ge
     reWriter.makeAtoms( splitter.getSplittingVertex , splittingType) ::: splitter.children.map(generateChildPredicate)
 
 
-  def generateChildPredicate(currentSplitter: Splitter): Atom ={
+  private def createDependentType (newSplitter:Splitter, borderType:Type, splittingTyper:Type):Type = {
     val typeUnion = borderType.union(splittingType)
 
-    val borderTerms = typeUnion.getDomain.intersect( currentSplitter.getAllTerms )
+    val borderTerms = typeUnion.getDomain.intersect( newSplitter.getAllTerms )
 
-    val up: Type =  typeUnion.projection( borderTerms )
+    typeUnion.projection( borderTerms )
+
+  }
+
+  def generateChildPredicate(currentSplitter: Splitter): Atom ={
+    val up = createDependentType(currentSplitter, borderType, splittingType)
 
     val terms:List[Term] = up.getVar(generatingAtoms)
 
@@ -40,7 +45,8 @@ class RuleTemplate (splitter: Splitter, borderType:Type,  splittingType:Type, ge
 
   }
   
-  def GetAllSubordinateRules:List[RuleTemplate] = splitter.children.map(c => reWriter.generateRewriting(up, c)).flatten
+  def GetAllSubordinateRules:List[RuleTemplate] = splitter.children.flatMap(c =>
+    reWriter.generateRewriting(createDependentType(c,borderType,splittingType), c))
   
   
   

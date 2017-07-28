@@ -181,7 +181,7 @@ class ReWriter(ontology: RuleSet) {
     val types =  typeExtender.collectTypes
     val body = new LinkedListAtomSet
     val rule :Rule = new DefaultRule()
-    types.map( s => new RuleTemplate( splitter, borderType, s , generatingAtoms, this  ) ).map(ruleTemplate => ruleTemplate :: ruleTemplate.GetAllSubordinateRules).flatten  
+    types.map(s => new RuleTemplate(splitter, borderType, s, generatingAtoms, this)).flatMap(ruleTemplate => ruleTemplate :: ruleTemplate.GetAllSubordinateRules)
 
   }
 

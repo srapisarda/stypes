@@ -21,7 +21,7 @@ import scala.collection.JavaConverters._
   *
   *   on 09/05/2017.
   */
-class ReWriterTest extends FunSpec{
+class  ReWriterTest extends FunSpec{
 
   // 0 - Create a Dlgp writer and a structure to store rules.
   val writer = new DlgpWriter
