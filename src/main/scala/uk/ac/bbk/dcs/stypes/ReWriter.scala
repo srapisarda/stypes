@@ -176,12 +176,12 @@ class ReWriter(ontology: RuleSet) {
     visitBagAtoms(bag.atoms.toList, List())
   }
 
-  def generateRewriting ( borderType: Type, splitter: Splitter ) : List[Any]  ={
+  def generateRewriting ( borderType: Type, splitter: Splitter ) : List[RuleTemplate]  ={
     val typeExtender = new TypeExtender( splitter.getSplittingVertex, borderType.homomorphism , canonicalModels.toArray )
     val types =  typeExtender.collectTypes
     val body = new LinkedListAtomSet
     val rule :Rule = new DefaultRule()
-    types.map( s => new RuleTemplate( splitter, borderType, s , generatingAtoms, this  ) )
+    types.map( s => new RuleTemplate( splitter, borderType, s , generatingAtoms, this  ) ).map(ruleTemplate => ruleTemplate :: ruleTemplate.GetAllSubordinateRules).flatten  
 
   }
 

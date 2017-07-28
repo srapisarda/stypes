@@ -39,6 +39,10 @@ class RuleTemplate (splitter: Splitter, borderType:Type,  splittingType:Type, ge
     new DefaultAtom( predicate, terms.asJava)
 
   }
-
+  
+  def GetAllSubordinateRules:List[RuleTemplate] = splitter.children.map(c => reWriter.generateRewriting(up, c)).flatten
+  
+  
+  
 }
 
