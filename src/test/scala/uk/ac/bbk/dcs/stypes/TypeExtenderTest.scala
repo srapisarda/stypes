@@ -36,7 +36,7 @@ class TypeExtenderTest extends FunSpec {
 
 
     it ( "should filter the atoms and return true ") {
-      val ret = getMockFileterAtoms(true)
+      val ret = getMockFilterAtoms(true)
       val te = testExtension(ret._1, Some(ret._2))
       assert(te.isValid)
       assert(te.types.size==1)
@@ -44,12 +44,20 @@ class TypeExtenderTest extends FunSpec {
     }
 
     it ( "should filter the atoms and return false ") {
-      val ret = getMockFileterAtoms(false)
+      val ret = getMockFilterAtoms(false)
       val te = testExtension(ret._1, Some(ret._2))
       assert(!te.children.head.isValid)
       assert(te.types.size==1)
       assert(te.children.head.types==Nil)
     }
+
+    it("should  collect the leave types from the extender ") {
+      val extender = testExtension(getEmptyType, None)
+      val types = extender.collectTypes
+      assert(types.size == 4)
+    }
+
+
 
   }
 
@@ -74,6 +82,11 @@ class TypeExtenderTest extends FunSpec {
     Type( s1 )
   }
 
+  def getEmptyType: Type = {
+    val s1 = new TreeMapSubstitution
+    Type( s1 )
+  }
+
   def getMockAnonymousType: Type = {
     val s1 = new TreeMapSubstitution
     val tx = DefaultTermFactory.instance.createVariable("X2")
@@ -84,7 +97,7 @@ class TypeExtenderTest extends FunSpec {
   }
 
 
-  def getMockFileterAtoms( switch:Boolean): (Type, Bag)  ={
+  def getMockFilterAtoms(switch:Boolean): (Type, Bag)  ={
     val tx1 = DefaultTermFactory.instance.createVariable("X1")
     val tx2 = DefaultTermFactory.instance.createVariable("X2")
 
