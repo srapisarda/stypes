@@ -26,7 +26,7 @@ case class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[Atom
   private val typesExtended =  getTypesExtension
   val children: List[TypeExtender] = typesExtended._2
   val isValid:Boolean = typesExtended._1
-  val types: List[Type] = collectTypes( children )
+  val types: List[Type] = collectTypes
 
   type AtomSetWithCanonicalModelIndex = (AtomSet, Int)
 
@@ -63,25 +63,10 @@ case class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[Atom
     * Collect homomorphisms from valid leaves
     * @return a List of Type
     */
-  def  collectTypes : List[Type] = collectTypes(children)
 
-  /**
-    * Collect homomorphisms from valid leaves
-    * @param children to visit
-    * @return a List of Type
-    */
-  def collectTypes( children: List[TypeExtender]) : List[Type] = {
-
-    @tailrec
-    def collectTypesH(children: List[TypeExtender], acc: List[Type]): List[Type] = children match {
-      case List() => acc
-      case x :: xs =>
-        if (x.children.isEmpty  ) collectTypesH(xs, Type(x.hom) :: acc)
-        else collectTypesH(xs, acc:::collectTypes(xs) )
-    }
-
-    collectTypesH(children, List())
-
+  def collectTypes:List[Type] = children match {
+    case List() => if (isValid) List(Type(hom)) else List()
+    case head::tail => children.flatMap( c => c.collectTypes)
   }
 
   private def isGoodWithRespectToSubstitution(substitution: Substitution, atom: Atom): Boolean = {
@@ -215,10 +200,12 @@ case class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[Atom
         else {
           val cm = canonicalModels(canonicalModelIndex)
           val generatingTerms = cm.getTerms().asScala.filter( p=> ! ReWriter.isAnonymous( p ) )
+          val anonymousTerms = cm.getTerms().asScala.filter( p=> ReWriter.isAnonymous( p ) )
           val s = new TreeMapSubstitution()
           generatingTerms.foreach( p => s.put(p, ConstantType.EPSILON ) )
+          anonymousTerms.foreach(p => s.put(p, new ConstantType(canonicalModelIndex, p.getLabel) ))
           val image =  s.createImageOf(cm)
-          image.contains(atom)
+          image.contains(hom.createImageOf(atom))
         }
 
       }

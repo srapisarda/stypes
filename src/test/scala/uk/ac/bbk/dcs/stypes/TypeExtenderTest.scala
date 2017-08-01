@@ -16,22 +16,20 @@ class TypeExtenderTest extends FunSpec {
 
   describe("TypeExtender  decomposition commons ") {
 
-    it("should  create the children property on anonymous individual ") {
+    it("should  create the children properly on anonymous individual ") {
       val te = testExtension(getMockAnonymousType, None)
       assert(te!=null)
       assert(te.children.nonEmpty)
       assert(te.children.head.children.isEmpty)
       assert(te.types.size==1)
-      assert(te.children.head.types==Nil)
     }
 
-    it("should  create the children property on EPSILON individual ") {
+    it("should  create the children properly on EPSILON individual ") {
       val te = testExtension(getMockEpsilonType, None)
       assert(te!=null)
       assert(te.children.length == 3)
       assert(te.children.head.children.isEmpty)
       assert(te.types.size==3)
-      assert(te.children.head.types==Nil)
     }
 
 
@@ -40,21 +38,19 @@ class TypeExtenderTest extends FunSpec {
       val te = testExtension(ret._1, Some(ret._2))
       assert(te.isValid)
       assert(te.types.size==1)
-      assert(te.children.head.types==Nil)
     }
 
     it ( "should filter the atoms and return false ") {
       val ret = getMockFilterAtoms(false)
       val te = testExtension(ret._1, Some(ret._2))
       assert(!te.children.head.isValid)
-      assert(te.types.size==1)
-      assert(te.children.head.types==Nil)
+      assert(te.types.size==0)
     }
 
     it("should  collect the leave types from the extender ") {
       val extender = testExtension(getEmptyType, None)
       val types = extender.collectTypes
-      assert(types.size == 4)
+      assert(types.size == 5)
     }
 
 
