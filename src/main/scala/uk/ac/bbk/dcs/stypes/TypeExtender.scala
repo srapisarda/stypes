@@ -25,7 +25,7 @@ case class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[Atom
 
   private val typesExtended =  getTypesExtension
   val children: List[TypeExtender] = typesExtended._2
-  val isValid:Boolean = typesExtended._1
+  val isValid:Boolean = typesExtended._1 && (children.nonEmpty || variableToBeMapped.isEmpty)
   val types: List[Type] = collectTypes
 
   type AtomSetWithCanonicalModelIndex = (AtomSet, Int)
