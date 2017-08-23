@@ -64,7 +64,7 @@ class TreeDecompositionTest extends FunSpec {
         assert(Set("X3", "X4").contains(term.getIdentifier.asInstanceOf[String])))
 
       //
-      val s =  new  Splitter(t)
+      val s =  Splitter(t)
 
 
       println(s)
