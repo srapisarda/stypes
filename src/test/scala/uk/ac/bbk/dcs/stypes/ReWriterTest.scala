@@ -139,7 +139,7 @@ class  ReWriterTest extends FunSpec{
       val result = new ReWriter(ontology).generateRewriting(Type(new TreeMapSubstitution()) , Splitter(t))
       println(result)
       assert( 1 == 1 )
-
+      assert( result.size == 7 )
     }
 
 
