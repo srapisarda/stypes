@@ -25,20 +25,27 @@ class  ReWriterTest extends FunSpec{
 
   // 0 - Create a Dlgp writer and a structure to store rules.
   val writer = new DlgpWriter
-  val ontology = new LinkedListRuleSet
+  val ontology1 = getOntology("src/main/resources/ont-1.dlp")
+  val ontology2 = getOntology("src/main/resources/ont-2.dlp")
 
   // 1 - Create a relational database store with HSQLDB (An InMemory Java
   // database system),
-  val store = new DefaultRdbmsStore(new HSQLDBDriver("test", null))
+  //  val store = new DefaultRdbmsStore(new HSQLDBDriver("test", null))
 
-  // 2 - Parse Animals.dlp (A Dlgp file with rules and facts)
-  val dlgpParser = new DlgpParser(new File("src/main/resources/ont-1.dlp" ))
-  while (dlgpParser.hasNext) {
-     dlgpParser.next match {
-      case atom: Atom => store.add(atom)
-      case rule: Rule => ontology.add(rule)
-      case  _ =>  // println("do nothing")
+  def getOntology (filename:String ) = {
+    // 2 - Parse Animals.dlp (A Dlgp file with rules and facts)
+    val dlgpParser = new DlgpParser(new File(filename))
+    // val store = new DefaultRdbmsStore(new HSQLDBDriver("test", null))
+    val ontology = new LinkedListRuleSet
+    while (dlgpParser.hasNext) {
+      dlgpParser.next match {
+        // case atom: Atom => store.add(atom)
+        case rule: Rule => ontology.add(rule)
+        case _ => // println("do nothing")
+      }
     }
+
+    ontology
   }
 
 
@@ -90,14 +97,14 @@ class  ReWriterTest extends FunSpec{
   describe("ReWriter test cases") {
 
     it("should contains at least 2 atoms") {
-       val atoms =  ReWriter.makeGeneratingAtoms( ontology)
+       val atoms =  ReWriter.makeGeneratingAtoms( ontology1)
         assert(atoms.size == 2)
 //       println (atoms)
 
     }
 
     it("should create the canonical models from 2 atoms") {
-        val canonicalModels = ReWriter.canonicalModelList(ontology)
+        val canonicalModels = ReWriter.canonicalModelList(ontology1)
         assert(canonicalModels.length == 2)
         canonicalModels.foreach( atomSet => assert(atomSet.asScala.size == 4))
 //        println(canonicalModels)
@@ -108,7 +115,7 @@ class  ReWriterTest extends FunSpec{
       val test:TreeDecompositionTest  = new TreeDecompositionTest
       val t:TreeDecomposition= test.buildTestTreeDecomposition
       val s = getMockTypeEpsilon
-      val atoms = new ReWriter(ontology).makeAtoms( t.getRoot,s)
+      val atoms = new ReWriter(ontology1).makeAtoms( t.getRoot,s)
       println(atoms)
       assert( atoms.length==1 )
     }
@@ -117,7 +124,7 @@ class  ReWriterTest extends FunSpec{
       val test:TreeDecompositionTest  = new TreeDecompositionTest
       val t:TreeDecomposition= test.buildTestTreeDecomposition
       val s = getMockTypeAnonymous
-      val atoms = new ReWriter(ontology).makeAtoms( t.getRoot,s)
+      val atoms = new ReWriter(ontology1).makeAtoms( t.getRoot,s)
       println(atoms)
       assert( atoms.length==1 )
 
@@ -127,25 +134,34 @@ class  ReWriterTest extends FunSpec{
       val test:TreeDecompositionTest  = new TreeDecompositionTest
       val t:TreeDecomposition= test.buildTestTreeDecomposition
       val s = getMockTypeMixed
-      val atoms = new ReWriter(ontology).makeAtoms( t.getRoot,s)
+      val atoms = new ReWriter(ontology1).makeAtoms( t.getRoot,s)
       println(atoms)
       assert( atoms.length==1 )
     }
 
-    it("should rewrite the query"){
+    it("should rewrite the query for ont-1"){
       val test:TreeDecompositionTest  = new TreeDecompositionTest
       val t:TreeDecomposition = test.buildTestTreeDecomposition
-      
-      val result = new ReWriter(ontology).generateRewriting(Type(new TreeMapSubstitution()) , Splitter(t))
+
+      val result = new ReWriter(ontology1).generateRewriting(Type(new TreeMapSubstitution()) , Splitter(t))
       println(result)
-      assert( 1 == 1 )
       assert( result.size == 7 )
     }
 
 
+    it("should rewrite the query for ont-2"){
+      val test:TreeDecompositionTest  = new TreeDecompositionTest
+      val t:TreeDecomposition = test.buildTestTreeDecomposition
+
+      val result = new ReWriter(ontology2).generateRewriting(Type(new TreeMapSubstitution()) , Splitter(t))
+      println(result)
+      assert( result.size == 20 ) // verify this result
+    }
 
   }
 
 
 
 }
+
+

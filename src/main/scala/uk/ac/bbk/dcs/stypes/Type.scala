@@ -21,34 +21,18 @@ case class Type( homomorphism: Substitution ){
   def getVar1: List[Term] =
     homomorphism.getTerms.asScala
       .filter((t: Term) =>
-        homomorphism.createImageOf(t).getLabel.startsWith("epsilon")).toList // todo: The epsilon should refer to the ConstantType EPSILON
+        homomorphism.createImageOf(t).equals( ConstantType.EPSILON)).toList
 
-  def getVar2 (atoms: List[Atom]): List[Term] = {
-
-    @tailrec
-    def visitAtomsTerms(atoms: List[Atom], acc: List[Variable]): List[Variable] = atoms match {
-      case List() => acc
-      case x :: xs => visitAtomsTerms(xs, acc ::: getTerms(x.getTerms.asScala.toList, List()))
-    }
-
-    @tailrec
-    def getTerms(terms: List[Term], acc: List[Variable]): List[Variable] = terms match {
-      case List() => acc.reverse
-      case x :: xs => getTerms(xs, DefaultTermFactory.instance.createVariable("v" + x.getLabel) :: acc) // todo: this should be identified by a ConstantType
-    }
-
-    val ee = homomorphism.getTerms.asScala
+  def getVar2 (atoms: Vector[Atom]): List[Term] = {
+    val anonymousVariables = homomorphism.getTerms.asScala
       .filter((t: Term) =>
-        homomorphism.createImageOf(t).getLabel.startsWith("EE")).toList // todo: this should be identified by a ConstantType
+        ! homomorphism.createImageOf(t).equals(ConstantType.EPSILON)).toList
 
-    if (ee.nonEmpty)
-      visitAtomsTerms(atoms, List())
-    else
-      List()
+     anonymousVariables.flatMap( t => atoms(homomorphism.createImageOf(t).asInstanceOf[ConstantType].getIdentifier._1).getTerms.asScala.toSet )
 
   }
 
-  def getVar(atoms: List[Atom]):List[Term] = getVar1:::getVar2(atoms)
+  def getVar(atoms: List[Atom]):List[Term] = getVar1:::getVar2(atoms.toVector)
 
 
   /**

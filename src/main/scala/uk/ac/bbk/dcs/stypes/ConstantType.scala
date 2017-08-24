@@ -45,5 +45,6 @@ class ConstantType(var identifier: (Int, String) ) extends AbstractTerm {
 
 object ConstantType {
   val EPSILON:ConstantType = new ConstantType((-1,"epsilon"))
-
+  val CS0:ConstantType = new ConstantType(0, "EE0")
+  val CS1:ConstantType = new ConstantType(1, "EE0")
 }
