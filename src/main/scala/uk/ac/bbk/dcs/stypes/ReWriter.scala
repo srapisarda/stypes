@@ -177,7 +177,7 @@ class ReWriter(ontology: RuleSet) {
   }
 
   def generateRewriting ( borderType: Type, splitter: Splitter ) : List[RuleTemplate]  ={
-    val typeExtender = new TypeExtender( splitter.getSplittingVertex, borderType.homomorphism , canonicalModels.toArray )
+    val typeExtender = new TypeExtender( splitter.getSplittingVertex, borderType.homomorphism , canonicalModels.toVector )
     val types =  typeExtender.collectTypes
     val body = new LinkedListAtomSet
     val rule :Rule = new DefaultRule()

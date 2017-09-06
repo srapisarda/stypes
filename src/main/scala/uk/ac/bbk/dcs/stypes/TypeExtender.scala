@@ -17,10 +17,10 @@ import scala.collection.JavaConverters._
   * on 24/06/2017.
   *
   */
-case class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Array[AtomSet],
+case class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Vector[AtomSet],
                    atomsToBeMapped: List[Atom], variableToBeMapped:List[Term] ) {
 
-  def this(bag: Bag, hom: Substitution, canonicalModels: Array[AtomSet] ) =
+  def this(bag: Bag, hom: Substitution, canonicalModels: Vector[AtomSet] ) =
     this(bag, hom, canonicalModels, bag.atoms.toList, bag.variables.filter( p=> ! hom.getTerms.contains(p) ).toList )
 
   private val typesExtended =  getTypesExtension
