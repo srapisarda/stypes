@@ -153,7 +153,7 @@ class  ReWriterTest extends FunSpec{
       val test:TreeDecompositionTest  = new TreeDecompositionTest
       val t:TreeDecomposition = test.buildTestTreeDecomposition
 
-      val result = new ReWriter(ontology2).generateRewriting(Type(new TreeMapSubstitution()) , Splitter(t))
+      val result: Seq[RuleTemplate] = new ReWriter(ontology2).generateRewriting(Type(new TreeMapSubstitution()) , Splitter(t))
       println(result)
       assert( result.size == 20 ) // verify this result
     }

@@ -1,8 +1,7 @@
 package uk.ac.bbk.dcs.stypes
 
 import fr.lirmm.graphik.graal.api.core._
-import fr.lirmm.graphik.graal.core.DefaultRule
-import fr.lirmm.graphik.graal.core.atomset.LinkedListAtomSet
+import fr.lirmm.graphik.graal.core.{DefaultAtom, DefaultRule}
 import fr.lirmm.graphik.graal.core.atomset.graph.DefaultInMemoryGraphAtomSet
 import fr.lirmm.graphik.graal.forward_chaining.DefaultChase
 
@@ -88,6 +87,19 @@ object ReWriter {
   def isAnonymous(x: Term): Boolean =
     x.getLabel.toLowerCase.startsWith("ee")
 
+  def generateDatalog(rewriting: List[RuleTemplate]) : List[DatalogRule] = {
+
+    def getAtomsFromRewrite( ruleTemplate: RuleTemplate) : DatalogRule = {
+
+
+      val body = if (ruleTemplate.head.getPredicate.getArity == 0) List()
+
+      Clause(new DefaultAtom(new Predicate( ruleTemplate.head.hashCode(), body.size)) , body )
+    }
+
+    rewriting.map(getAtomsFromRewrite)
+
+  }
 
 }
 
@@ -179,12 +191,10 @@ class ReWriter(ontology: RuleSet) {
   def generateRewriting ( borderType: Type, splitter: Splitter ) : List[RuleTemplate]  ={
     val typeExtender = new TypeExtender( splitter.getSplittingVertex, borderType.homomorphism , canonicalModels.toVector )
     val types =  typeExtender.collectTypes
-    val body = new LinkedListAtomSet
-    val rule :Rule = new DefaultRule()
+    //val body = new LinkedListAtomSet
+    //val rule :Rule = new DefaultRule()
     types.map(s => new RuleTemplate(splitter, borderType, s, generatingAtoms, this)).flatMap(ruleTemplate => ruleTemplate :: ruleTemplate.GetAllSubordinateRules)
 
   }
-
-
 
 }

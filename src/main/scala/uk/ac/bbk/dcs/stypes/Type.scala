@@ -1,8 +1,7 @@
 package uk.ac.bbk.dcs.stypes
 
-import fr.lirmm.graphik.graal.api.core.{Atom, Substitution, Term, Variable}
+import fr.lirmm.graphik.graal.api.core.{Atom, Substitution, Term}
 import fr.lirmm.graphik.graal.core.TreeMapSubstitution
-import fr.lirmm.graphik.graal.core.term.DefaultTermFactory
 import uk.ac.bbk.dcs.stypes.ConstantType.EPSILON
 
 import scala.annotation.tailrec
