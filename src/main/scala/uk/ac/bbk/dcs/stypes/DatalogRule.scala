@@ -16,6 +16,7 @@ import scala.collection.JavaConverters._
     def head: Atom
     def name: String = head.getPredicate.toString
     def arity: Int = head.getPredicate.getArity
+
   }
 
   case class Fact(head: Atom) extends DatalogRule {

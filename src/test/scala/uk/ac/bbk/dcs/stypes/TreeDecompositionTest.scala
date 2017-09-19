@@ -19,7 +19,7 @@ import scala.reflect.io.File
   */
 class TreeDecompositionTest extends FunSpec {
 
-  def buildTestTreeDecomposition: TreeDecomposition= {
+  def buildTestTreeDecomposition(fileGML:String ) : TreeDecomposition= {
     val pt = Map(
       "r1" -> List("X2", "X3"),
       "s1" -> List("X3", "X4"),
@@ -40,7 +40,7 @@ class TreeDecompositionTest extends FunSpec {
     }).toSet
 
     val graph: Graph = new TinkerGraph
-    val in = File("src/main/resources/Q7.gml").inputStream()
+    val in = File(fileGML ).inputStream()
 
     GMLReader.inputGraph(graph, in)
     new  TreeDecomposition(atoms, graph, null)
@@ -51,7 +51,7 @@ class TreeDecompositionTest extends FunSpec {
   describe("Tree decomposition commons ") {
     it("should make common operation correctly") {
 
-      val t = buildTestTreeDecomposition
+      val t = buildTestTreeDecomposition("src/main/resources/Q7.gml")
 
       Assert.assertNotNull(t)
       assert(Set("X2", "X3") == t.getRoot.variables.map(_.getIdentifier))

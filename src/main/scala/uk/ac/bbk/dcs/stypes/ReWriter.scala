@@ -127,7 +127,7 @@ class ReWriter(ontology: RuleSet) {
 
   val generatingAtoms: List[Atom] = ReWriter.makeGeneratingAtoms(ontology)
   val canonicalModels: List[AtomSet] = ReWriter.canonicalModelList(ontology, generatingAtoms)
-  private val arrayGeneratingAtoms = generatingAtoms.toArray
+  private val arrayGeneratingAtoms = generatingAtoms.toVector
   /**
     * Given a type t defined on a bag, it computes the formula At(t)
     *
@@ -198,7 +198,7 @@ class ReWriter(ontology: RuleSet) {
             .map(atom => getEqualities(currentAtom.getTerms.asScala.toList, atom.getTerms.asScala.toList, List()))
 
 
-          visitBagAtoms(xs, expression :: acc)
+          visitBagAtoms(xs, arrayGeneratingAtoms(index) ::expression :: acc)
 
         }
     }
