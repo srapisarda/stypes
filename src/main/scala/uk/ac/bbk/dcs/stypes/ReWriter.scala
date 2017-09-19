@@ -87,31 +87,31 @@ object ReWriter {
   def isAnonymous(x: Term): Boolean =
     x.getLabel.toLowerCase.startsWith("ee")
 
-  def generateDatalog(rewriting: List[RuleTemplate]) : List[DatalogRule] = {
+  def generateDatalog(rewriting: Seq[RuleTemplate]) : Seq[DatalogRule] = {
 
     def getAtomsFromRewrite( ruleTemplate: RuleTemplate) : DatalogRule = {
 
       @tailrec
       def getAtomEqualities ( list:Seq[Any], acc:List[Atom] ) : List[Atom]  = list match{
         case Nil => acc
-        case (x,y)::xs => getAtomEqualities(xs, Equality(x,y).getAtom::acc )
+        case (x:Term,y:Term)::xs => getAtomEqualities(xs, Equality(x,y).getAtom::acc )
       }
 
-      val head = new DefaultAtom(
-        new Predicate(ruleTemplate.head.hashCode(),
-        ruleTemplate.head.getPredicate.getArity))
-      head.setTerms(ruleTemplate.head.getTerms)
+      def transformAtom ( atom: Atom):Atom = atom.getPredicate.getIdentifier match {
+          case _: String => atom
+          case atomIdentifier: Any =>
+            new DefaultAtom(new Predicate(s"p${math.abs(atomIdentifier.toString.hashCode())}", atom.getPredicate.getArity), atom.getTerms )
+        }
+
+      val head = transformAtom(ruleTemplate.head)
 
       val body: List[Atom] =
         ruleTemplate.body.map {
-          case (x,y)::xs =>  Equality(x,y).getAtom
-          case rule: String =>
-            // todo add the terms
-            new DefaultAtom( new Predicate( rule.toString ,1 ) )
-          case rule: Any =>
-            // todo add the terms
-            new DefaultAtom( new Predicate(rule.toString , 2 ) )
-      }
+          case List(List((x: Term, y: Term))) =>
+            Equality(x, y).getAtom
+          case bodyAtom: Atom =>
+            transformAtom(bodyAtom)
+        }
 
       Clause(head, body)
     }

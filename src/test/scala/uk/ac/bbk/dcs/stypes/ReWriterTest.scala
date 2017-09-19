@@ -156,7 +156,13 @@ class  ReWriterTest extends FunSpec{
       val result: Seq[RuleTemplate] = new ReWriter(ontology2).generateRewriting(Type(new TreeMapSubstitution()) , Splitter(t))
       println(result)
       assert( result.size == 20 ) // verify this result
+
+      val datalog =  ReWriter.generateDatalog(result )
+      println(datalog)
+
     }
+
+
 
   }
 
