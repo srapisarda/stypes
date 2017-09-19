@@ -91,10 +91,29 @@ object ReWriter {
 
     def getAtomsFromRewrite( ruleTemplate: RuleTemplate) : DatalogRule = {
 
+      @tailrec
+      def getAtomEqualities ( list:Seq[Any], acc:List[Atom] ) : List[Atom]  = list match{
+        case Nil => acc
+        case (x,y)::xs => getAtomEqualities(xs, Equality(x,y).getAtom::acc )
+      }
 
-      val body = if (ruleTemplate.head.getPredicate.getArity == 0) List()
+      val head = new DefaultAtom(
+        new Predicate(ruleTemplate.head.hashCode(),
+        ruleTemplate.head.getPredicate.getArity))
+      head.setTerms(ruleTemplate.head.getTerms)
 
-      Clause(new DefaultAtom(new Predicate( ruleTemplate.head.hashCode(), body.size)) , body )
+      val body: List[Atom] =
+        ruleTemplate.body.map {
+          case (x,y)::xs =>  Equality(x,y).getAtom
+          case rule: String =>
+            // todo add the terms
+            new DefaultAtom( new Predicate( rule.toString ,1 ) )
+          case rule: Any =>
+            // todo add the terms
+            new DefaultAtom( new Predicate(rule.toString , 2 ) )
+      }
+
+      Clause(head, body)
     }
 
     rewriting.map(getAtomsFromRewrite)
