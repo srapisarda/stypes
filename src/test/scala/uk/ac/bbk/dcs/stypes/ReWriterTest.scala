@@ -136,7 +136,7 @@ class  ReWriterTest extends FunSpec{
       val s = getMockTypeMixed
       val atoms = new ReWriter(ontology1).makeAtoms( t.getRoot,s)
       println(atoms)
-      assert( atoms.length==1 )
+      assert( atoms.length==2 )
     }
 
     it("should rewrite the query for ont-1"){
