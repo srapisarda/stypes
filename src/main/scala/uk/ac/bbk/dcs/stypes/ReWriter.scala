@@ -1,7 +1,7 @@
 package uk.ac.bbk.dcs.stypes
 
 import fr.lirmm.graphik.graal.api.core._
-import fr.lirmm.graphik.graal.core.{DefaultAtom, DefaultRule}
+import fr.lirmm.graphik.graal.core.DefaultAtom
 import fr.lirmm.graphik.graal.core.atomset.graph.DefaultInMemoryGraphAtomSet
 import fr.lirmm.graphik.graal.forward_chaining.DefaultChase
 
@@ -87,36 +87,55 @@ object ReWriter {
   def isAnonymous(x: Term): Boolean =
     x.getLabel.toLowerCase.startsWith("ee")
 
-  def generateDatalog(rewriting: Seq[RuleTemplate]) : Seq[DatalogRule] = {
 
-    def getAtomsFromRewrite( ruleTemplate: RuleTemplate) : DatalogRule = {
+  def generateDatalog(rewriting: Seq[RuleTemplate]): Seq[DatalogRule] = {
+
+    def getAtomsFromRewrite(ruleTemplate: RuleTemplate,  map: Map[Int, Int], currentIndex: Int): (DatalogRule, Map[Int, Int], Int) = {
+
+      def transformAtom(atom: Atom, map: Map[Int, Int], currentIndex: Int): (Atom, Map[Int, Int], Int) =
+        atom.getPredicate.getIdentifier match {
+          case _: String => (atom, map, currentIndex)
+          case atomIdentifier: Any =>
+            val predicateHash = atomIdentifier.toString.hashCode()
+            val next =
+              if (map.contains(predicateHash)) (map, map(predicateHash), currentIndex)
+              else {
+                val plusOne = currentIndex + 1
+                (map + (predicateHash -> plusOne), plusOne, plusOne)
+              }
+            (new DefaultAtom(new Predicate(s"p${next._2}", atom.getPredicate.getArity), atom.getTerms), next._1, next._3)
+        }
 
       @tailrec
-      def getAtomEqualities ( list:Seq[Any], acc:List[Atom] ) : List[Atom]  = list match{
-        case Nil => acc
-        case (x:Term,y:Term)::xs => getAtomEqualities(xs, Equality(x,y).getAtom::acc )
-      }
-
-      def transformAtom ( atom: Atom):Atom = atom.getPredicate.getIdentifier match {
-          case _: String => atom
-          case atomIdentifier: Any =>
-            new DefaultAtom(new Predicate(s"p${math.abs(atomIdentifier.toString.hashCode())}", atom.getPredicate.getArity), atom.getTerms )
+      def transformBody(body: Any, acc: (List[Atom], Map[Int, Int], Int)): (List[Atom], Map[Int, Int], Int) =
+        body match {
+          case List() => acc
+          case x :: xs => x match {
+            case List(List((x: Term, y: Term))) =>
+              transformBody(xs, (Equality(x, y).getAtom :: acc._1, acc._2, acc._3))
+            case bodyAtom: Atom =>
+              val res = transformAtom(bodyAtom, acc._2, acc._3)
+              transformBody(xs, (res._1 :: acc._1, res._2, res._3))
+          }
         }
 
-      val head = transformAtom(ruleTemplate.head)
+      val head = transformAtom(ruleTemplate.head, map, currentIndex)
+      val body: (List[Atom], Map[Int, Int], Int) = transformBody(ruleTemplate.body, (List(), head._2, head._3))
 
-      val body: List[Atom] =
-        ruleTemplate.body.map {
-          case List(List((x: Term, y: Term))) =>
-            Equality(x, y).getAtom
-          case bodyAtom: Atom =>
-            transformAtom(bodyAtom)
-        }
+      val clause =  Clause(head._1, body._1.reverse)
 
-      Clause(head, body)
+      (clause, body._2, body._3 )
     }
 
-    rewriting.map(getAtomsFromRewrite)
+    def visitRewriting(rewriting: List[RuleTemplate], acc: (List[DatalogRule], Map[Int, Int], Int) ) : ( Seq[DatalogRule],  Map[Int, Int], Int ) =
+    rewriting match {
+      case List() =>  acc
+      case x::xs =>
+        val res = getAtomsFromRewrite (x, acc._2, acc._3)
+        visitRewriting( xs, (res._1::acc._1, res._2, res._3) )
+    }
+
+    visitRewriting( rewriting.toList, (List(), Map(), 0) )._1.reverse
 
   }
 
@@ -128,11 +147,12 @@ class ReWriter(ontology: RuleSet) {
   val generatingAtoms: List[Atom] = ReWriter.makeGeneratingAtoms(ontology)
   val canonicalModels: List[AtomSet] = ReWriter.canonicalModelList(ontology, generatingAtoms)
   private val arrayGeneratingAtoms = generatingAtoms.toVector
+
   /**
     * Given a type t defined on a bag, it computes the formula At(t)
     *
-    * @param bag a Bag
-    * @param theType   a Type
+    * @param bag     a Bag
+    * @param theType a Type
     * @return a List[Atom]
     */
   def makeAtoms(bag: Bag, theType: Type): List[Any] = {
@@ -165,20 +185,20 @@ class ReWriter(ontology: RuleSet) {
         // All anonymous
         else if (theType.areAllAnonymous(currentAtom)) {
           theType.homomorphism.createImageOf(currentAtom.getTerm(0)) match {
-            case constantType:ConstantType =>
-               val index = constantType.identifier._1
-               if ( index < arrayGeneratingAtoms.length ) {
-                 val atom = arrayGeneratingAtoms(index)
-                 visitBagAtoms(xs, atom :: acc)
-               }else {
-                 visitBagAtoms(xs, acc)
-               }
+            case constantType: ConstantType =>
+              val index = constantType.identifier._1
+              if (index < arrayGeneratingAtoms.length) {
+                val atom = arrayGeneratingAtoms(index)
+                visitBagAtoms(xs, atom :: acc)
+              } else {
+                visitBagAtoms(xs, acc)
+              }
 
-            case _ =>  visitBagAtoms(xs, new Exception ("It must be a constant type!!!") :: acc)
+            case _ => visitBagAtoms(xs, new Exception("It must be a constant type!!!") :: acc)
 
           }
 
-         //val atom: Option[Atom] =   // theType.genAtoms.get(currentAtom.getTerm(0))
+          //val atom: Option[Atom] =   // theType.genAtoms.get(currentAtom.getTerm(0))
 
           //if (atom.isDefined) visitBagAtoms(xs, atom.get :: acc)
           //else visitBagAtoms(xs, acc)
@@ -198,7 +218,7 @@ class ReWriter(ontology: RuleSet) {
             .map(atom => getEqualities(currentAtom.getTerms.asScala.toList, atom.getTerms.asScala.toList, List()))
 
 
-          visitBagAtoms(xs, arrayGeneratingAtoms(index) ::expression :: acc)
+          visitBagAtoms(xs, arrayGeneratingAtoms(index) :: expression :: acc)
 
         }
     }
@@ -207,9 +227,9 @@ class ReWriter(ontology: RuleSet) {
     visitBagAtoms(bag.atoms.toList, List())
   }
 
-  def generateRewriting ( borderType: Type, splitter: Splitter ) : List[RuleTemplate]  ={
-    val typeExtender = new TypeExtender( splitter.getSplittingVertex, borderType.homomorphism , canonicalModels.toVector )
-    val types =  typeExtender.collectTypes
+  def generateRewriting(borderType: Type, splitter: Splitter): List[RuleTemplate] = {
+    val typeExtender = new TypeExtender(splitter.getSplittingVertex, borderType.homomorphism, canonicalModels.toVector)
+    val types = typeExtender.collectTypes
     //val body = new LinkedListAtomSet
     //val rule :Rule = new DefaultRule()
     types.map(s => new RuleTemplate(splitter, borderType, s, generatingAtoms, this)).flatMap(ruleTemplate => ruleTemplate :: ruleTemplate.GetAllSubordinateRules)

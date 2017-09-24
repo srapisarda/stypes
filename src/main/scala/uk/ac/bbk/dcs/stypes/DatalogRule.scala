@@ -24,7 +24,7 @@ import scala.collection.JavaConverters._
   }
 
   case class Clause(head: Atom, body: List[Atom]) extends DatalogRule {
-    override def toString: String = head + " :- " + body.map( a => a ).mkString(", ")
+    override def toString: String =  s"$head :- ${body.map( a => a ).mkString(", ")}"
   }
 
   trait BinaryOperator  {
@@ -39,4 +39,6 @@ import scala.collection.JavaConverters._
   object Equality {
     val predicateName:String ="EQ"
   }
+
+
 
