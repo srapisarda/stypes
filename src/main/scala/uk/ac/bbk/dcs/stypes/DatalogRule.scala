@@ -33,12 +33,14 @@ import scala.collection.JavaConverters._
   }
 
   case class Equality ( t1: Term, t2: Term ) extends BinaryOperator{
-    def getAtom :Atom =  new  DefaultAtom( new Predicate(Equality.predicateName,2 ), List(t1, t2).asJava  )
+    def getAtom :Atom =  new  DefaultAtom( DatalogPredicate(Equality.predicateName,2 ), List(t1, t2).asJava  )
     override def toString: String = s"EQ($t1,$t2)" // not sure if should be t1=t2
   }
   object Equality {
     val predicateName:String ="EQ"
   }
+
+  case class DatalogPredicate( identifier: Any,  arity: Int) extends  Predicate (identifier, arity)
 
 
 

@@ -157,7 +157,7 @@ class  ReWriterTest extends FunSpec{
       println(result)
       assert( result.size == 20 ) // verify this result
 
-      val datalog: Seq[DatalogRule] =  ReWriter.generateDatalog(result )
+      val datalog: Set[Clause] =  ReWriter.generateDatalog(result )
       println(s"${datalog.mkString(".\n")}.")
 
     }
@@ -172,7 +172,7 @@ class  ReWriterTest extends FunSpec{
       println(result)
       assert( result.size == 4 ) // verify this result
 
-      val datalog: Seq[DatalogRule] =  ReWriter.generateDatalog(result )
+      val datalog: Set[Clause] =  ReWriter.generateDatalog(result )
       println(datalog.mkString(".\n"))
 
     }

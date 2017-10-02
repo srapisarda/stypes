@@ -88,9 +88,9 @@ object ReWriter {
     x.getLabel.toLowerCase.startsWith("ee")
 
 
-  def generateDatalog(rewriting: Seq[RuleTemplate]): Seq[DatalogRule] = {
+  def generateDatalog(rewriting: Seq[RuleTemplate]): Set[Clause] = {
 
-    def getAtomsFromRewrite(ruleTemplate: RuleTemplate,  map: Map[Int, Int], currentIndex: Int): (DatalogRule, Map[Int, Int], Int) = {
+    def getAtomsFromRewrite(ruleTemplate: RuleTemplate, map: Map[Int, Int], currentIndex: Int): (Clause, Map[Int, Int], Int) = {
 
       def transformAtom(atom: Atom, map: Map[Int, Int], currentIndex: Int): (Atom, Map[Int, Int], Int) =
         atom.getPredicate.getIdentifier match {
@@ -103,7 +103,7 @@ object ReWriter {
                 val plusOne = currentIndex + 1
                 (map + (predicateHash -> plusOne), plusOne, plusOne)
               }
-            (new DefaultAtom(new Predicate(s"p${next._2}", atom.getPredicate.getArity), atom.getTerms), next._1, next._3)
+            (new DefaultAtom(DatalogPredicate(s"p${next._2}", atom.getPredicate.getArity), atom.getTerms), next._1, next._3)
         }
 
       @tailrec
@@ -122,22 +122,77 @@ object ReWriter {
       val head = transformAtom(ruleTemplate.head, map, currentIndex)
       val body: (List[Atom], Map[Int, Int], Int) = transformBody(ruleTemplate.body, (List(), head._2, head._3))
 
-      val clause =  Clause(head._1, body._1.reverse)
+      val clause = Clause(head._1, body._1.reverse)
 
-      (clause, body._2, body._3 )
+      (clause, body._2, body._3)
     }
 
-    def visitRewriting(rewriting: List[RuleTemplate], acc: (List[DatalogRule], Map[Int, Int], Int) ) : ( Seq[DatalogRule],  Map[Int, Int], Int ) =
-    rewriting match {
-      case List() =>  acc
-      case x::xs =>
-        val res = getAtomsFromRewrite (x, acc._2, acc._3)
-        visitRewriting( xs, (res._1::acc._1, res._2, res._3) )
+    def visitRewriting(rewriting: List[RuleTemplate], acc: (List[Clause], Map[Int, Int], Int)): (List[Clause], Map[Int, Int], Int) =
+      rewriting match {
+        case List() => acc
+        case x :: xs =>
+          val res = getAtomsFromRewrite(x, acc._2, acc._3)
+          visitRewriting(xs, (res._1 :: acc._1, res._2, res._3))
+      }
+
+    val datalog = visitRewriting(rewriting.toList, (List(), Map(), 0))._1.reverse.toSet
+
+    val toBeRemoved1 = datalog.toList.map(p => (p.head.getPredicate, 1L)).groupBy(_._1)
+
+    val toBeRemoved = toBeRemoved1.filter(_._2.size == 1).keys.toList
+
+    def predicateSubstitution(datalog: Set[Clause]): Set[Clause] = {
+
+      val toSubstitute: Map[Atom, List[Atom]] = datalog
+        .filter(p => toBeRemoved.contains(p.head.getPredicate))
+        .map(p => p.head -> p.body ).toMap
+
+      def visitPredicates(datalog: List[Atom], acc: (List[Atom], Boolean) ): (List[Atom], Boolean) = datalog match {
+        case List() =>  (acc._1.reverse, acc._2)
+        case atom::xs => atom.getPredicate match {
+          case p:DatalogPredicate =>
+            //println(s"datalog predicate $p")
+            if ( toSubstitute.contains(atom) )
+              visitPredicates( xs, (toSubstitute(atom) ::: acc._1, true)  )
+            else
+              visitPredicates( xs, (atom :: acc._1, acc._2) )
+          case p:Any =>
+            //println(s"data predicate $p")
+            visitPredicates( xs, (atom :: acc._1, acc._2) )
+        }
+      }
+
+      def substitution(datalog: List[Clause]) :List[Clause] = {
+
+        def substitutionH(datalog: List[Clause]): List[(Clause, Boolean)] = {
+          datalog.map(d => {
+            val visit = visitPredicates(d.body, (List(), false))
+            (Clause(d.head, visit._1), visit._2)
+          })
+        }
+
+        val sub = substitutionH(datalog)
+
+        val hasSubstitution: Boolean = sub.map(_._2).reduce((s1, s2)  => s1 || s2 )
+
+        if ( hasSubstitution )
+          substitution(sub.map(_._1))
+        else
+          sub.map(_._1)
+      }
+
+      val sub = substitution(datalog.toList).filter( p=>  ! toBeRemoved.contains( p.head.getPredicate )  )
+
+      println( sub.mkString(".\n") )
+      println("-----")
+
+      datalog
+
     }
 
-    visitRewriting( rewriting.toList, (List(), Map(), 0) )._1.reverse
-
+    predicateSubstitution( datalog  )
   }
+
 
 }
 
@@ -233,7 +288,6 @@ class ReWriter(ontology: RuleSet) {
     //val body = new LinkedListAtomSet
     //val rule :Rule = new DefaultRule()
     types.map(s => new RuleTemplate(splitter, borderType, s, generatingAtoms, this)).flatMap(ruleTemplate => ruleTemplate :: ruleTemplate.GetAllSubordinateRules)
-
   }
 
 }
