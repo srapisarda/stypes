@@ -88,7 +88,7 @@ object ReWriter {
     x.getLabel.toLowerCase.startsWith("ee")
 
 
-  def generateDatalog(rewriting: Seq[RuleTemplate]): Set[Clause] = {
+  def generateDatalog(rewriting: Seq[RuleTemplate]): List[Clause] = {
 
     def getAtomsFromRewrite(ruleTemplate: RuleTemplate, map: Map[Int, Int], currentIndex: Int): (Clause, Map[Int, Int], Int) = {
 
@@ -135,35 +135,70 @@ object ReWriter {
           visitRewriting(xs, (res._1 :: acc._1, res._2, res._3))
       }
 
-    val datalog = visitRewriting(rewriting.toList, (List(), Map(), 0))._1.reverse.toSet
+    val datalog = visitRewriting(rewriting.toList, (List(), Map(), 0))._1.reverse
 
-    val toBeRemoved1 = datalog.toList.map(p => (p.head.getPredicate, 1L)).groupBy(_._1)
 
-    val toBeRemoved = toBeRemoved1.filter(_._2.size == 1).keys.toList
+    def removeEmptyClauses(datalog: List[Clause]): List[Clause] = {
 
-    def predicateSubstitution(datalog: Set[Clause]): Set[Clause] = {
+      def removalHelper(datalog: List[Clause]): (List[Clause], Boolean) = {
+        val defined = datalog.map(_.head.getPredicate).toSet
 
-      val toSubstitute: Map[Atom, List[Atom]] = datalog
-        .filter(p => toBeRemoved.contains(p.head.getPredicate))
-        .map(p => p.head -> p.body ).toMap
+        def remove(l: List[Atom]): Boolean = l match {
+          case List() => false
+          case x :: xs => x.getPredicate match {
+            case p: DatalogPredicate =>
+              !defined.contains(x.getPredicate) || remove(xs)
+            case _ =>
+              remove(xs)
+          }
+        }
 
-      def visitPredicates(datalog: List[Atom], acc: (List[Atom], Boolean) ): (List[Atom], Boolean) = datalog match {
-        case List() =>  (acc._1.reverse, acc._2)
-        case atom::xs => atom.getPredicate match {
-          case p:DatalogPredicate =>
-            //println(s"datalog predicate $p")
-            if ( toSubstitute.contains(atom) )
-              visitPredicates( xs, (toSubstitute(atom) ::: acc._1, true)  )
+        val ret = datalog.filter(rule => !remove(rule.body))
+        (ret, ret.size != datalog.size)
+      }
+
+      val removalOutcome = removalHelper(datalog)
+
+      val iterate = removalOutcome._2
+
+      val removalResult = removalOutcome._1
+
+      if (iterate)
+        removalHelper(removalResult)._1
+      else
+        removalResult
+    }
+
+    def removeDuplicate (datalog: List[Clause]): List[Clause] = datalog.toSet.toList
+
+    def predicateSubstitution(datalog: List[Clause]): List[Clause] = {
+
+      val toBeSubstituted = datalog
+        .sortBy(_.head.getPredicate)
+        .map(p => (p.head.getPredicate, 1L))
+        .groupBy(_._1)
+        .filter(_._2.size == 1)
+        .keys.toList
+
+      val substitutionTable: Map[Atom, List[Atom]] = datalog
+        .filter(p => toBeSubstituted.contains(p.head.getPredicate))
+        .map(p => p.head -> p.body).toMap
+
+      def visitPredicates(datalog: List[Atom], acc: (List[Atom], Boolean)): (List[Atom], Boolean) = datalog match {
+        case List() => (acc._1.reverse, acc._2)
+        case atom :: xs => atom.getPredicate match {
+          case p: DatalogPredicate =>
+            if (substitutionTable.contains(atom))
+              visitPredicates(xs, (substitutionTable(atom) ::: acc._1, true))
             else
-              visitPredicates( xs, (atom :: acc._1, acc._2) )
-          case p:Any =>
-            //println(s"data predicate $p")
-            visitPredicates( xs, (atom :: acc._1, acc._2) )
+              visitPredicates(xs, (atom :: acc._1, acc._2))
+          case _ =>
+            visitPredicates(xs, (atom :: acc._1, acc._2))
         }
       }
 
-      def substitution(datalog: List[Clause]) :List[Clause] = {
 
+      def substitution(datalog: List[Clause]): List[Clause] = {
         def substitutionH(datalog: List[Clause]): List[(Clause, Boolean)] = {
           datalog.map(d => {
             val visit = visitPredicates(d.body, (List(), false))
@@ -173,24 +208,23 @@ object ReWriter {
 
         val sub = substitutionH(datalog)
 
-        val hasSubstitution: Boolean = sub.map(_._2).reduce((s1, s2)  => s1 || s2 )
+        val hasSubstitution: Boolean = sub.map(_._2).reduce((s1, s2) => s1 || s2)
 
-        if ( hasSubstitution )
+        if (hasSubstitution)
           substitution(sub.map(_._1))
         else
           sub.map(_._1)
       }
 
-      val sub = substitution(datalog.toList).filter( p=>  ! toBeRemoved.contains( p.head.getPredicate )  )
-
-      println( sub.mkString(".\n") )
-      println("-----")
-
-      datalog
+      substitution(datalog)
+        .filter(p => !toBeSubstituted.contains(p.head.getPredicate))
 
     }
 
-    predicateSubstitution( datalog  )
+    val removalResult: List[Clause] = removeEmptyClauses( removeDuplicate( datalog ))
+
+    predicateSubstitution(removalResult)
+
   }
 
 
