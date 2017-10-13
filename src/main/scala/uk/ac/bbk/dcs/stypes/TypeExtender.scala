@@ -168,18 +168,19 @@ case class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Vector[Ato
       extend( 0, canonicalModels.length,  List(buildExtender(ConstantType.EPSILON)))
     }
 
-    def filterThroughAtoms(atoms:List[Atom]): Boolean = atoms match  {
-      case List() => true
-      case x::xs => isGoodRespectToCanonicalModel(x) &&  filterThroughAtoms(xs)
+    @tailrec
+    def filterThroughAtoms(atoms:List[Atom], ret:Boolean = true): Boolean = atoms match  {
+      case List() => ret
+      case x::xs => isGoodRespectToCanonicalModel(x) &&  filterThroughAtoms(xs, ret)
     }
 
     def isGoodRespectToCanonicalModel(atom: Atom): Boolean = {
-
-      def areAllEqualCanonicalModelIndex(canonicalModelIndex:Int, terms:Seq[Term]): Boolean = terms match {
-        case Nil=> true
+      @tailrec
+      def areAllEqualCanonicalModelIndex(canonicalModelIndex:Int, terms:Seq[Term], ret:Boolean = true): Boolean = terms match {
+        case Nil=> ret
         case x::xs =>
            x.asInstanceOf[ConstantType].identifier._1==canonicalModelIndex &&
-             areAllEqualCanonicalModelIndex(canonicalModelIndex, xs )
+             areAllEqualCanonicalModelIndex(canonicalModelIndex, xs, ret )
       }
 
       val notEpsilon = atom.getTerms.asScala.map(hom.createImageOf ).filter(t => ! t.equals(ConstantType.EPSILON))
