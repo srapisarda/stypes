@@ -63,10 +63,9 @@ case class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Vector[Ato
     * Collect homomorphisms from valid leaves
     * @return a List of Type
     */
-
   def collectTypes:List[Type] = children match {
     case List() => if (isValid) List(Type(hom)) else List()
-    case head::tail => children.flatMap( c => c.collectTypes)
+    case _ => children.flatMap( c => c.collectTypes)
   }
 
   private def isGoodWithRespectToSubstitution(substitution: Substitution, atom: Atom): Boolean = {
