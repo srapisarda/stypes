@@ -73,9 +73,9 @@ case class Type( homomorphism: Substitution ){
   def projection(dest: Set[Term]): Type = {
     val homomorphismProj = new TreeMapSubstitution
     homomorphism.getTerms.asScala.foreach(term => {
-      val varialbe = homomorphism.createImageOf(term)
+      val variable = homomorphism.createImageOf(term)
       if (dest.contains(term))
-        homomorphismProj.put(term, varialbe)
+        homomorphismProj.put(term, variable)
     })
 
 //    val genAtomProj =
@@ -110,7 +110,7 @@ case class Type( homomorphism: Substitution ){
   @tailrec
   private def visitBagAtoms(terms: List[Term], f: Term => Boolean  ): Boolean = terms match {
     case List() => true
-    case x::xs => if (f(x)) false else visitBagAtoms(xs, f)
+    case x::xs => if ( f(x)) false else visitBagAtoms(xs, f)
 
   }
 

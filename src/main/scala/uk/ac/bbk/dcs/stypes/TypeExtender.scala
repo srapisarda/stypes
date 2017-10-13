@@ -118,7 +118,7 @@ case class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Vector[Ato
 
   }
 
-  private def  getTypesExtension: (Boolean, List[TypeExtender]) =   {
+  private def getTypesExtension: (Boolean, List[TypeExtender]) =   {
 
     @tailrec
     def getPossibleConnectedTypesExtensions(atoms: List[Atom], acc: (Boolean,  List[TypeExtender] ) = (false, List()) ) :
@@ -171,7 +171,12 @@ case class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Vector[Ato
     @tailrec
     def filterThroughAtoms(atoms:List[Atom], ret:Boolean = true): Boolean = atoms match  {
       case List() => ret
-      case x::xs => isGoodRespectToCanonicalModel(x) &&  filterThroughAtoms(xs, ret)
+      case x::xs =>
+        //isGoodRespectToCanonicalModel(x) &&  filterThroughAtoms(xs, ret)
+        if (isGoodRespectToCanonicalModel(x))
+          filterThroughAtoms(xs, ret)
+        else
+          false
     }
 
     def isGoodRespectToCanonicalModel(atom: Atom): Boolean = {
@@ -179,8 +184,10 @@ case class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Vector[Ato
       def areAllEqualCanonicalModelIndex(canonicalModelIndex:Int, terms:Seq[Term], ret:Boolean = true): Boolean = terms match {
         case Nil=> ret
         case x::xs =>
-           x.asInstanceOf[ConstantType].identifier._1==canonicalModelIndex &&
-             areAllEqualCanonicalModelIndex(canonicalModelIndex, xs, ret )
+           // x.asInstanceOf[ConstantType].identifier._1==canonicalModelIndex && areAllEqualCanonicalModelIndex(canonicalModelIndex, xs, ret )
+          if ( x.asInstanceOf[ConstantType].identifier._1==canonicalModelIndex)
+            areAllEqualCanonicalModelIndex(canonicalModelIndex, xs, ret )
+          else false
       }
 
       val notEpsilon = atom.getTerms.asScala.map(hom.createImageOf ).filter(t => ! t.equals(ConstantType.EPSILON))
