@@ -121,7 +121,7 @@ case class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Vector[Ato
   private def  getTypesExtension: (Boolean, List[TypeExtender]) =   {
 
     @tailrec
-    def getPossibleConnectedTypesExtensions(atoms: List[Atom], acc: (Boolean,  List[TypeExtender] ) ) :
+    def getPossibleConnectedTypesExtensions(atoms: List[Atom], acc: (Boolean,  List[TypeExtender] ) = (false, List()) ) :
     ( Boolean,List[TypeExtender]) = atoms match {
       case List() => acc
       case x :: xs  =>
@@ -208,7 +208,7 @@ case class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Vector[Ato
     if (variableToBeMapped.isEmpty)
       (filterThroughAtoms(atomsToBeMapped), List())
     else {
-      val possibleConnectedExtensions = getPossibleConnectedTypesExtensions(atomsToBeMapped, (false, List()))
+      val possibleConnectedExtensions = getPossibleConnectedTypesExtensions(atomsToBeMapped)
 
       if (possibleConnectedExtensions._1)
         (true, possibleConnectedExtensions._2)

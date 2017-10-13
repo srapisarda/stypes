@@ -7,40 +7,44 @@ import scala.collection.JavaConverters._
 /**
   *
   * Created by :
-  *   Salvatore Rapisarda
-  *   Stanislav Kikot
+  * Salvatore Rapisarda
+  * Stanislav Kikot
   *
   */
 
-  sealed trait DatalogRule {
-    def head: Atom
-    def name: String = head.getPredicate.toString
-    def arity: Int = head.getPredicate.getArity
+sealed trait DatalogRule {
+  def head: Atom
 
-  }
+  def name: String = head.getPredicate.toString
 
-  case class Fact(head: Atom) extends DatalogRule {
-    override def toString: String = head.toString
-  }
+  def arity: Int = head.getPredicate.getArity
 
-  case class Clause(head: Atom, body: List[Atom]) extends DatalogRule {
-    override def toString: String =  s"$head :- ${body.map( a => a ).mkString(", ")}"
-  }
+}
 
-  trait BinaryOperator  {
-    def t1:Any
-    def t2: Any
-  }
+case class Fact(head: Atom) extends DatalogRule {
+  override def toString: String = head.toString
+}
 
-  case class Equality ( t1: Term, t2: Term ) extends BinaryOperator{
-    def getAtom :Atom =  new  DefaultAtom( new Predicate( Equality.predicateName,2 ), List(t1, t2).asJava  )
-    override def toString: String = s"EQ($t1,$t2)" // not sure if should be t1=t2
-  }
-  object Equality {
-    val predicateName:String ="EQ"
-  }
+case class Clause(head: Atom, body: List[Atom]) extends DatalogRule {
+  override def toString: String = s"$head :- ${body.map(a => a).mkString(", ")}"
+}
 
-  case class DatalogPredicate( identifier: Any,  arity: Int) extends  Predicate (identifier, arity)
+trait BinaryOperator {
+  def t1: Any
+  def t2: Any
+}
+
+case class Equality(t1: Term, t2: Term) extends BinaryOperator {
+  def getAtom: Atom = new DefaultAtom(new Predicate(Equality.predicateName, 2), List(t1, t2).asJava)
+
+  override def toString: String = s"EQ($t1,$t2)" // not sure if should be t1=t2
+}
+
+object Equality {
+  val predicateName: String = "EQ"
+}
+
+case class DatalogPredicate(identifier: Any, arity: Int) extends Predicate(identifier, arity)
 
 
 
