@@ -116,6 +116,7 @@ object ReWriter {
             case bodyAtom: Atom =>
               val res = transformAtom(bodyAtom, acc._2, acc._3)
               transformBody(xs, (res._1 :: acc._1, res._2, res._3))
+            //case _ => OpenUpBrackets()
           }
         }
 
@@ -125,6 +126,18 @@ object ReWriter {
       val clause = Clause(head._1, body._1.reverse)
 
       (clause, body._2, body._3)
+    }
+
+    def OpenUpBrackets(body:List[Any]) : List[List[Any]] = {
+      body match {
+        case List() => List()
+        case head::tail => head match {
+          case x:Atom=> OpenUpBrackets(tail).map(t => x::t)
+          case x:List[(Term, Term)] => {
+              x.flatMap( equality => OpenUpBrackets(tail).map (t => equality::t))
+          }
+        }
+      }
     }
 
     def visitRewriting(rewriting: List[RuleTemplate], acc: (List[Clause], Map[Int, Int], Int)): (List[Clause], Map[Int, Int], Int) =

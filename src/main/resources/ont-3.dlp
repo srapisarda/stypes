@@ -1,0 +1,16 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Rules ont-3 (for testing BracketOpener)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+t1(X,Y,V) :- u1(X,Y).
+
+s0(Y,V) :- t1(X,Y,V).
+
+s0(V,X) :- t1(X,Y,V).
+
+t2(X,Y,V) :- u2(X,Y).
+
+r1(V,Y) :- t2(X,Y,V).
+
+r1(X,V) :- t2(X,Y,V).
