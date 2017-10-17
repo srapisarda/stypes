@@ -44,7 +44,7 @@ object Equality {
   val predicateName: String = "EQ"
 }
 
-case class DatalogPredicate(identifier: Any, arity: Int) extends Predicate(identifier, arity)
+case class DatalogPredicate(identifier: Any, arity: Int, isGoalPredicate:Boolean=false ) extends Predicate(identifier, arity)
 
 
 

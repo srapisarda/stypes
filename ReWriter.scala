@@ -103,7 +103,7 @@ object ReWriter {
                 val plusOne = currentIndex + 1
                 (map + (predicateHash -> plusOne), plusOne, plusOne)
               }
-            (new DefaultAtom(DatalogPredicate(s"p${next._2}", atom.getPredicate.getArity), atom.getTerms), next._1, next._3)
+            (new DefaultAtom(DatalogPredicate(s"p${next._2}", atom.getPredicate.getArity), atom.getTerm, next._2 == 1  ), next._1, next._3)
         }
 
         
@@ -129,9 +129,9 @@ object ReWriter {
       val bodyWithTransformedAtomsButWithListListPairForEqualities: (List[Any], Map[Int, Int], Int) = transformBody(ruleTemplate.body, (List(), map, currentIndex))
        
       
-      val clauses = OpenUpBrackets(bodyWithTransformedAtomsButWithListListPairForEqualities._1).map(b => Clause(head._1, b))
+      val clauses:List[Clause] = OpenUpBrackets(bodyWithTransformedAtomsButWithListListPairForEqualities._1).map(b => Clause(head._1, b))
 
-      (clauses, body._2, body._3)
+      (clauses, bodyWithTransformedAtomsButWithListListPairForEqualities._2, bodyWithTransformedAtomsButWithListListPairForEqualities._3)
     }
 
     def EqualityAtom((x:Term, y:Term)):Atom = {
@@ -162,7 +162,7 @@ object ReWriter {
           visitRewriting(xs, (res._1 :: acc._1, res._2, res._3))
       }
 
-    val datalog = visitRewriting(rewriting.toList, (List(), Map(), 0))._1.flatmap(_).reverse
+    val datalog = visitRewriting(rewriting.toList, (List(), Map(), 0))._1.flatMap(_).reverse
 
 
     def removeEmptyClauses(datalog: List[Clause]): List[Clause] = {

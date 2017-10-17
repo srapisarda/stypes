@@ -7,6 +7,7 @@ import fr.lirmm.graphik.graal.forward_chaining.DefaultChase
 
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
+import scala.collection.immutable
 
 /**
   * Created by
@@ -90,7 +91,7 @@ object ReWriter {
 
   def generateDatalog(rewriting: Seq[RuleTemplate]): List[Clause] = {
 
-    def getAtomsFromRewrite(ruleTemplate: RuleTemplate, map: Map[Int, Int], currentIndex: Int): (Clause, Map[Int, Int], Int) = {
+    def getAtomsFromRewrite(ruleTemplate: RuleTemplate, map: Map[Int, Int], currentIndex: Int): (List[Clause], Map[Int, Int], Int) = {
 
       def transformAtom(atom: Atom, map: Map[Int, Int], currentIndex: Int): (Atom, Map[Int, Int], Int) =
         atom.getPredicate.getIdentifier match {
@@ -103,44 +104,62 @@ object ReWriter {
                 val plusOne = currentIndex + 1
                 (map + (predicateHash -> plusOne), plusOne, plusOne)
               }
-            (new DefaultAtom(DatalogPredicate(s"p${next._2}", atom.getPredicate.getArity), atom.getTerms), next._1, next._3)
+            (new DefaultAtom(DatalogPredicate(s"p${next._2}", atom.getPredicate.getArity, next._2==1), atom.getTerms), next._1, next._3)
         }
 
       @tailrec
-      def transformBody(body: Any, acc: (List[Atom], Map[Int, Int], Int)): (List[Atom], Map[Int, Int], Int) =
+      def transformBody(body: Any, acc: (List[Any], Map[Int, Int], Int)): (List[Any], Map[Int, Int], Int) =
         body match {
           case List() => acc
           case x :: xs => x match {
-            case List(List((x: Term, y: Term))) =>
-              transformBody(xs, (Equality(x, y).getAtom :: acc._1, acc._2, acc._3))
+            case equ:List[List[(Term,Term)]] =>
+                transformBody(xs, (equ :: acc._1, acc._2, acc._3))
             case bodyAtom: Atom =>
               val res = transformAtom(bodyAtom, acc._2, acc._3)
               transformBody(xs, (res._1 :: acc._1, res._2, res._3))
-            //case _ => OpenUpBrackets()
           }
         }
 
-      val head = transformAtom(ruleTemplate.head, map, currentIndex)
-      val body: (List[Atom], Map[Int, Int], Int) = transformBody(ruleTemplate.body, (List(), head._2, head._3))
+      val head: (Atom, Map[Int, Int], Int) = transformAtom(ruleTemplate.head, map, currentIndex)
+      val bodyWithTransformedAtomsButWithListListPairForEqualities: (List[Any], Map[Int, Int], Int) =
+        transformBody(ruleTemplate.body, (List(), head._2, head._3))
 
-      val clause = Clause(head._1, body._1.reverse)
 
-      (clause, body._2, body._3)
+      val clauses:List[Clause] = OpenUpBrackets(bodyWithTransformedAtomsButWithListListPairForEqualities._1).map(b => Clause(head._1, b))
+
+      (clauses, bodyWithTransformedAtomsButWithListListPairForEqualities._2, bodyWithTransformedAtomsButWithListListPairForEqualities._3)
     }
 
-    def OpenUpBrackets(body:List[Any]) : List[List[Any]] = {
+    def EqualityAtom(e:(Term, Term)):Atom = {
+      Equality(e._1, e._2).getAtom
+    }
+
+    def EqualityAtomConjunction(list:List[(Term,Term)]):List[Atom] = {
+      list.map(equality => EqualityAtom(equality))
+    }
+
+    def OpenUpBrackets(body:List[Any], acc:List[List[Atom]] = List() ) : List[List[Atom]] = {
       body match {
-        case List() => List()
+        case List() => acc
         case head::tail => head match {
-          case x:Atom=> OpenUpBrackets(tail).map(t => x::t)
-          case x:List[(Term, Term)] => {
-              x.flatMap( equality => OpenUpBrackets(tail).map (t => equality::t))
+          case x:Atom=>
+            if (tail.isEmpty) List(List(x))
+            else OpenUpBrackets(tail).map(a => x::a )
+          case x:List[List[(Term, Term)]] => {
+            if ( tail.isEmpty)
+              x.map (coe => EqualityAtomConjunction(coe))
+            else
+              cartisianProduct(x,OpenUpBrackets(tail))
           }
         }
       }
     }
 
-    def visitRewriting(rewriting: List[RuleTemplate], acc: (List[Clause], Map[Int, Int], Int)): (List[Clause], Map[Int, Int], Int) =
+    def cartisianProduct(x: List[List[(Term,Term)]], res: List[List[Atom]]): List[List[Atom]]={
+        x.flatMap(equalityConj => res.map((t: List[Atom]) =>   EqualityAtomConjunction(equalityConj) ++ t ))
+    }
+
+    def visitRewriting(rewriting: List[RuleTemplate], acc: (List[List[Clause]], Map[Int, Int], Int)): (List[List[Clause]], Map[Int, Int], Int) =
       rewriting match {
         case List() => acc
         case x :: xs =>
@@ -148,7 +167,7 @@ object ReWriter {
           visitRewriting(xs, (res._1 :: acc._1, res._2, res._3))
       }
 
-    val datalog = visitRewriting(rewriting.toList, (List(), Map(), 0))._1.reverse
+    val datalog = visitRewriting(rewriting.toList, (List(), Map(), 0))._1.flatMap( p=> p).reverse
 
 
     def removeEmptyClauses(datalog: List[Clause]): List[Clause] = {
@@ -186,11 +205,15 @@ object ReWriter {
 
     def predicateSubstitution(datalog: List[Clause]): List[Clause] = {
 
+      val goalPredicate: Predicate = datalog.filter(p=> p.head.getPredicate.isInstanceOf[DatalogPredicate])
+        .find( p=> p.head.getPredicate.asInstanceOf[DatalogPredicate].isGoalPredicate)
+        .get.head.getPredicate
+
       val toBeSubstituted = datalog
         .sortBy(_.head.getPredicate)
-        .map(p => (p.head.getPredicate, 1L))
+        .map(p => ( p.head.getPredicate, 1L))
         .groupBy(_._1)
-        .filter(_._2.size == 1)
+        .filter(c => c._1 != goalPredicate && c._2.size == 1)
         .keys.toList
 
       val substitutionTable: Map[Atom, List[Atom]] = datalog
