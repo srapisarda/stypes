@@ -175,7 +175,7 @@ class  ReWriterTest extends FunSpec{
 
       val datalog=  ReWriter.generateDatalog(result )
       println(datalog.mkString(".\n"))
-      assert(datalog.size==2)
+      assert(datalog.size==3)
     }
 
 
