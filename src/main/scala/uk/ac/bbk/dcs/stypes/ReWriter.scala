@@ -106,13 +106,15 @@ object ReWriter {
             (new DefaultAtom(DatalogPredicate(s"p${next._2}", atom.getPredicate.getArity, next._2==1), atom.getTerms), next._1, next._3)
         }
 
+
+
       @tailrec
       def transformBody(body: Any, acc: (List[Any], Map[Int, Int], Int)): (List[Any], Map[Int, Int], Int) =
         body match {
           case List() => acc
           case x :: xs => x match {
-            case equ:List[List[(Term,Term)]] =>
-                transformBody(xs, (equ :: acc._1, acc._2, acc._3))
+            case equ:List[Any] =>
+              transformBody(xs, (equ :: acc._1, acc._2, acc._3))
             case bodyAtom: Atom =>
               val res = transformAtom(bodyAtom, acc._2, acc._3)
               transformBody(xs, (res._1 :: acc._1, res._2, res._3))
@@ -144,12 +146,12 @@ object ReWriter {
           case x:Atom=>
             if (tail.isEmpty) List(List(x))
             else OpenUpBrackets(tail).map(a => x::a )
-          case x:List[List[(Term, Term)]] => {
-            if ( tail.isEmpty)
+          case x:List[List[(Term, Term)]] =>
+            if ( tail.isEmpty )
               x.map (coe => EqualityAtomConjunction(coe))
             else
               cartisianProduct(x,OpenUpBrackets(tail))
-          }
+
         }
       }
     }
