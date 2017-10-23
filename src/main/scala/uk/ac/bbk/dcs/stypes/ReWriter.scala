@@ -150,13 +150,13 @@ object ReWriter {
             if ( tail.isEmpty )
               x.map (coe => EqualityAtomConjunction(coe))
             else
-              cartisianProduct(x,OpenUpBrackets(tail))
+              cartesianProduct(x,OpenUpBrackets(tail))
 
         }
       }
     }
 
-    def cartisianProduct(x: List[List[(Term,Term)]], res: List[List[Atom]]): List[List[Atom]]={
+    def cartesianProduct(x: List[List[(Term,Term)]], res: List[List[Atom]]): List[List[Atom]]={
         x.flatMap(equalityConj => res.map((t: List[Atom]) =>   EqualityAtomConjunction(equalityConj) ++ t ))
     }
 
