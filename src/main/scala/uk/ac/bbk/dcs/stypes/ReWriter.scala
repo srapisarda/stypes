@@ -7,7 +7,6 @@ import fr.lirmm.graphik.graal.forward_chaining.DefaultChase
 
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
-import scala.collection.immutable
 
 /**
   * Created by
@@ -167,7 +166,7 @@ object ReWriter {
           visitRewriting(xs, (res._1 :: acc._1, res._2, res._3))
       }
 
-    val datalog = visitRewriting(rewriting.toList, (List(), Map(), 0))._1.flatMap( p=> p).reverse
+    val datalog = visitRewriting(rewriting.toList, (List(), Map(), 0))._1.flatten.reverse
 
 
     def removeEmptyClauses(datalog: List[Clause]): List[Clause] = {
