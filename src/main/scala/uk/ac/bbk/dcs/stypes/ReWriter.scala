@@ -88,6 +88,9 @@ object ReWriter {
     x.getLabel.toLowerCase.startsWith("ee")
 
 
+
+  case class TermsTupleList(value: List[(Term, Term)])
+
   def generateDatalog(rewriting: Seq[RuleTemplate]): List[Clause] = {
 
     def getAtomsFromRewrite(ruleTemplate: RuleTemplate, map: Map[Int, Int], currentIndex: Int): (List[Clause], Map[Int, Int], Int) = {
@@ -140,15 +143,15 @@ object ReWriter {
     }
 
     def OpenUpBrackets(body:List[Any], acc:List[List[Atom]] = List() ) : List[List[Atom]] = {
-      body match {
-        case List() => acc
+      body  match {
+        case List() => List()
         case head::tail => head match {
           case x:Atom=>
             if (tail.isEmpty) List(List(x))
             else OpenUpBrackets(tail).map(a => x::a )
-          case x:List[List[(Term, Term)]] =>
+          case x:  Seq[Seq[(Term, Term)]] =>
             if ( tail.isEmpty )
-              x.map (coe => EqualityAtomConjunction(coe))
+              x.toList.map (coe => EqualityAtomConjunction(coe.toList))
             else
               cartesianProduct(x,OpenUpBrackets(tail))
 
@@ -156,8 +159,8 @@ object ReWriter {
       }
     }
 
-    def cartesianProduct(x: List[List[(Term,Term)]], res: List[List[Atom]]): List[List[Atom]]={
-        x.flatMap(equalityConj => res.map((t: List[Atom]) =>   EqualityAtomConjunction(equalityConj) ++ t ))
+    def cartesianProduct(x: Seq[Seq[(Term,Term)]], res: List[List[Atom]]): List[List[Atom]]={
+        x.flatMap(equalityConj => res.map((t: List[Atom]) =>   EqualityAtomConjunction(equalityConj.toList) ++ t )).toList
     }
 
     def visitRewriting(rewriting: List[RuleTemplate], acc: (List[List[Clause]], Map[Int, Int], Int)): (List[List[Clause]], Map[Int, Int], Int) =
@@ -339,14 +342,35 @@ class ReWriter(ontology: RuleSet) {
 
           //val sameAreEqual = canonicalModel.asScala.toList.map(atom => isMixed(atom.getTerms().asScala.toList) )
 
-          val expression: List[List[(Term, Term)]] = canonicalModel.asScala.toList
-            .filter(atom => atom.getPredicate.equals(currentAtom.getPredicate) && isMixed(atom.getTerms().asScala.toList))
+          val expression: Seq[Seq[(Term, Term)]] = canonicalModel.asScala.toList
+            .filter(atom => atom.getPredicate.equals(currentAtom.getPredicate) && isMixed(atom.getTerms().asScala.toList ) && currentAtomCompatible(currentAtom, atom) )
             .map(atom => getEqualities(currentAtom.getTerms.asScala.toList, atom.getTerms.asScala.toList, List()))
 
 
           visitBagAtoms(xs, arrayGeneratingAtoms(index) :: expression :: acc)
 
+
+
         }
+
+
+
+
+
+    }
+
+    def currentAtomCompatible( currentAtom: Atom,  atom: Atom ) : Boolean = {
+      def matches (ct:ConstantType, term: Term ): Boolean = {
+        if (ct == ConstantType.EPSILON) ! ReWriter.isAnonymous(term)
+        else ct.identifier._2 == term.toString
+      }
+
+      val  zipped = currentAtom.getTerms.asScala.toList.zip( atom.getTerms.asScala )
+      val resmapped = zipped
+        .map( f=> matches( theType.homomorphism.createImageOf( f._1).asInstanceOf[ConstantType], f._2) )
+
+      val ret = resmapped.reduce( (b1, b2 ) => b1 && b2  )
+      ret
     }
 
     // makeAtoms
