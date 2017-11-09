@@ -346,17 +346,9 @@ class ReWriter(ontology: RuleSet) {
             .filter(atom => atom.getPredicate.equals(currentAtom.getPredicate) && isMixed(atom.getTerms().asScala.toList ) && currentAtomCompatible(currentAtom, atom) )
             .map(atom => getEqualities(currentAtom.getTerms.asScala.toList, atom.getTerms.asScala.toList, List()))
 
-
           visitBagAtoms(xs, arrayGeneratingAtoms(index) :: expression :: acc)
 
-
-
         }
-
-
-
-
-
     }
 
     def currentAtomCompatible( currentAtom: Atom,  atom: Atom ) : Boolean = {
@@ -366,11 +358,10 @@ class ReWriter(ontology: RuleSet) {
       }
 
       val  zipped = currentAtom.getTerms.asScala.toList.zip( atom.getTerms.asScala )
-      val resmapped = zipped
+      val mapping = zipped
         .map( f=> matches( theType.homomorphism.createImageOf( f._1).asInstanceOf[ConstantType], f._2) )
 
-      val ret = resmapped.reduce( (b1, b2 ) => b1 && b2  )
-      ret
+      mapping.reduce(_ && _)
     }
 
     // makeAtoms
