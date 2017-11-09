@@ -286,7 +286,7 @@ class ReWriter(ontology: RuleSet) {
     */
   def makeAtoms(bag: Bag, theType: Type): List[Any] = {
 
-
+    @tailrec
     def getEqualities(variables: List[Term], constants: List[Term], acc: List[(Term, Term)]): List[(Term, Term)] = constants match {
       case List() => acc
       case x :: xs =>

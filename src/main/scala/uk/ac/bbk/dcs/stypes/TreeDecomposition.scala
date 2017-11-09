@@ -78,14 +78,14 @@ class TreeDecomposition {
 
 
   private def getSpittedItems(items: String): List[String] =
-    items.replace("{", "").replace("}", "").split(", ").toList
+    items.replace("{", "").replace("}", "").split(',').map(_.trim).toList
 
 
   private def getBagFromVertex(vertex: Vertex): Bag = {
     val label: String = vertex.getProperty("label")
-    val split: Array[String] = label.split(" {4}")
-    if (split.length != 2) throw new RuntimeException("Incorrect vertex label.")
-    val predicates: List[String] = getSpittedItems(split(0)).map(_.toLowerCase)
+    val predicateAndVariables: Array[String] = label.split(" {4}")
+    if (predicateAndVariables.length != 2) throw new RuntimeException("Incorrect vertex label.")
+    val predicates: List[String] = getSpittedItems(predicateAndVariables(0)).map(_.toLowerCase)
     val atoms: Set[Atom] =
       mapCqAtoms.filter(entry => predicates.contains(entry._1.getIdentifier.toString)).values.toSet
     val terms: Set[Term] = atoms.flatMap(a=> a.getTerms.asScala)
