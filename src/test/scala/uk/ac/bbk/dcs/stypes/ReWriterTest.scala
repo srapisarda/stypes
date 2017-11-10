@@ -224,6 +224,20 @@ class  ReWriterTest extends FunSpec{
 
     }
 
+    it("should rewrite the query for q-7-p with ont-q7p"){
+      val test:TreeDecompositionTest  = new TreeDecompositionTest
+      val t:TreeDecomposition = test.buildTestTreeDecomposition("src/main/resources/Q7p.gml", "src/main/resources/Q7p.cq")
+
+      val result: Seq[RuleTemplate] = new ReWriter(ontology4).generateRewriting(Type(new TreeMapSubstitution()) , Splitter(t))
+      println(result)
+      //assert( result.size == 5 ) // verify this result
+
+      val datalog=  ReWriter.generateDatalog(result )
+      println(datalog.mkString(".\n"))
+      // assert(datalog.size==7)
+
+    }
+
   }
 
 
