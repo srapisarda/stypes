@@ -1,0 +1,9 @@
+% Extracted by MS from file "b02.bench": 26 relations, 27 variables
+
+S__01__(X0, X1), 
+R__2__(X1, X2), 
+R__3__(X2, X3), 
+S__4__(X3, X4), 
+S__05__(X4, X5), 
+R__06__(X5, X6), 
+S__07__(X6, X7).
