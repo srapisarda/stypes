@@ -4,6 +4,7 @@ import com.tinkerpop.blueprints.Direction.{IN, OUT}
 import com.tinkerpop.blueprints.impls.tg.TinkerGraph
 import com.tinkerpop.blueprints.{Edge, Graph, Vertex}
 import fr.lirmm.graphik.graal.api.core.{Atom, Predicate, Term}
+import fr.lirmm.graphik.graal.core.DefaultAtom
 
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
@@ -89,7 +90,20 @@ class TreeDecomposition {
     val atoms: Set[Atom] =
       mapCqAtoms.filter(entry => predicates.contains(entry._1.getIdentifier.toString)).values.toSet
     val terms: Set[Term] = atoms.flatMap(a=> a.getTerms.asScala)
-    Bag(atoms, terms)
+    // remove __<num>__
+    // regular expression
+    val atomsRenamed = atoms.map( renameAtom  )
+    Bag(atomsRenamed, terms)
+
+
+
+
+  }
+
+ private def renameAtom(atom:Atom) : Atom={
+    val pattern = "(__\\d+__)".r
+    val newPredicateName =  pattern.replaceAllIn( atom.getPredicate.getIdentifier.toString, "" )
+    new DefaultAtom( new Predicate( newPredicateName, atom.getPredicate.getArity), atom.getTerms() )
   }
 
 
