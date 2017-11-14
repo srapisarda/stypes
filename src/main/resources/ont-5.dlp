@@ -3,7 +3,7 @@
 % Rules ont-5 (from PODS)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-s(X,Y),r(Y,x) :- a(X).
+s(X,Y),r(Y,X) :- a(X).
 
-r(X,Y),s(Y,x) :- b(X).
+r(X,Y),s(Y,X) :- b(X).
 

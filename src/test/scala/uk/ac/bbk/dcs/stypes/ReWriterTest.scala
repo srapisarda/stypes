@@ -29,7 +29,7 @@ class  ReWriterTest extends FunSpec{
   val ontology2 = getOntology("src/main/resources/ont-2.dlp")
   val ontology3 = getOntology("src/main/resources/ont-3.dlp")
   val ontology4 = getOntology("src/main/resources/ont-4.dlp")
-
+  val ontology5 = getOntology("src/main/resources/ont-5.dlp")
 
   // 1 - Create a relational database store with HSQLDB (An InMemory Java
   // database system),
@@ -228,7 +228,7 @@ class  ReWriterTest extends FunSpec{
       val test:TreeDecompositionTest  = new TreeDecompositionTest
       val t:TreeDecomposition = test.buildTestTreeDecomposition("src/main/resources/Q7p.gml", "src/main/resources/Q7p.cq")
 
-      val result: Seq[RuleTemplate] = new ReWriter(ontology4).generateRewriting(Type(new TreeMapSubstitution()) , Splitter(t))
+      val result: Seq[RuleTemplate] = new ReWriter(ontology5).generateRewriting(Type(new TreeMapSubstitution()) , Splitter(t))
       println(result)
       //assert( result.size == 5 ) // verify this result
 

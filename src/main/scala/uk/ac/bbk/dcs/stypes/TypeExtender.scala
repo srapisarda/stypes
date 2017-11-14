@@ -181,8 +181,8 @@ case class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Vector[Ato
 
     def isGoodRespectToCanonicalModel(atom: Atom): Boolean = {
       @tailrec
-      def areAllEqualCanonicalModelIndex(canonicalModelIndex:Int, terms:Seq[Term], ret:Boolean = true): Boolean = terms match {
-        case Nil=> ret
+      def areAllEqualCanonicalModelIndex(canonicalModelIndex:Int, terms:Seq[Term], ret:Boolean = true): Boolean = terms.toList match {
+        case Nil => ret
         case x::xs =>
            // x.asInstanceOf[ConstantType].identifier._1==canonicalModelIndex && areAllEqualCanonicalModelIndex(canonicalModelIndex, xs, ret )
           if ( x.asInstanceOf[ConstantType].identifier._1==canonicalModelIndex)
