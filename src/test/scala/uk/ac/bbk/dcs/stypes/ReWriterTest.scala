@@ -2,13 +2,12 @@ package uk.ac.bbk.dcs.stypes
 
 import java.io.File
 
-import fr.lirmm.graphik.graal.api.core.{Atom, Predicate, Rule, Substitution}
-import fr.lirmm.graphik.graal.core.{DefaultAtom, TreeMapSubstitution}
+import fr.lirmm.graphik.graal.api.core.{Predicate, Rule}
 import fr.lirmm.graphik.graal.core.ruleset.LinkedListRuleSet
 import fr.lirmm.graphik.graal.core.term.DefaultTermFactory
+import fr.lirmm.graphik.graal.core.{DefaultAtom, TreeMapSubstitution}
 import fr.lirmm.graphik.graal.io.dlp.{DlgpParser, DlgpWriter}
-import fr.lirmm.graphik.graal.store.rdbms.DefaultRdbmsStore
-import fr.lirmm.graphik.graal.store.rdbms.driver.HSQLDBDriver
+import fr.lirmm.graphik.util.DefaultURI
 import org.scalatest.FunSpec
 
 import scala.collection.JavaConverters._
@@ -25,17 +24,17 @@ class  ReWriterTest extends FunSpec{
 
   // 0 - Create a Dlgp writer and a structure to store rules.
   val writer = new DlgpWriter
-  val ontology1 = getOntology("src/main/resources/ont-1.dlp")
-  val ontology2 = getOntology("src/main/resources/ont-2.dlp")
-  val ontology3 = getOntology("src/main/resources/ont-3.dlp")
-  val ontology4 = getOntology("src/main/resources/ont-4.dlp")
-  val ontology5 = getOntology("src/main/resources/ont-5.dlp")
+  private val ontology1 = getOntology("src/main/resources/ont-1.dlp")
+  private val ontology2 = getOntology("src/main/resources/ont-2.dlp")
+  private val ontology3 = getOntology("src/main/resources/ont-3.dlp")
+  private val ontology4 = getOntology("src/main/resources/ont-4.dlp")
+  private val ontology5 = getOntology("src/main/resources/ont-5.dlp")
 
   // 1 - Create a relational database store with HSQLDB (An InMemory Java
   // database system),
   //  val store = new DefaultRdbmsStore(new HSQLDBDriver("test", null))
 
-  def getOntology (filename:String ) = {
+  private def getOntology (filename:String ) = {
     // 2 - Parse Animals.dlp (A Dlgp file with rules and facts)
     val dlgpParser = new DlgpParser(new File(filename))
     // val store = new DefaultRdbmsStore(new HSQLDBDriver("test", null))
@@ -240,6 +239,28 @@ class  ReWriterTest extends FunSpec{
 
   }
 
+  describe( "Substitution tests cases"){
+    it("should be a OntologyTerm instance"){
+      assert( TypeTermFactory.createOntologyVariable("X1").isInstanceOf[OntologyTerm] )
+      assert( TypeTermFactory.createOntologyConstant(ConstantType.EPSILON ).isInstanceOf[OntologyTerm])
+      assert( TypeTermFactory.createOntologyLiteral("test").isInstanceOf[OntologyTerm])
+      assert( TypeTermFactory.createOntologyLiteral(new DefaultURI("http://www.dcs.bbk.ac.uk/~srapis01/ont/#test"), "test")
+        .isInstanceOf[OntologyTerm])
+
+
+    }
+
+    it("should be a QueryTerm instance"){
+      assert( TypeTermFactory.createQueryVariable("X1").isInstanceOf[QueryTerm] )
+      assert( TypeTermFactory.createQueryConstant(ConstantType.EPSILON ).isInstanceOf[QueryTerm])
+      assert( TypeTermFactory.createQueryLiteral("test").isInstanceOf[QueryTerm])
+      assert( TypeTermFactory.createQueryLiteral(new DefaultURI("http://www.dcs.bbk.ac.uk/~srapis01/ont/#test"), "test")
+        .isInstanceOf[QueryTerm])
+
+
+    }
+
+  }
 
 
 }
