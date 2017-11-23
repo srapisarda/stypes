@@ -1,0 +1,9 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Rules for Sale (from DL-17)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+purchase(X,Y,Z) :- purchased(X,Y).
+
+sale(Z,Y,X) :- purchase(X,Y,Z).
+
