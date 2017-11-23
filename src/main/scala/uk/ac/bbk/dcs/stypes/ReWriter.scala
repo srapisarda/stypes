@@ -273,6 +273,8 @@ object ReWriter {
 
 class ReWriter(ontology: RuleSet) {
 
+
+
   val generatingAtoms: List[Atom] = ReWriter.makeGeneratingAtoms(ontology)
   val canonicalModels: List[AtomSet] = ReWriter.canonicalModelList(ontology, generatingAtoms)
   private val arrayGeneratingAtoms = generatingAtoms.toVector
@@ -305,12 +307,17 @@ class ReWriter(ontology: RuleSet) {
     }
 
 
+    def getTypedAtom(atom:Atom, f:Term => Term):Atom = {
+      val terms:List[Term] = atom.getTerms.asScala.map(f).toList
+      new DefaultAtom ( atom.getPredicate,terms.asJava )
+    }
+
     @tailrec
     def visitBagAtoms(atoms: List[Atom], acc: List[Any]): List[Any] = atoms match {
       case List() => acc.reverse
       case currentAtom :: xs =>
         // All epsilon
-        if (theType.areAllEpsilon(currentAtom)) visitBagAtoms(xs, currentAtom :: acc)
+        if (theType.areAllEpsilon(currentAtom)) visitBagAtoms(xs, getTypedAtom(currentAtom, QueryTerm) :: acc)
         // All anonymous
         else if (theType.areAllAnonymous(currentAtom)) {
           theType.homomorphism.createImageOf(currentAtom.getTerm(0)) match {
@@ -318,7 +325,7 @@ class ReWriter(ontology: RuleSet) {
               val index = constantType.identifier._1
               if (index < arrayGeneratingAtoms.length) {
                 val atom = arrayGeneratingAtoms(index)
-                visitBagAtoms(xs, atom :: acc)
+                visitBagAtoms(xs, getTypedAtom(atom, OntologyTerm) :: acc)
               } else {
                 visitBagAtoms(xs, acc)
               }
