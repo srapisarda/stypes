@@ -296,23 +296,38 @@ object ReWriter {
           }
         }
 
+        def removeEqualityWithSameTerms(atoms:List[Atom], acc: List[Atom]): List[Atom] = atoms match {
+          case List() => acc
+          case x::xs => x match {
+            case atom: Equality =>
+              if (atom.t1.equals(atom.t2)) removeEqualityWithSameTerms(xs, acc)
+              else removeEqualityWithSameTerms(xs, x :: acc)
+            case _ => removeEqualityWithSameTerms(xs, x::acc )
+          }
+        }
+
         // getting substitutionSet ∑
         val substitutionSetMap: Map[Term, Term] = createSubstitutionList(clause.body)
           .toSet
           //.map(p => (p._1 -> p._2 )
           .toMap
 
-        def substituteAtom(atom:Atom) =
-          new DefaultAtom( atom.getPredicate,
-          atom.getTerms.asScala.toList.map( t =>  {
-            if ( substitutionSetMap.contains(t))
-              substitutionSetMap(t)
-            else
-              t}).asJava)
+        def getSubstitutionTerm(t:Term): Term = if (substitutionSetMap.contains(t)) substitutionSetMap(t) else t
+
+        def substituteAtom(atom:Atom) = atom match {
+          case _: Equality =>
+            val terms = atom.getTerms.asScala.toList.map(getSubstitutionTerm).toVector
+            if (terms.size == 2 )
+              Equality(terms(0), terms(1) )
+            else atom
+          case _ =>
+            new DefaultAtom(atom.getPredicate,
+              atom.getTerms.asScala.toList.map(getSubstitutionTerm).asJava)
+        }
 
         val head = substituteAtom(clause.head)
 
-        val body = clause.body.map(substituteAtom)
+        val body =  removeEqualityWithSameTerms(clause.body.map(substituteAtom), List())
 
         Clause(head, body )
 
