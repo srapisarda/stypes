@@ -53,7 +53,6 @@ object ReWriter {
 
   }
 
-
   /**
     * Generates canonical models for each of the generating atoms
     *
@@ -80,14 +79,11 @@ object ReWriter {
       store
     }
 
-
     canonicalModelList(generatingAtomList, List())
   }
 
   def isAnonymous(x: Term): Boolean =
     x.getLabel.toLowerCase.startsWith("ee")
-
-
 
   case class TermsTupleList(value: List[(Term, Term)])
 
@@ -106,17 +102,15 @@ object ReWriter {
                 val plusOne = currentIndex + 1
                 (map + (predicateHash -> plusOne), plusOne, plusOne)
               }
-            (new DefaultAtom(DatalogPredicate(s"p${next._2}", atom.getPredicate.getArity, next._2==1), atom.getTerms), next._1, next._3)
+            (new DefaultAtom(DatalogPredicate(s"p${next._2}", atom.getPredicate.getArity, next._2 == 1), atom.getTerms), next._1, next._3)
         }
-
-
 
       @tailrec
       def transformBody(body: Any, acc: (List[Any], Map[Int, Int], Int)): (List[Any], Map[Int, Int], Int) =
         body match {
           case List() => acc
           case x :: xs => x match {
-            case equ:List[Any] =>
+            case equ: List[Any] =>
               transformBody(xs, (equ :: acc._1, acc._2, acc._3))
             case bodyAtom: Atom =>
               val res = transformAtom(bodyAtom, acc._2, acc._3)
@@ -128,39 +122,38 @@ object ReWriter {
       val bodyWithTransformedAtomsButWithListListPairForEqualities: (List[Any], Map[Int, Int], Int) =
         transformBody(ruleTemplate.body, (List(), head._2, head._3))
 
-
-      val clauses:List[Clause] = OpenUpBrackets(bodyWithTransformedAtomsButWithListListPairForEqualities._1).map(b => Clause(head._1, b))
+      val clauses: List[Clause] = OpenUpBrackets(bodyWithTransformedAtomsButWithListListPairForEqualities._1).map(b => Clause(head._1, b))
 
       (clauses, bodyWithTransformedAtomsButWithListListPairForEqualities._2, bodyWithTransformedAtomsButWithListListPairForEqualities._3)
     }
 
-    def EqualityAtom(e:(Term, Term)):Atom = {
+    def EqualityAtom(e: (Term, Term)): Atom = {
       Equality(e._1, e._2).getAtom
     }
 
-    def EqualityAtomConjunction(list:List[(Term,Term)]):List[Atom] = {
+    def EqualityAtomConjunction(list: List[(Term, Term)]): List[Atom] = {
       list.map(equality => EqualityAtom(equality))
     }
 
-    def OpenUpBrackets(body:List[Any], acc:List[List[Atom]] = List() ) : List[List[Atom]] = {
-      body  match {
+    def OpenUpBrackets(body: List[Any], acc: List[List[Atom]] = List()): List[List[Atom]] = {
+      body match {
         case List() => List()
-        case head::tail => head match {
-          case x:Atom=>
+        case head :: tail => head match {
+          case x: Atom =>
             if (tail.isEmpty) List(List(x))
-            else OpenUpBrackets(tail).map(a => x::a )
-          case x:  Seq[Seq[(Term, Term)]] =>
-            if ( tail.isEmpty )
-              x.toList.map (coe => EqualityAtomConjunction(coe.toList))
+            else OpenUpBrackets(tail).map(a => x :: a)
+          case x: Seq[Seq[(Term, Term)]] =>
+            if (tail.isEmpty)
+              x.toList.map(coe => EqualityAtomConjunction(coe.toList))
             else
-              cartesianProduct(x,OpenUpBrackets(tail))
+              cartesianProduct(x, OpenUpBrackets(tail))
 
         }
       }
     }
 
-    def cartesianProduct(x: Seq[Seq[(Term,Term)]], res: List[List[Atom]]): List[List[Atom]]={
-        x.flatMap(equalityConj => res.map((t: List[Atom]) =>   EqualityAtomConjunction(equalityConj.toList) ++ t )).toList
+    def cartesianProduct(x: Seq[Seq[(Term, Term)]], res: List[List[Atom]]): List[List[Atom]] = {
+      x.flatMap(equalityConj => res.map((t: List[Atom]) => EqualityAtomConjunction(equalityConj.toList) ++ t)).toList
     }
 
     def visitRewriting(rewriting: List[RuleTemplate], acc: (List[List[Clause]], Map[Int, Int], Int)): (List[List[Clause]], Map[Int, Int], Int) =
@@ -172,7 +165,6 @@ object ReWriter {
       }
 
     val datalog = visitRewriting(rewriting.toList, (List(), Map(), 0))._1.flatten.reverse
-
 
     def removeEmptyClauses(datalog: List[Clause]): List[Clause] = {
 
@@ -205,17 +197,17 @@ object ReWriter {
         removalResult
     }
 
-    def removeDuplicate (datalog: List[Clause]): List[Clause] = datalog.toSet.toList
+    def removeDuplicate(datalog: List[Clause]): List[Clause] = datalog.toSet.toList
 
     def predicateSubstitution(datalog: List[Clause]): List[Clause] = {
 
-      val goalPredicate: Predicate = datalog.filter(p=> p.head.getPredicate.isInstanceOf[DatalogPredicate])
-        .find( p=> p.head.getPredicate.asInstanceOf[DatalogPredicate].isGoalPredicate)
+      val goalPredicate: Predicate = datalog.filter(p => p.head.getPredicate.isInstanceOf[DatalogPredicate])
+        .find(p => p.head.getPredicate.asInstanceOf[DatalogPredicate].isGoalPredicate)
         .get.head.getPredicate
 
       val toBeSubstituted = datalog
         .sortBy(_.head.getPredicate)
-        .map(p => ( p.head.getPredicate, 1L))
+        .map(p => (p.head.getPredicate, 1L))
         .groupBy(_._1)
         .filter(c => c._1 != goalPredicate && c._2.size == 1)
         .keys.toList
@@ -236,7 +228,6 @@ object ReWriter {
             visitPredicates(xs, (atom :: acc._1, acc._2))
         }
       }
-
 
       def substitution(datalog: List[Clause]): List[Clause] = {
         def substitutionH(datalog: List[Clause]): List[(Clause, Boolean)] = {
@@ -261,64 +252,64 @@ object ReWriter {
 
     }
 
-    def equalitySubstitution ( datalog: List[Clause] ) : List[Clause] = {
+    def equalitySubstitution(datalog: List[Clause]): List[Clause] = {
 
       def equalityClauseSubstitution(clause: Clause): Clause = {
 
-        def existSubstitutionTerm( list: List[(Term, Term)], term: Term ): Boolean = list match{
-          case List()=> false
-          case x::xs => if ( x._1.equals(term) ) true
-                        else existSubstitutionTerm(xs, term)
+        def existSubstitutionTerm(list: List[(Term, Term)], term: Term): Boolean = list match {
+          case List() => false
+          case x :: xs => if (x._1.equals(term)) true
+          else existSubstitutionTerm(xs, term)
         }
 
-        def createSubstitutionList(body: List[Atom], acc: List[(Term, Term)] = List()): List[ (Term, Term) ] = body match {
+        def createSubstitutionList(body: List[Atom], acc: List[(Term, Term)] = List()): List[(Term, Term)] = body match {
           case List() => acc
-          case x::xs => x match {
-
+          case x :: xs => x match {
             case atom: Equality =>
 
-                if (atom.t1.isInstanceOf[QueryTerm] && atom.t2.isInstanceOf[OntologyTerm] )
-                  if ( existSubstitutionTerm( acc, atom.t2 ) )
-                    createSubstitutionList(xs, acc )
-                  else
-                    createSubstitutionList(xs,  (atom.t2, atom.t1 ):: acc)
-
-                else if (atom.t2.isInstanceOf[QueryTerm] && atom.t1.isInstanceOf[OntologyTerm])
-                  if ( existSubstitutionTerm( acc, atom.t1 ) )
-                    createSubstitutionList( xs,  (atom.t1, atom.t2 ):: acc)
-                  else
-                    createSubstitutionList(xs, acc)
-
+              if (atom.t1.isInstanceOf[QueryTerm] && atom.t2.isInstanceOf[OntologyTerm])
+                if (existSubstitutionTerm(acc, atom.t2))
+                  createSubstitutionList(xs, acc)
                 else
-                  createSubstitutionList(xs,   acc)
+                  createSubstitutionList(xs, (atom.t2, atom.t1) :: acc)
 
-            case _ => createSubstitutionList(xs, acc )
+              else if (atom.t2.isInstanceOf[QueryTerm] && atom.t1.isInstanceOf[OntologyTerm])
+                if (existSubstitutionTerm(acc, atom.t1))
+                  createSubstitutionList(xs, (atom.t1, atom.t2) :: acc)
+                else
+                  createSubstitutionList(xs, acc)
+              else  if ( atom.t1.isInstanceOf[QueryTerm]  && atom.t2.isInstanceOf[QueryTerm] && ! atom.t1.equals(atom.t2) )
+                createSubstitutionList(xs,  (atom.t1, atom.t2 ):: acc)
+
+              else
+                createSubstitutionList(xs, acc)
+
+            case _ => createSubstitutionList(xs, acc)
           }
         }
 
-        def removeEqualityWithSameTerms(atoms:List[Atom], acc: List[Atom]): List[Atom] = atoms match {
+        def removeEqualityWithSameTerms(atoms: List[Atom], acc: List[Atom]): List[Atom] = atoms match {
           case List() => acc
-          case x::xs => x match {
+          case x :: xs => x match {
             case atom: Equality =>
               if (atom.t1.equals(atom.t2)) removeEqualityWithSameTerms(xs, acc)
               else removeEqualityWithSameTerms(xs, x :: acc)
-            case _ => removeEqualityWithSameTerms(xs, x::acc )
+            case _ => removeEqualityWithSameTerms(xs, x :: acc)
           }
         }
 
-        // getting substitutionSet ∑
+        // getting substitutionSet σ
         val substitutionSetMap: Map[Term, Term] = createSubstitutionList(clause.body)
           .toSet
-          //.map(p => (p._1 -> p._2 )
           .toMap
 
-        def getSubstitutionTerm(t:Term): Term = if (substitutionSetMap.contains(t)) substitutionSetMap(t) else t
+        def getSubstitutionTerm(t: Term): Term = if (substitutionSetMap.contains(t)) substitutionSetMap(t) else t
 
-        def substituteAtom(atom:Atom) = atom match {
+        def substituteAtom(atom: Atom) = atom match {
           case _: Equality =>
             val terms = atom.getTerms.asScala.toList.map(getSubstitutionTerm).toVector
-            if (terms.size == 2 )
-              Equality(terms(0), terms(1) )
+            if (terms.size == 2)
+              Equality(terms(0), terms(1))
             else atom
           case _ =>
             new DefaultAtom(atom.getPredicate,
@@ -327,16 +318,19 @@ object ReWriter {
 
         val head = substituteAtom(clause.head)
 
-        val body =  removeEqualityWithSameTerms(clause.body.map(substituteAtom), List())
+        val body = removeEqualityWithSameTerms(clause.body.map(substituteAtom), List())
 
-        Clause(head, body )
+        Clause(head, body)
+
+       if (substitutionSetMap.isEmpty) Clause(head, body)
+       else equalityClauseSubstitution(Clause(head, body))
 
       }
 
       datalog.map(equalityClauseSubstitution)
     }
 
-    val removalResult: List[Clause] = removeEmptyClauses( removeDuplicate( datalog ))
+    val removalResult: List[Clause] = removeEmptyClauses(removeDuplicate(datalog))
 
     val predicateSubstitutionRes: List[Clause] = predicateSubstitution(removalResult)
 
@@ -344,13 +338,9 @@ object ReWriter {
 
   }
 
-
 }
 
-
 class ReWriter(ontology: RuleSet) {
-
-
 
   val generatingAtoms: List[Atom] = ReWriter.makeGeneratingAtoms(ontology)
   val canonicalModels: List[AtomSet] = ReWriter.canonicalModelList(ontology, generatingAtoms)
@@ -370,10 +360,9 @@ class ReWriter(ontology: RuleSet) {
       case List() => acc
       case x :: xs =>
         if (ReWriter.isAnonymous(x)) getEqualities(variables.tail, xs, acc)
-        else getEqualities(variables.tail, xs, ( QueryTerm(variables.head), OntologyTerm(x)) :: acc)
+        else getEqualities(variables.tail, xs, (QueryTerm(variables.head), OntologyTerm(x)) :: acc)
 
     }
-
 
     def isMixed(terms: List[Term]): Boolean =
       atLeastOneTerm(terms, x => ReWriter.isAnonymous(x)) && atLeastOneTerm(terms, x => !ReWriter.isAnonymous(x))
@@ -383,10 +372,9 @@ class ReWriter(ontology: RuleSet) {
       case x :: xs => if (f(x)) true else atLeastOneTerm(xs, f)
     }
 
-
-    def getTypedAtom(atom:Atom, f:Term => Term):Atom = {
-      val terms:List[Term] = atom.getTerms.asScala.map(f).toList
-      new DefaultAtom ( atom.getPredicate,terms.asJava )
+    def getTypedAtom(atom: Atom, f: Term => Term): Atom = {
+      val terms: List[Term] = atom.getTerms.asScala.map(f).toList
+      new DefaultAtom(atom.getPredicate, terms.asJava)
     }
 
     @tailrec
@@ -427,7 +415,7 @@ class ReWriter(ontology: RuleSet) {
           //val sameAreEqual = canonicalModel.asScala.toList.map(atom => isMixed(atom.getTerms().asScala.toList) )
 
           val expression: Seq[Seq[(Term, Term)]] = canonicalModel.asScala.toList
-            .filter(atom => atom.getPredicate.equals(currentAtom.getPredicate) && isMixed(atom.getTerms().asScala.toList ) && currentAtomCompatible(currentAtom, atom) )
+            .filter(atom => atom.getPredicate.equals(currentAtom.getPredicate) && isMixed(atom.getTerms().asScala.toList) && currentAtomCompatible(currentAtom, atom))
             .map(atom => getEqualities(currentAtom.getTerms.asScala.toList, atom.getTerms.asScala.toList, List()))
 
           visitBagAtoms(xs, arrayGeneratingAtoms(index) :: expression :: acc)
@@ -435,15 +423,15 @@ class ReWriter(ontology: RuleSet) {
         }
     }
 
-    def currentAtomCompatible( currentAtom: Atom,  atom: Atom ) : Boolean = {
-      def matches (ct:ConstantType, term: Term ): Boolean = {
-        if (ct == ConstantType.EPSILON) ! ReWriter.isAnonymous(term)
+    def currentAtomCompatible(currentAtom: Atom, atom: Atom): Boolean = {
+      def matches(ct: ConstantType, term: Term): Boolean = {
+        if (ct == ConstantType.EPSILON) !ReWriter.isAnonymous(term)
         else ct.identifier._2 == term.toString
       }
 
-      val  zipped = currentAtom.getTerms.asScala.toList.zip( atom.getTerms.asScala )
+      val zipped = currentAtom.getTerms.asScala.toList.zip(atom.getTerms.asScala)
       val mapping = zipped
-        .map( f=> matches( theType.homomorphism.createImageOf( f._1).asInstanceOf[ConstantType], f._2) )
+        .map(f => matches(theType.homomorphism.createImageOf(f._1).asInstanceOf[ConstantType], f._2))
 
       mapping.reduce(_ && _)
     }
