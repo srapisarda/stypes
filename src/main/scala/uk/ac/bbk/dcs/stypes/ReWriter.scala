@@ -292,9 +292,9 @@ object ReWriter {
           case List() => acc
           case x :: xs => x match {
             case atom: Equality =>
-              if (atom.t1.equals(atom.t2)) removeEqualityWithSameTerms(xs, acc)
+              if (atom.t1.equals(atom.t2) ) removeEqualityWithSameTerms(xs, acc)
               else removeEqualityWithSameTerms(xs, x :: acc)
-            case _ => removeEqualityWithSameTerms(xs, x :: acc)
+            case _ => if (! acc.contains(x) ) removeEqualityWithSameTerms(xs, x :: acc) else  removeEqualityWithSameTerms(xs, acc)
           }
         }
 
