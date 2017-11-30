@@ -2,7 +2,7 @@ package uk.ac.bbk.dcs.stypes
 
 import java.io.File
 
-import fr.lirmm.graphik.graal.api.core.{Predicate, Rule}
+import fr.lirmm.graphik.graal.api.core.{Atom, Predicate, Rule, Term}
 import fr.lirmm.graphik.graal.core.ruleset.LinkedListRuleSet
 import fr.lirmm.graphik.graal.core.term.DefaultTermFactory
 import fr.lirmm.graphik.graal.core.{DefaultAtom, TreeMapSubstitution}
@@ -259,6 +259,25 @@ class  ReWriterTest extends FunSpec{
 
 
     }
+
+
+//    it("should substitute x with x6 in the clause: p9[1](X6) :- a[1](X), EQ[2](X6,X) "){
+//
+//      val x6:Term=  QueryTerm( DefaultTermFactory.instance().createVariable("X6") )
+//      val x:Term=  OntologyTerm( DefaultTermFactory.instance().createVariable("X") )
+//
+//
+//
+//      val head = new DefaultAtom( new Predicate("p9", 1 )  ,  List(x6).asJava )
+//      val atomA = new DefaultAtom( new Predicate("a", 1 )  ,  List(x).asJava )
+//      val equality = Equality(x6,x)
+//      val body:List[Atom] = List(atomA, equality)
+//
+//      val clause = Clause(head, body)
+//
+//      ReWriter.generateDatalog()
+//
+//    }
 
   }
 

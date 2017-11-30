@@ -261,9 +261,71 @@ object ReWriter {
 
     }
 
+    def equalitySubstitution ( datalog: List[Clause] ) : List[Clause] = {
+
+      def equalityClauseSubstitution(clause: Clause): Clause = {
+
+        def existSubstitutionTerm( list: List[(Term, Term)], term: Term ): Boolean = list match{
+          case List()=> false
+          case x::xs => if ( x._1.equals(term) ) true
+                        else existSubstitutionTerm(xs, term)
+        }
+
+        def createSubstitutionList(body: List[Atom], acc: List[(Term, Term)] = List()): List[ (Term, Term) ] = body match {
+          case List() => acc
+          case x::xs => x match {
+
+            case atom: Equality =>
+
+                if (atom.t1.isInstanceOf[QueryTerm] && atom.t2.isInstanceOf[OntologyTerm] )
+                  if ( existSubstitutionTerm( acc, atom.t2 ) )
+                    createSubstitutionList(xs, acc )
+                  else
+                    createSubstitutionList(xs,  (atom.t2, atom.t1 ):: acc)
+
+                else if (atom.t2.isInstanceOf[QueryTerm] && atom.t1.isInstanceOf[OntologyTerm])
+                  if ( existSubstitutionTerm( acc, atom.t1 ) )
+                    createSubstitutionList( xs,  (atom.t1, atom.t2 ):: acc)
+                  else
+                    createSubstitutionList(xs, acc)
+
+                else
+                  createSubstitutionList(xs,   acc)
+
+            case _ => createSubstitutionList(xs, acc )
+          }
+        }
+
+        // getting substitutionSet ∑
+        val substitutionSetMap: Map[Term, Term] = createSubstitutionList(clause.body)
+          .toSet
+          //.map(p => (p._1 -> p._2 )
+          .toMap
+
+        def substituteAtom(atom:Atom) =
+          new DefaultAtom( atom.getPredicate,
+          atom.getTerms.asScala.toList.map( t =>  {
+            if ( substitutionSetMap.contains(t))
+              substitutionSetMap(t)
+            else
+              t}).asJava)
+
+        val head = substituteAtom(clause.head)
+
+        val body = clause.body.map(substituteAtom)
+
+        Clause(head, body )
+
+      }
+
+      datalog.map(equalityClauseSubstitution)
+    }
+
     val removalResult: List[Clause] = removeEmptyClauses( removeDuplicate( datalog ))
 
-    predicateSubstitution(removalResult)
+    val predicateSubstitutionRes: List[Clause] = predicateSubstitution(removalResult)
+
+    equalitySubstitution(predicateSubstitutionRes)
 
   }
 
@@ -293,7 +355,7 @@ class ReWriter(ontology: RuleSet) {
       case List() => acc
       case x :: xs =>
         if (ReWriter.isAnonymous(x)) getEqualities(variables.tail, xs, acc)
-        else getEqualities(variables.tail, xs, (variables.head, x) :: acc)
+        else getEqualities(variables.tail, xs, ( QueryTerm(variables.head), OntologyTerm(x)) :: acc)
 
     }
 
