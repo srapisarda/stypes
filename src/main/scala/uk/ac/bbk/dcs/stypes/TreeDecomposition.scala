@@ -88,7 +88,7 @@ class TreeDecomposition {
     if (predicateAndVariables.length != 2) throw new RuntimeException("Incorrect vertex label.")
     val predicates: List[String] = getSpittedItems(predicateAndVariables(0)).map(_.toLowerCase)
     val atoms: Set[Atom] =
-      mapCqAtoms.filter(entry => predicates.contains(entry._1.getIdentifier.toString)).values.toSet
+      mapCqAtoms.filter(entry => predicates.contains(entry._1.getIdentifier.toString.toLowerCase)).values.toSet
     val terms: Set[Term] = atoms.flatMap(a=> a.getTerms.asScala)
     // remove __<num>__
     // regular expression
