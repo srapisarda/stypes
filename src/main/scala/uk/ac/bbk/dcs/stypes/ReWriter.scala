@@ -329,13 +329,14 @@ object ReWriter {
 
       datalog.map(equalityClauseSubstitution)
     }
-
-    val removalResult: List[Clause] = removeEmptyClauses(removeDuplicate(datalog))
-
-    val predicateSubstitutionRes: List[Clause] = predicateSubstitution(removalResult)
-
-    equalitySubstitution(predicateSubstitutionRes)
-
+    if ( datalog.isEmpty) {
+      datalog
+    }
+    else {
+      val removalResult: List[Clause] = removeEmptyClauses(removeDuplicate(datalog))
+      val predicateSubstitutionRes: List[Clause] = predicateSubstitution(removalResult)
+      equalitySubstitution(predicateSubstitutionRes)
+    }
   }
 
 }

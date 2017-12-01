@@ -1,2 +1,2 @@
-Car(Y)
-Sale(X,Y,Z) 
+Car(Y).
+Sale(X,Y,Z).
