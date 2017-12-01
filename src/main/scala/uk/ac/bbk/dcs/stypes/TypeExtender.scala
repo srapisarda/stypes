@@ -73,7 +73,7 @@ case class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Vector[Ato
       val homTerm: Term = hom.createImageOf(term)
       val subTerm = substitution.createImageOf(term)
       (!(subTerm.getLabel.equals(homTerm.getLabel) || homTerm.equals(ConstantType.EPSILON))
-        || homTerm.equals(ConstantType.EPSILON) && !ReWriter.isAnonymous(subTerm))
+        || (homTerm.equals(ConstantType.EPSILON) && ReWriter.isAnonymous(subTerm)))
     }
 
     val knownVariables = getKnownVariables(atom)

@@ -95,9 +95,6 @@ class TreeDecomposition {
     val atomsRenamed = atoms.map( renameAtom  )
     Bag(atomsRenamed, terms)
 
-
-
-
   }
 
  private def renameAtom(atom:Atom) : Atom={
