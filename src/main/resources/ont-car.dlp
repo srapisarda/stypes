@@ -6,4 +6,3 @@
 purchase(X,Y,Z) :- purchased(X,Y).
 
 sale(Z,Y,X) :- purchase(X,Y,Z).
-
