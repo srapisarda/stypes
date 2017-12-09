@@ -1,6 +1,11 @@
 package uk.ac.bbk.dcs.stypes
 
 import java.io.File
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.nio.file.StandardOpenOption
+import java.io.BufferedWriter
+import java.io.FileWriter
 
 import fr.lirmm.graphik.graal.api.core.{Atom, Predicate, Rule, Term}
 import fr.lirmm.graphik.graal.core.ruleset.LinkedListRuleSet
@@ -11,6 +16,7 @@ import fr.lirmm.graphik.util.DefaultURI
 import org.scalatest.FunSpec
 
 import scala.collection.JavaConverters._
+import scala.io.{BufferedSource, Source}
 
 /**
   * Created by
@@ -277,27 +283,60 @@ class  ReWriterTest extends FunSpec{
 
     }
 
-
-//    it("should substitute x with x6 in the clause: p9[1](X6) :- a[1](X), EQ[2](X6,X) "){
-//
-//      val x6:Term=  QueryTerm( DefaultTermFactory.instance().createVariable("X6") )
-//      val x:Term=  OntologyTerm( DefaultTermFactory.instance().createVariable("X") )
-//
-//
-//
-//      val head = new DefaultAtom( new Predicate("p9", 1 )  ,  List(x6).asJava )
-//      val atomA = new DefaultAtom( new Predicate("a", 1 )  ,  List(x).asJava )
-//      val equality = Equality(x6,x)
-//      val body:List[Atom] = List(atomA, equality)
-//
-//      val clause = Clause(head, body)
-//
-//      ReWriter.generateDatalog()
-//
-//    }
-
   }
 
+  describe( "Benchmark tests cases"){
+
+     def transform2Dlp(pin:String, pout:String ): Unit ={
+      val lines = Source.fromFile(pin).getLines.toList
+
+      val datalog = lines.map( line => {
+        val sentence = line.split("->")
+        val head = sentence(1).replace("?", "").replace(".", "").trim
+        val body = sentence(0).replace("?", "").trim
+        s"$head -: $body."
+
+      })
+
+       assert( lines.length == datalog.length)
+
+      val text = datalog.mkString("\n")
+      val out = new BufferedWriter(new FileWriter(pout))
+      out.write(text)
+      out.close()
+    }
+
+    def transformCQ (pin:String, pout:String ): Unit ={
+      val cq = Source.fromFile(pin).getLines().map(_.trim).reduce(_ + _)
+      val text = cq.replace("<-", ":- ").replace("\n", " ").replace("?","").trim
+      val out = new BufferedWriter(new FileWriter(pout))
+      out.write(text)
+      out.close()
+    }
+
+
+    it("should rewrite the benchmark tgd deep.t-tgds.txt."){
+      transform2Dlp("src/main/resources/benchmark/dependencies/deep.t-tgds.txt",
+        "src/main/resources/benchmark/dependencies/deep.t-tgds.dlp")
+    }
+
+    it("should rewrite the benchmark tgd deep.st-tgds.txt."){
+
+      transform2Dlp("src/main/resources/benchmark/dependencies/deep.st-tgds.txt",
+        "src/main/resources/benchmark/dependencies/deep.st-tgds.dlp")
+    }
+
+    it("should rewrite the benchmark cq q01.txt to q01.cq"){
+
+      transformCQ("src/main/resources/benchmark/queries/q01.txt",
+        "src/main/resources/benchmark/queries/q01.cq")
+    }
+
+
+
+
+
+  }
 
 }
 
