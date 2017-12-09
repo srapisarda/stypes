@@ -1,13 +1,8 @@
 package uk.ac.bbk.dcs.stypes
 
-import java.io.File
-import java.nio.file.Files
-import java.nio.file.Paths
-import java.nio.file.StandardOpenOption
-import java.io.BufferedWriter
-import java.io.FileWriter
+import java.io.{BufferedWriter, File, FileWriter}
 
-import fr.lirmm.graphik.graal.api.core.{Atom, Predicate, Rule, Term}
+import fr.lirmm.graphik.graal.api.core.{Predicate, Rule}
 import fr.lirmm.graphik.graal.core.ruleset.LinkedListRuleSet
 import fr.lirmm.graphik.graal.core.term.DefaultTermFactory
 import fr.lirmm.graphik.graal.core.{DefaultAtom, TreeMapSubstitution}
@@ -16,7 +11,7 @@ import fr.lirmm.graphik.util.DefaultURI
 import org.scalatest.FunSpec
 
 import scala.collection.JavaConverters._
-import scala.io.{BufferedSource, Source}
+import scala.io.Source
 
 /**
   * Created by
@@ -36,6 +31,7 @@ class  ReWriterTest extends FunSpec{
   private val ontology4 = getOntology("src/main/resources/ont-4.dlp")
   private val ontology5 = getOntology("src/main/resources/ont-5.dlp")
   private val ontCar = getOntology("src/main/resources/ont-car.dlp")
+  private val ontBenchmark = getOntology("src/main/resources/benchmark/dependencies/deep.st-tgds.dlp")
 
   // 1 - Create a relational database store with HSQLDB (An InMemory Java
   // database system),
@@ -315,25 +311,22 @@ class  ReWriterTest extends FunSpec{
     }
 
 
-    it("should rewrite the benchmark tgd deep.t-tgds.txt."){
-      transform2Dlp("src/main/resources/benchmark/dependencies/deep.t-tgds.txt",
-        "src/main/resources/benchmark/dependencies/deep.t-tgds.dlp")
+//
+
+
+    it("should rewrite the query for q01 with ont of deep.st-tdgs.dlp"){
+      val test:TreeDecompositionTest  = new TreeDecompositionTest
+      val t:TreeDecomposition = test.buildTestTreeDecomposition("src/main/resources/benchmark/queries/q01.gml", "src/main/resources/benchmark/queries/q01.cq")
+
+      val result: Seq[RuleTemplate] = new ReWriter(ontCar).generateRewriting(Type(new TreeMapSubstitution()) , Splitter(t))
+      println(result)
+      //assert( result.size == 2 ) // verify this result
+
+      val datalog=  ReWriter.generateDatalog(result )
+      println(datalog.mkString(".\n"))
+      //assert(datalog.size==2)
+
     }
-
-    it("should rewrite the benchmark tgd deep.st-tgds.txt."){
-
-      transform2Dlp("src/main/resources/benchmark/dependencies/deep.st-tgds.txt",
-        "src/main/resources/benchmark/dependencies/deep.st-tgds.dlp")
-    }
-
-    it("should rewrite the benchmark cq q01.txt to q01.cq"){
-
-      transformCQ("src/main/resources/benchmark/queries/q01.txt",
-        "src/main/resources/benchmark/queries/q01.cq")
-    }
-
-
-
 
 
   }
