@@ -24,14 +24,18 @@ import scala.io.Source
 class  ReWriterTest extends FunSpec{
 
   // 0 - Create a Dlgp writer and a structure to store rules.
-  val writer = new DlgpWriter
+  private val writer = new DlgpWriter
+  private val pathToBenchmark100 = "src/main/resources/benchmark/100"
+  private val pathToBenchmark300 = "src/main/resources/benchmark/300"
   private val ontology1 = getOntology("src/main/resources/ont-1.dlp")
   private val ontology2 = getOntology("src/main/resources/ont-2.dlp")
   private val ontology3 = getOntology("src/main/resources/ont-3.dlp")
   private val ontology4 = getOntology("src/main/resources/ont-4.dlp")
   private val ontology5 = getOntology("src/main/resources/ont-5.dlp")
   private val ontCar = getOntology("src/main/resources/ont-car.dlp")
-  private val ontBenchmark = getOntology("src/main/resources/benchmark/dependencies/deep.t-tgds.dlp")
+  private val ontBenchmark100Dep = getOntology(s"$pathToBenchmark100/dependencies/deep.t-tgds.dlp")
+  private val ontBenchmark300Dep = getOntology(s"$pathToBenchmark300/dependencies/deep.t-tgds.dlp")
+  ///private val ontBenchmark300Dep = getOntology(s"${pathTo300Dep}deep.t-tgds.dlp")
 
   // 1 - Create a relational database store with HSQLDB (An InMemory Java
   // database system),
@@ -290,7 +294,7 @@ class  ReWriterTest extends FunSpec{
         val sentence = line.split("->")
         val head = sentence(1).replace("?", "").replace(".", "").trim
         val body = sentence(0).replace("?", "").trim
-        s"$head -: $body."
+        s"$head :- $body."
 
       })
 
@@ -312,13 +316,33 @@ class  ReWriterTest extends FunSpec{
 
 
 //
+    it("should rewrite the benchmark 100 tgd deep.t-tgds.txt. "){
+      transform2Dlp(s"$pathToBenchmark100/dependencies/deep.t-tgds.txt",
+        s"$pathToBenchmark100/dependencies/deep.t-tgds-test.dlp")
+    }
 
+    it("should rewrite the benchmark 100/1000 tgd deep.st-tgds.txt."){
+
+      transform2Dlp(s"$pathToBenchmark100/dependencies/deep.st-tgds.txt",
+        s"$pathToBenchmark100/dependencies/deep.st-tgds-test.dlp")
+    }
+
+    it("should rewrite the benchmark cq q01.txt to q01.cq"){
+
+      transformCQ(s"$pathToBenchmark100/queries/q01.txt",
+        s"$pathToBenchmark100/queries/q01-test.cq")
+    }
+
+    it("should rewrite the benchmark 300 tgd deep.t-tgds.txt. "){
+      transform2Dlp(s"$pathToBenchmark100/dependencies/deep.t-tgds.txt",
+        s"$pathToBenchmark300/dependencies/deep.t-tgds-test.dlp")
+    }
 
     it("should rewrite the query for q01 with ont of deep.t-tdgs.dlp"){
       val test:TreeDecompositionTest  = new TreeDecompositionTest
-      val t:TreeDecomposition = test.buildTestTreeDecomposition("src/main/resources/benchmark/queries/q01.gml", "src/main/resources/benchmark/queries/q01.cq")
+      val t:TreeDecomposition = test.buildTestTreeDecomposition(s"$pathToBenchmark100/queries/q01.gml", s"$pathToBenchmark100/queries/q01.cq")
 
-      val result: Seq[RuleTemplate] = new ReWriter(ontBenchmark).generateRewriting(Type(new TreeMapSubstitution()) , Splitter(t))
+      val result: Seq[RuleTemplate] = new ReWriter(ontBenchmark100Dep).generateRewriting(Type(new TreeMapSubstitution()) , Splitter(t))
       println(result)
       //assert( result.size == 2 ) // verify this result
 
