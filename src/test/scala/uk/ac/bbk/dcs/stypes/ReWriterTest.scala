@@ -34,6 +34,7 @@ class  ReWriterTest extends FunSpec{
   private val ontology5 = getOntology("src/main/resources/ont-5.dlp")
   private val ontCar = getOntology("src/main/resources/ont-car.dlp")
   private val ontBenchmark100Dep = getOntology(s"$pathToBenchmark100/dependencies/deep.t-tgds.dlp")
+  private val ontBenchmark100sDep = getOntology(s"$pathToBenchmark100/dependencies/deep.st-tgds.dlp")
   private val ontBenchmark300Dep = getOntology(s"$pathToBenchmark300/dependencies/deep.t-tgds.dlp")
   ///private val ontBenchmark300Dep = getOntology(s"${pathTo300Dep}deep.t-tgds.dlp")
 
@@ -344,11 +345,25 @@ class  ReWriterTest extends FunSpec{
 
       val result: Seq[RuleTemplate] = new ReWriter(ontBenchmark100Dep).generateRewriting(Type(new TreeMapSubstitution()) , Splitter(t))
       println(result)
-      //assert( result.size == 2 ) // verify this result
+      assert( result.size == 3 ) // verify this result
 
       val datalog=  ReWriter.generateDatalog(result )
       println(datalog.mkString(".\n"))
-      //assert(datalog.size==2)
+      assert(datalog.size==3)
+
+    }
+
+    it("should rewrite the query for q01 with ont of deep.st-tdgs.dlp"){
+      val test:TreeDecompositionTest  = new TreeDecompositionTest
+      val t:TreeDecomposition = test.buildTestTreeDecomposition(s"$pathToBenchmark100/queries/q01.gml", s"$pathToBenchmark100/queries/q01.cq")
+
+      val result: Seq[RuleTemplate] = new ReWriter(ontBenchmark100sDep).generateRewriting(Type(new TreeMapSubstitution()) , Splitter(t))
+      println(result)
+      assert( result.size == 94 ) // verify this result
+
+      val datalog=  ReWriter.generateDatalog(result )
+      println(datalog.mkString(".\n"))
+      //assert(datalog.size==3)
 
     }
 
@@ -358,11 +373,11 @@ class  ReWriterTest extends FunSpec{
 
       val result: Seq[RuleTemplate] = new ReWriter(ontBenchmark300Dep).generateRewriting(Type(new TreeMapSubstitution()) , Splitter(t))
       println(result)
-      //assert( result.size == 2 ) // verify this result
+      assert( result.size == 80 ) // verify this result
 
       val datalog=  ReWriter.generateDatalog(result )
       println(datalog.mkString(".\n"))
-      //assert(datalog.size==2)
+      assert(datalog.size== 11)
 
     }
 
