@@ -27,6 +27,7 @@ class  ReWriterTest extends FunSpec{
   private val writer = new DlgpWriter
   private val pathToBenchmark100 = "src/main/resources/benchmark/100"
   private val pathToBenchmark300 = "src/main/resources/benchmark/300"
+  private val pathToBenchmarkNDL_SQL = "src/main/resources/benchmark/NDL-SQL"
   private val ontology1 = getOntology("src/main/resources/ont-1.dlp")
   private val ontology2 = getOntology("src/main/resources/ont-2.dlp")
   private val ontology3 = getOntology("src/main/resources/ont-3.dlp")
@@ -36,6 +37,7 @@ class  ReWriterTest extends FunSpec{
   private val ontBenchmark100Dep = getOntology(s"$pathToBenchmark100/dependencies/deep.t-tgds.dlp")
   private val ontBenchmark100sDep = getOntology(s"$pathToBenchmark100/dependencies/deep.st-tgds.dlp")
   private val ontBenchmark300Dep = getOntology(s"$pathToBenchmark300/dependencies/deep.t-tgds.dlp")
+  private val ontBenchmarkNDL_SQL = getOntology(s"$pathToBenchmarkNDL_SQL/dependencies/15-tw.dlp")
   ///private val ontBenchmark300Dep = getOntology(s"${pathTo300Dep}deep.t-tgds.dlp")
 
   // 1 - Create a relational database store with HSQLDB (An InMemory Java
@@ -381,6 +383,23 @@ class  ReWriterTest extends FunSpec{
 
     }
 
+
+    it("should rewrite the query for queries for NDL-SQL"){
+      val test:TreeDecompositionTest  = new TreeDecompositionTest
+
+
+      assert(!ontBenchmarkNDL_SQL.isEmpty)
+//      val t:TreeDecomposition = test.buildTestTreeDecomposition(s"$pathToBenchmarkNDL_SQL/queries/queries.gml", s"$pathToBenchmarkNDL_SQL/queries/queries.cq")
+//
+//      val result: Seq[RuleTemplate] = new ReWriter(ontBenchmark300Dep).generateRewriting(Type(new TreeMapSubstitution()) , Splitter(t))
+//      println(result)
+//      assert( result.size == 80 ) // verify this result
+//
+//      val datalog=  ReWriter.generateDatalog(result )
+//      println(datalog.mkString(".\n"))
+//      assert(datalog.size== 11)
+
+    }
 
   }
 
