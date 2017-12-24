@@ -2,7 +2,7 @@ package uk.ac.bbk.dcs.stypes
 
 import java.io.{BufferedWriter, File, FileWriter}
 
-import fr.lirmm.graphik.graal.api.core.{Predicate, Rule}
+import fr.lirmm.graphik.graal.api.core.{Predicate, Rule, Term}
 import fr.lirmm.graphik.graal.core.ruleset.LinkedListRuleSet
 import fr.lirmm.graphik.graal.core.term.DefaultTermFactory
 import fr.lirmm.graphik.graal.core.{DefaultAtom, TreeMapSubstitution}
@@ -381,6 +381,38 @@ class  ReWriterTest extends FunSpec{
 
     }
 
+
+    it( "has to read a clause"){
+      val cq = Source.fromFile(s"$pathToBenchmark100/queries/q01-t.cq").getLines.reduce(_+_)
+
+      val headBody = cq.split(":-")
+
+      assert(headBody.length==2)
+      val dlgpParser = new DlgpParser(new File(s"$pathToBenchmark100/queries/q01-t.cq"))
+      val rules = dlgpParser.asScala.toList.map {
+        case rule: Rule =>
+          rule
+      }
+
+      println(rules)
+
+
+      val vertices =  rules.flatMap(r =>  r.getHead.getTerms.asScala.toList :::  r.getBody.getTerms.asScala.toList ).toSet.toList
+
+      println( vertices.map( v=> s"vertex($v)").mkString(".\n" ) )
+
+      def getpairs ( terms : List[Term] ) = for ( t1 <-  terms; t2 <-  terms; if t1 != t2 ) yield  (t1, t2)
+
+      val edges  =rules.head.getBody.asScala.toList.flatMap( a=> getpairs(a.getTerms.asScala.toList) )     // getTerms.asScala.toList
+
+
+
+//      val edges =
+//        for ( t1 <-  terms; t2 <-  terms; if t1 != t2 ) yield  (t1, t2)
+
+
+       print ( edges.map( h => s"edge$h"  ).mkString(".\n" ) )
+    }
 
   }
 
