@@ -173,7 +173,7 @@ class SparkTest01 extends FunSpec {
 
       val P_0_15 = myJoin(P_0_7, P_7_15).union(myJoin(myJoin(P_0_6, aMapped), P_8_15))
 
-      println(s"P_0_15.distinct.count: ${P_0_15.count}")
+      println(s"P_0_15.distinct.count: ${P_0_15.distinct.count}")
     }
   }
 }
