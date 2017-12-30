@@ -15,5 +15,5 @@ libraryDependencies ++= Seq( "fr.lirmm.graphik" % "graal-core" % "1.2.0"
                 ,"ch.qos.logback" % "logback-classic" % "1.2.3"
                 ,"com.tinkerpop.blueprints" % "blueprints-core" % "2.6.0"
                 ,"org.apache.spark" %% "spark-core" % "2.2.0"
-                ,"org.apache.spark" %% "spark-sql" % "2.2.0"
+               , "org.apache.spark" %% "spark-sql" % "2.2.0"
             )
