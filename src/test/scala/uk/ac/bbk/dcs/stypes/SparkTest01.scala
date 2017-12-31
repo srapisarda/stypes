@@ -308,34 +308,34 @@ class SparkTest01 extends FunSpec {
     it("should run the following SPARK SQL2RDD Test") {
 
       //<P-0-1> (?X,?Y) :- <R> (?X, ?Y) .
-      val p0_1 = r
+      lazy val p0_1 = r
 
       //<P-1-2> (?X,?Y) :- <R> (?X, ?Y) .
-      val p1_2 = r
+      lazy val p1_2 = r
 
       //<P-2-3> (?X,?Y) :- <S> (?X, ?Y) .
-      val p2_3 = s
+      lazy val p2_3 = s
 
       //<P-3-4> (?X,?Y) :- <R> (?X, ?Y) .
-      val p3_4 = r
+      lazy val p3_4 = r
 
       //<P-4-5> (?X,?Y) :- <S> (?X, ?Y) .
-      val p4_5 = s
+      lazy val p4_5 = s
 
       //<P-6-7> (?X,?Y) :- <S> (?X, ?Y) .
-      val p6_7 = s
+      lazy val p6_7 = s
 
       //<P-7-8> (?X,?Y) :- <R> (?X, ?Y) .
-      val p7_8 = r
+      lazy val p7_8 = r
 
       //<P-8-9> (?X,?Y) :- <R> (?X, ?Y) .
-      val p8_9 = r
+      lazy val p8_9 = r
 
       //<P-9-10> (?X,?Y) :- <S> (?X, ?Y) .
-      val p9_10 = s
+      lazy val p9_10 = s
 
       //<P-10-11> (?X,?Y) :- <R> (?X, ?Y) .
-      val p10_11 = r
+      lazy val p10_11 = r
 
       //<P-9-11> (?X,?X) :- <A>(?X).
       //<P-9-11> (?X,?Y) :- <P-9-10> (?X, ?Z),<P-10-11> (?Z, ?Y).
@@ -349,72 +349,71 @@ class SparkTest01 extends FunSpec {
       lazy val p0_3 = myJoin(p0_1, p1_3)
 
       //<P-3-5> (?X,?Y) :- <P-1-3> (?X, ?Y) .
-      val p3_5 = p1_3
+      lazy val p3_5 = p1_3
 
       //<P-5-7> (?X,?Y) :- <P-1-3> (?X, ?Y) .
-      val p5_7 = p1_3
+      lazy val p5_7 = p1_3
 
       //<P-3-7> (?X,?Y) :- <P-3-5> (?X, ?Z),<P-5-7> (?Z, ?Y).
       //<P-3-7> (?X,?Y) :- <P-3-4>(?X, ?Z), <A>(?Z),<P-6-7> (?Z, ?Y).
-      val p3_7 = myJoin(p3_5, p5_7).union(myJoin(myJoin(p3_4, aMapped), p6_7)).cache()
+      lazy val p3_7 = myJoin(p3_5, p5_7).union(myJoin(myJoin(p3_4, aMapped), p6_7)).cache()
 
       //<P-0-2> (?X,?Y) :- <P-0-1> (?X, ?Z),<P-1-2> (?Z, ?Y).
-      val p0_2 = myJoin(p0_1, p1_2).cache()
+      lazy val p0_2 = myJoin(p0_1, p1_2).cache()
 
       //<P-4-6> (?X,?Y) :- <P-9-11> (?X, ?Y) .
-      val p4_6 = p9_11
+      lazy val p4_6 = p9_11
 
       //<P-4-7> (?X,?Y) :- <A>(?X), <P-6-7>(?X, ?Y) .
       //<P-4-7> (?X,?Y) :- <P-4-5> (?X, ?Z),<P-5-7> (?Z, ?Y).
-      val p4_7 = myJoin(aMapped, p6_7).union( myJoin(p4_5, p5_7) ).cache()
+      lazy val p4_7 = myJoin(aMapped, p6_7).union( myJoin(p4_5, p5_7) ).cache()
 
       //<P-0-7> (?X,?Y) :- <P-0-3> (?X, ?Z),<P-3-7> (?Z, ?Y).
       //<P-0-7> (?X,?Y) :- <P-0-2>(?X, ?Z), <A>(?Z),<P-4-7> (?Z, ?Y).
-      val p0_7 = myJoin(p0_3, p3_7).union( myJoin(myJoin( p0_2, aMapped), p4_7) ).cache()
+      lazy val p0_7 = myJoin(p0_3, p3_7).union( myJoin(myJoin( p0_2, aMapped), p4_7) ).cache()
 
       //<P-7-9> (?X,?Y) :- <P-0-2> (?X, ?Y) .
-      val p7_9 = p0_2
+      lazy val p7_9 = p0_2
 
       //<P-7-11> (?X,?Y) :- <P-7-9> (?X, ?Z),<P-9-11> (?Z, ?Y).
       //<P-7-11> (?X,?Y) :- <P-7-8>(?X, ?Z), <B>(?Z),<P-10-11> (?Z, ?Y).
-      val p7_11 = myJoin(p7_9, p9_11).union( myJoin( myJoin( p7_8, bMapped ), p10_11 )).cache()
+      lazy val p7_11 = myJoin(p7_9, p9_11).union( myJoin( myJoin( p7_8, bMapped ), p10_11 )).cache()
 
       //<P-8-11> (?X,?Y) :- <P-8-9> (?X, ?Z),<P-9-11> (?Z, ?Y).
       //<P-8-11> (?X,?Y) :- <B>(?X),<P-10-11>(?X, ?Y).
-      val p8_11 =  myJoin( p8_9, p9_11).union( myJoin(bMapped, p10_11) ).cache()
+      lazy val p8_11 =  myJoin( p8_9, p9_11).union( myJoin(bMapped, p10_11) ).cache()
 
       //<P-3-6> (?X,?Y) :- <P-8-11> (?X, ?Y) .
-      val p3_6 = p8_11
+      lazy val p3_6 = p8_11
 
       //<P-13-15> (?X,?Y) :- <P-9-11> (?X, ?Y) .
-      val p13_15 = p9_11
+      lazy val p13_15 = p9_11
 
       //<P-11-13> (?X,?Y) :- <P-1-3> (?X, ?Y) .
-      val p11_13 = p1_3
+      lazy val p11_13 = p1_3
 
       //<P-11-15> (?X,?Y) :- <P-11-13> (?X, ?Z),<P-13-15> (?Z, ?Y).
-      val p11_15 =  myJoin(p11_13, p13_15).cache()
+      lazy val p11_15 =  myJoin(p11_13, p13_15).cache()
 
       //<P-7-15> (?X,?Y) :- <P-7-11> (?X, ?Z),<P-11-15> (?Z, ?Y).
-      val p7_15 = myJoin( p7_11, p11_15 ).cache()
+      lazy val p7_15 = myJoin( p7_11, p11_15 ).cache()
 
       //<P-8-15> (?X,?Y) :- <P-8-11> (?X, ?Z),<P-11-15> (?Z, ?Y).
-      val p8_15 = myJoin(p8_11, p11_15).cache()
+      lazy val p8_15 = myJoin(p8_11, p11_15).cache()
 
       //<P-0-6> (?X,?Y) :- <P-0-3> (?X, ?Z),<P-3-6> (?Z, ?Y).
       //<P-0-6> (?X,?Y) :- <P-0-2>(?X, ?Z), <A>(?Z),<P-4-6> (?Z, ?Y).
-      val p0_6 = myJoin(p0_3, p3_6).union(myJoin(myJoin(p0_2, aMapped), p4_6))
+      lazy val p0_6 = myJoin(p0_3, p3_6).union(myJoin(myJoin(p0_2, aMapped), p4_6))
 
       //<P-0-15> (?X,?Y) :- <P-0-7> (?X, ?Z),<P-7-15> (?Z, ?Y).
       //<P-0-15> (?X,?Y) :- <P-0-6>(?X, ?Z), <A>(?Z),<P-8-15> (?Z, ?Y).
-      val p0_15 = myJoin(p0_7, p7_15).union(
+      lazy val p0_15 = myJoin(p0_7, p7_15).union(
               myJoin( myJoin(p0_6, aMapped), p8_15 ))
 
-      val count =  p0_15.distinct.count
+      lazy val count =  p0_15.distinct.count
       println(s"p0_15.distinct.count: $count")
 
       assert( 12165 == count)
     }
-
   }
 }
