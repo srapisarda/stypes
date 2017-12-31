@@ -10,7 +10,7 @@ import org.scalatest.FunSpec
   */
 class SparkTest01 extends FunSpec {
   private val pathToBenchmarkNDL_SQL = "src/main/resources/benchmark/NDL-SQL"
-  private val config = new SparkConf().setAppName("SparkTest03").setMaster("local[2]").set("spark.executor.memory", "1g")
+  private val config = new SparkConf().setAppName("SparkTest03").setMaster("local[4]").set("spark.executor.memory", "1g")
   private val sc = SparkContext.getOrCreate(config)
 
   sc.setCheckpointDir(s"$pathToBenchmarkNDL_SQL/data")
@@ -346,7 +346,7 @@ class SparkTest01 extends FunSpec {
       lazy val p1_3 = bMapped.union(myJoin(p1_2, p2_3)).cache()
 
       //<P-0-3> (?X,?Y) :- <P-0-1> (?X, ?Z),<P-1-3> (?Z, ?Y).
-      lazy val p0_3 = myJoin(p0_1, p1_3)
+      lazy val p0_3 = myJoin(p0_1, p1_3).cache()
 
       //<P-3-5> (?X,?Y) :- <P-1-3> (?X, ?Y) .
       lazy val p3_5 = p1_3
@@ -403,7 +403,7 @@ class SparkTest01 extends FunSpec {
 
       //<P-0-6> (?X,?Y) :- <P-0-3> (?X, ?Z),<P-3-6> (?Z, ?Y).
       //<P-0-6> (?X,?Y) :- <P-0-2>(?X, ?Z), <A>(?Z),<P-4-6> (?Z, ?Y).
-      lazy val p0_6 = myJoin(p0_3, p3_6).union(myJoin(myJoin(p0_2, aMapped), p4_6))
+      lazy val p0_6 = myJoin(p0_3, p3_6).union(myJoin(myJoin(p0_2, aMapped), p4_6)).cache()
 
       //<P-0-15> (?X,?Y) :- <P-0-7> (?X, ?Z),<P-7-15> (?Z, ?Y).
       //<P-0-15> (?X,?Y) :- <P-0-6>(?X, ?Z), <A>(?Z),<P-8-15> (?Z, ?Y).

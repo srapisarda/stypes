@@ -369,7 +369,7 @@ class  ReWriterTest extends FunSpec{
 
     }
 
-    it("should rewrite the query for queries  with 300 ont of deep.t-tdgs.dlp"){
+    it("should rewrite  for queries  with 300 ont of deep.t-tdgs.dlp"){
       val test:TreeDecompositionTest  = new TreeDecompositionTest
       val t:TreeDecomposition = test.buildTestTreeDecomposition(s"$pathToBenchmark300/queries/queries.gml", s"$pathToBenchmark300/queries/queries.cq")
 
