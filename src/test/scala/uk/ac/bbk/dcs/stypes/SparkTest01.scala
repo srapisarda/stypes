@@ -305,7 +305,7 @@ class SparkTest01 extends FunSpec {
 
 
 
-    it("should run the following SPARK SQL2RDD Test") {
+    ignore("should run the following SPARK SQL2RDD Test") {
 
       //<P-0-1> (?X,?Y) :- <R> (?X, ?Y) .
       lazy val p0_1 = r
@@ -408,7 +408,7 @@ class SparkTest01 extends FunSpec {
       //<P-0-15> (?X,?Y) :- <P-0-7> (?X, ?Z),<P-7-15> (?Z, ?Y).
       //<P-0-15> (?X,?Y) :- <P-0-6>(?X, ?Z), <A>(?Z),<P-8-15> (?Z, ?Y).
       lazy val p0_15 = myJoin(p0_7, p7_15).union(
-              myJoin( myJoin(p0_6, aMapped), p8_15 ))
+              myJoin( myJoin(p0_6, aMapped), p8_15 )).cache()
 
       lazy val count =  p0_15.distinct.count
       println(s"p0_15.distinct.count: $count")
