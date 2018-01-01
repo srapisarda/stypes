@@ -2,6 +2,7 @@ package uk.ac.bbk.dcs.stypes
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.types.{DataTypes, Metadata, StructField, StructType}
+import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.FunSpec
 
@@ -10,7 +11,7 @@ import org.scalatest.FunSpec
   */
 class SparkTest01 extends FunSpec {
   private val pathToBenchmarkNDL_SQL = "src/main/resources/benchmark/NDL-SQL"
-  private val config = new SparkConf().setAppName("SparkTest03").setMaster("local[4]").set("spark.executor.memory", "1g")
+  private val config = new SparkConf().setAppName("SparkTest03").setMaster("local[4]") // .set("spark.driver.memory", "4g") // .set("spark.executor.memory", "1g")
   private val sc = SparkContext.getOrCreate(config)
 
   sc.setCheckpointDir(s"$pathToBenchmarkNDL_SQL/data")
@@ -21,24 +22,24 @@ class SparkTest01 extends FunSpec {
     line => {
       val row = line.split(',')
       (row(0), row(1))
-    }).cache()
+    }).persist(StorageLevel.MEMORY_AND_DISK)
   private val s = sc.textFile(s"$pathToBenchmarkNDL_SQL/data/20mb-s.txt").map(
     line => {
       val row = line.split(',')
       (row(0), row(1))
-    }).cache()
+    }).persist(StorageLevel.MEMORY_AND_DISK)
   private val r50 = sc.textFile(s"$pathToBenchmarkNDL_SQL/data/20mb-r-50.txt").map(
     line => {
       val row = line.split(',')
       (row(0), row(1))
-    }).cache()
+    }).persist(StorageLevel.MEMORY_AND_DISK)
 
   private def myJoin(firstRelation: org.apache.spark.rdd.RDD[(String, String)],
                      secondRelation: org.apache.spark.rdd.RDD[(String, String)]) = {
     firstRelation.map(t => (t._2, t._1)).join(secondRelation).values
   }
 
-  describe("ndl rewriting") {
+  describe("Executing SPARK NDL rewriting") {
 
     it("should make a self join SPARK RDD Test ") {
       //P_7_9(X,Y) :- R(X,Z), R(Z,Y).
@@ -62,9 +63,9 @@ class SparkTest01 extends FunSpec {
           s"P_5_7(X,X) :- B(X).\n" +
         s"count: ${P_5_7.count}")
     }
-    lazy val aMapped =  a.map(x => (x, x)).cache()
+    lazy val aMapped =  a.map(x => (x, x)).persist(StorageLevel.MEMORY_AND_DISK)
 
-    lazy val bMapped = b.map(x => (x, x)).cache()
+    lazy val bMapped = b.map(x => (x, x)).persist(StorageLevel.MEMORY_AND_DISK)
 
 
     it("should run the following SPARK SQL Test") {
@@ -339,14 +340,14 @@ class SparkTest01 extends FunSpec {
 
       //<P-9-11> (?X,?X) :- <A>(?X).
       //<P-9-11> (?X,?Y) :- <P-9-10> (?X, ?Z),<P-10-11> (?Z, ?Y).
-      lazy val p9_11 = aMapped.union(myJoin(p9_10, p10_11)).cache()
+      lazy val p9_11 = aMapped.union(myJoin(p9_10, p10_11)).persist(StorageLevel.MEMORY_AND_DISK)
 
       //<P-1-3> (?X,?X) :- <B>(?X).
       //<P-1-3> (?X,?Y) :- <P-1-2> (?X, ?Z),<P-2-3> (?Z, ?Y).
-      lazy val p1_3 = bMapped.union(myJoin(p1_2, p2_3)).cache()
+      lazy val p1_3 = bMapped.union(myJoin(p1_2, p2_3)).persist(StorageLevel.MEMORY_AND_DISK)
 
       //<P-0-3> (?X,?Y) :- <P-0-1> (?X, ?Z),<P-1-3> (?Z, ?Y).
-      lazy val p0_3 = myJoin(p0_1, p1_3).cache()
+      lazy val p0_3 = myJoin(p0_1, p1_3).persist(StorageLevel.MEMORY_AND_DISK)
 
       //<P-3-5> (?X,?Y) :- <P-1-3> (?X, ?Y) .
       lazy val p3_5 = p1_3
@@ -356,32 +357,32 @@ class SparkTest01 extends FunSpec {
 
       //<P-3-7> (?X,?Y) :- <P-3-5> (?X, ?Z),<P-5-7> (?Z, ?Y).
       //<P-3-7> (?X,?Y) :- <P-3-4>(?X, ?Z), <A>(?Z),<P-6-7> (?Z, ?Y).
-      lazy val p3_7 = myJoin(p3_5, p5_7).union(myJoin(myJoin(p3_4, aMapped), p6_7)).cache()
+      lazy val p3_7 = myJoin(p3_5, p5_7).union(myJoin(myJoin(p3_4, aMapped), p6_7)).persist(StorageLevel.MEMORY_AND_DISK)
 
       //<P-0-2> (?X,?Y) :- <P-0-1> (?X, ?Z),<P-1-2> (?Z, ?Y).
-      lazy val p0_2 = myJoin(p0_1, p1_2).cache()
+      lazy val p0_2 = myJoin(p0_1, p1_2).persist(StorageLevel.MEMORY_AND_DISK)
 
       //<P-4-6> (?X,?Y) :- <P-9-11> (?X, ?Y) .
       lazy val p4_6 = p9_11
 
       //<P-4-7> (?X,?Y) :- <A>(?X), <P-6-7>(?X, ?Y) .
       //<P-4-7> (?X,?Y) :- <P-4-5> (?X, ?Z),<P-5-7> (?Z, ?Y).
-      lazy val p4_7 = myJoin(aMapped, p6_7).union( myJoin(p4_5, p5_7) ).cache()
+      lazy val p4_7 = myJoin(aMapped, p6_7).union( myJoin(p4_5, p5_7) ).persist(StorageLevel.MEMORY_AND_DISK)
 
       //<P-0-7> (?X,?Y) :- <P-0-3> (?X, ?Z),<P-3-7> (?Z, ?Y).
       //<P-0-7> (?X,?Y) :- <P-0-2>(?X, ?Z), <A>(?Z),<P-4-7> (?Z, ?Y).
-      lazy val p0_7 = myJoin(p0_3, p3_7).union( myJoin(myJoin( p0_2, aMapped), p4_7) ).cache()
+      lazy val p0_7 = myJoin(p0_3, p3_7).union( myJoin(myJoin( p0_2, aMapped), p4_7) ).persist(StorageLevel.MEMORY_AND_DISK)
 
       //<P-7-9> (?X,?Y) :- <P-0-2> (?X, ?Y) .
       lazy val p7_9 = p0_2
 
       //<P-7-11> (?X,?Y) :- <P-7-9> (?X, ?Z),<P-9-11> (?Z, ?Y).
       //<P-7-11> (?X,?Y) :- <P-7-8>(?X, ?Z), <B>(?Z),<P-10-11> (?Z, ?Y).
-      lazy val p7_11 = myJoin(p7_9, p9_11).union( myJoin( myJoin( p7_8, bMapped ), p10_11 )).cache()
+      lazy val p7_11 = myJoin(p7_9, p9_11).union( myJoin( myJoin( p7_8, bMapped ), p10_11 )).persist(StorageLevel.MEMORY_AND_DISK)
 
       //<P-8-11> (?X,?Y) :- <P-8-9> (?X, ?Z),<P-9-11> (?Z, ?Y).
       //<P-8-11> (?X,?Y) :- <B>(?X),<P-10-11>(?X, ?Y).
-      lazy val p8_11 =  myJoin( p8_9, p9_11).union( myJoin(bMapped, p10_11) ).cache()
+      lazy val p8_11 =  myJoin( p8_9, p9_11).union( myJoin(bMapped, p10_11) ).persist(StorageLevel.MEMORY_AND_DISK)
 
       //<P-3-6> (?X,?Y) :- <P-8-11> (?X, ?Y) .
       lazy val p3_6 = p8_11
@@ -393,22 +394,22 @@ class SparkTest01 extends FunSpec {
       lazy val p11_13 = p1_3
 
       //<P-11-15> (?X,?Y) :- <P-11-13> (?X, ?Z),<P-13-15> (?Z, ?Y).
-      lazy val p11_15 =  myJoin(p11_13, p13_15).cache()
+      lazy val p11_15 =  myJoin(p11_13, p13_15).persist(StorageLevel.MEMORY_AND_DISK)
 
       //<P-7-15> (?X,?Y) :- <P-7-11> (?X, ?Z),<P-11-15> (?Z, ?Y).
-      lazy val p7_15 = myJoin( p7_11, p11_15 ).cache()
+      lazy val p7_15 = myJoin( p7_11, p11_15 ).persist(StorageLevel.MEMORY_AND_DISK)
 
       //<P-8-15> (?X,?Y) :- <P-8-11> (?X, ?Z),<P-11-15> (?Z, ?Y).
-      lazy val p8_15 = myJoin(p8_11, p11_15).cache()
+      lazy val p8_15 = myJoin(p8_11, p11_15).persist(StorageLevel.MEMORY_AND_DISK)
 
       //<P-0-6> (?X,?Y) :- <P-0-3> (?X, ?Z),<P-3-6> (?Z, ?Y).
       //<P-0-6> (?X,?Y) :- <P-0-2>(?X, ?Z), <A>(?Z),<P-4-6> (?Z, ?Y).
-      lazy val p0_6 = myJoin(p0_3, p3_6).union(myJoin(myJoin(p0_2, aMapped), p4_6)).cache()
+      lazy val p0_6 = myJoin(p0_3, p3_6).union(myJoin(myJoin(p0_2, aMapped), p4_6)).persist(StorageLevel.MEMORY_AND_DISK)
 
       //<P-0-15> (?X,?Y) :- <P-0-7> (?X, ?Z),<P-7-15> (?Z, ?Y).
       //<P-0-15> (?X,?Y) :- <P-0-6>(?X, ?Z), <A>(?Z),<P-8-15> (?Z, ?Y).
       lazy val p0_15 = myJoin(p0_7, p7_15).union(
-              myJoin( myJoin(p0_6, aMapped), p8_15 )).cache()
+              myJoin( myJoin(p0_6, aMapped), p8_15 )).persist(StorageLevel.MEMORY_AND_DISK)
 
       lazy val count =  p0_15.distinct.count
       println(s"p0_15.distinct.count: $count")
