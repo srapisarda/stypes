@@ -1,9 +1,11 @@
 package uk.ac.bbk.dcs.stypes
 
 
+import java.util.UUID
+
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.scalatest.FunSpec
 import org.apache.flink.api.scala._
+import org.scalatest.FunSpec
 
 /**
   * Created by salvo on 01/01/2018.
@@ -48,7 +50,7 @@ class FlinkTest01 extends FunSpec {
 
   describe("Flink TESTS") {
 
-    it("should read execute the rewriting  selected") {
+    it("should read execute the rewriting 01 selected") {
 
       //<P-0-1> (?X,?Y) :- <R> (?X, ?Y) .
       lazy val p0_1 = r
@@ -154,11 +156,16 @@ class FlinkTest01 extends FunSpec {
       lazy val p0_15 = myJoin(p0_7, p7_15).union(
         myJoin( myJoin(p0_6, a), p8_15 ))
 
+      val p0_15_distinct = p0_15.distinct()
 
-      val count = p0_15.distinct.count
+      p0_15_distinct.writeAsCsv(s"$pathToBenchmarkNDL_SQL/data/rewriting-results-01-${UUID.randomUUID()}")
+
+      val count = p0_15_distinct.count
       println(s"p0_15.distinct.count: $count")
 
       assert( 12165 == count)
+
+
     }
 
   }
