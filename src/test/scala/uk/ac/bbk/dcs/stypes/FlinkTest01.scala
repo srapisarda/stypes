@@ -5,6 +5,7 @@ import java.util.UUID
 
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.scala._
+import org.apache.flink.configuration.Configuration
 import org.scalatest.FunSpec
 
 /**
@@ -13,11 +14,23 @@ import org.scalatest.FunSpec
 class FlinkTest01 extends FunSpec {
 
   private val pathToBenchmarkNDL_SQL = "src/main/resources/benchmark/NDL-SQL"
-  private val env = ExecutionEnvironment.getExecutionEnvironment
 
-  private implicit val typeLongInfo = TypeInformation.of(classOf[(Long, Long)])
+  val conf = new Configuration()
+  //conf.setInteger("taskmanager.network.numberOfBuffers", 16000)
+  conf.setInteger("taskmanager.numberOfTaskSlots",4)
 
-  private implicit val typeRelation2Info = TypeInformation.of(classOf[Relation2])
+  private val env = ExecutionEnvironment.createLocalEnvironment(conf)
+
+  env.setParallelism(4)
+
+
+  //private val env = ExecutionEnvironment.§getExecutionEnvironment
+
+
+
+  private implicit val typeLongInfo: TypeInformation[(Long, Long)] = TypeInformation.of(classOf[(Long, Long)])
+
+  private implicit val typeRelation2Info: TypeInformation[Relation2] = TypeInformation.of(classOf[Relation2])
 
   case class Relation2( x:Long, y:Long )
 
