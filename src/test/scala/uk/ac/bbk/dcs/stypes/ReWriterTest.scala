@@ -6,7 +6,7 @@ import fr.lirmm.graphik.graal.api.core.{Predicate, Rule, Term}
 import fr.lirmm.graphik.graal.core.ruleset.LinkedListRuleSet
 import fr.lirmm.graphik.graal.core.term.DefaultTermFactory
 import fr.lirmm.graphik.graal.core.{DefaultAtom, TreeMapSubstitution}
-import fr.lirmm.graphik.graal.io.dlp.{DlgpParser, DlgpWriter}
+import fr.lirmm.graphik.graal.io.dlp.DlgpParser
 import fr.lirmm.graphik.util.DefaultURI
 import org.scalatest.FunSpec
 
@@ -24,7 +24,6 @@ import scala.io.Source
 class  ReWriterTest extends FunSpec{
 
   // 0 - Create a Dlgp writer and a structure to store rules.
-  private val writer = new DlgpWriter
   private val pathToBenchmark100 = "src/main/resources/benchmark/100"
   private val pathToBenchmark300 = "src/main/resources/benchmark/300"
   private val pathToBenchmarkNDL_SQL = "src/main/resources/benchmark/NDL-SQL"
@@ -110,16 +109,15 @@ class  ReWriterTest extends FunSpec{
 
     it("should contains at least 2 atoms") {
        val atoms =  ReWriter.makeGeneratingAtoms( ontology1)
-        assert(atoms.size == 2)
-//       println (atoms)
-
+        assert(atoms.lengthCompare(2) == 0)
+//      println (atoms)
     }
 
     it("should create the canonical models from 2 atoms") {
         val canonicalModels = ReWriter.canonicalModelList(ontology1)
-        assert(canonicalModels.length == 2)
+        assert(canonicalModels.lengthCompare(2) == 0)
         canonicalModels.foreach( atomSet => assert(atomSet.asScala.size == 4))
-//        println(canonicalModels)
+//      println(canonicalModels)
     }
 
 
@@ -129,7 +127,7 @@ class  ReWriterTest extends FunSpec{
       val s = getMockTypeEpsilon
       val atoms = new ReWriter(ontology1).makeAtoms( t.getRoot,s)
       println(atoms)
-      assert( atoms.length==1 )
+      assert( atoms.lengthCompare(1) == 0 )
     }
 
     it("should get the anonymous "){
@@ -138,7 +136,7 @@ class  ReWriterTest extends FunSpec{
       val s = getMockTypeAnonymous
       val atoms = new ReWriter(ontology1).makeAtoms( t.getRoot,s)
       println(atoms)
-      assert( atoms.length==1 )
+      assert( atoms.lengthCompare(1) == 0 )
 
     }
 
@@ -148,7 +146,7 @@ class  ReWriterTest extends FunSpec{
       val s = getMockTypeMixed
       val atoms = new ReWriter(ontology1).makeAtoms( t.getRoot,s)
       println(atoms)
-      assert( atoms.length==2 )
+      assert( atoms.lengthCompare(2) == 0 )
     }
 
     it("should rewrite the query for ont-1"){
@@ -157,7 +155,7 @@ class  ReWriterTest extends FunSpec{
 
       val result = new ReWriter(ontology1).generateRewriting(Type(new TreeMapSubstitution()) , Splitter(t))
       println(result)
-      assert( result.size == 7 )
+      assert( result.lengthCompare(7) == 0 )
     }
 
 
@@ -167,11 +165,11 @@ class  ReWriterTest extends FunSpec{
 
       val result: Seq[RuleTemplate] = new ReWriter(ontology2).generateRewriting(Type(new TreeMapSubstitution()) , Splitter(t))
       println(result)
-      assert( result.size == 20 ) // verify this result
+      assert( result.lengthCompare(20) == 0 ) // verify this result
 
       val datalog: List[Clause] =  ReWriter.generateDatalog(result )
       println(s"${datalog.mkString(".\n")}.")
-      assert(datalog.size==2)
+      assert(datalog.lengthCompare(2) == 0)
     }
 
 
@@ -182,11 +180,11 @@ class  ReWriterTest extends FunSpec{
 
       val result: Seq[RuleTemplate] = new ReWriter(ontology2).generateRewriting(Type(new TreeMapSubstitution()) , Splitter(t))
       println(result)
-      assert( result.size == 4 ) // verify this result
+      assert( result.lengthCompare(4) == 0 ) // verify this result
 
       val datalog=  ReWriter.generateDatalog(result )
       println(datalog.mkString(".\n"))
-      assert(datalog.size==3)
+      assert(datalog.lengthCompare(3) == 0)
     }
 
 
@@ -196,11 +194,11 @@ class  ReWriterTest extends FunSpec{
 
       val result: Seq[RuleTemplate] = new ReWriter(ontology3).generateRewriting(Type(new TreeMapSubstitution()) , Splitter(t))
       println(result)
-      assert( result.size == 5 ) // verify this result
+      assert( result.lengthCompare(5) == 0 ) // verify this result
 
       val datalog=  ReWriter.generateDatalog(result )
       println(datalog.mkString(".\n"))
-      assert(datalog.size==5)
+      assert(datalog.lengthCompare(5) == 0)
 
     }
 
@@ -210,11 +208,11 @@ class  ReWriterTest extends FunSpec{
 
       val result: Seq[RuleTemplate] = new ReWriter(ontology4).generateRewriting(Type(new TreeMapSubstitution()) , Splitter(t))
       println(result)
-      assert( result.size == 5 ) // verify this result
+      assert( result.lengthCompare(5) == 0 ) // verify this result
 
       val datalog=  ReWriter.generateDatalog(result )
       println(datalog.mkString(".\n"))
-      assert(datalog.size==7)
+      assert(datalog.lengthCompare(7) == 0)
 
     }
 
@@ -239,11 +237,11 @@ class  ReWriterTest extends FunSpec{
 
       val result: Seq[RuleTemplate] = new ReWriter(ontology5).generateRewriting(Type(new TreeMapSubstitution()) , Splitter(t))
       println(result)
-      assert( result.size == 63 ) // verify this result
+      assert( result.lengthCompare(63) == 0 ) // verify this result
 
       val datalog=  ReWriter.generateDatalog(result )
       println(datalog.mkString(".\n"))
-      assert(datalog.size==13)
+      assert(datalog.lengthCompare(13) == 0)
 
     }
 
@@ -254,11 +252,11 @@ class  ReWriterTest extends FunSpec{
 
       val result: Seq[RuleTemplate] = new ReWriter(ontCar).generateRewriting(Type(new TreeMapSubstitution()) , Splitter(t))
       println(result)
-      assert( result.size == 2 ) // verify this result
+      assert( result.lengthCompare(2) == 0 ) // verify this result
 
       val datalog=  ReWriter.generateDatalog(result )
       println(datalog.mkString(".\n"))
-      assert(datalog.size==2)
+      assert(datalog.lengthCompare(2) == 0)
 
     }
 
@@ -301,7 +299,7 @@ class  ReWriterTest extends FunSpec{
 
       })
 
-       assert( lines.length == datalog.length)
+       assert( lines.lengthCompare(datalog.length) == 0)
 
       val text = datalog.mkString("\n")
       val out = new BufferedWriter(new FileWriter(pout))
@@ -343,25 +341,27 @@ class  ReWriterTest extends FunSpec{
 
     it("should rewrite the query for q01 with ont of deep.t-tdgs.dlp"){
       val test:TreeDecompositionTest  = new TreeDecompositionTest
-      val t:TreeDecomposition = test.buildTestTreeDecomposition(s"$pathToBenchmark100/queries/q01.gml", s"$pathToBenchmark100/queries/q01.cq")
+      val t:TreeDecomposition = test.buildTestTreeDecomposition(s"$pathToBenchmark100/queries/q01.gml",
+        s"$pathToBenchmark100/queries/q01.cq")
 
       val result: Seq[RuleTemplate] = new ReWriter(ontBenchmark100Dep).generateRewriting(Type(new TreeMapSubstitution()) , Splitter(t))
       println(result)
-      assert( result.size == 3 ) // verify this result
+      assert( result.lengthCompare(3) == 0 ) // verify this result
 
       val datalog=  ReWriter.generateDatalog(result )
       println(datalog.mkString(".\n"))
-      assert(datalog.size==3)
+      assert(datalog.lengthCompare(3) == 0)
 
     }
 
     it("should rewrite the query for q01 with ont of deep.st-tdgs.dlp"){
       val test:TreeDecompositionTest  = new TreeDecompositionTest
-      val t:TreeDecomposition = test.buildTestTreeDecomposition(s"$pathToBenchmark100/queries/q01.gml", s"$pathToBenchmark100/queries/q01.cq")
+      val t:TreeDecomposition = test.buildTestTreeDecomposition(s"$pathToBenchmark100/queries/q01.gml",
+        s"$pathToBenchmark100/queries/q01.cq")
 
       val result: Seq[RuleTemplate] = new ReWriter(ontBenchmark100sDep).generateRewriting(Type(new TreeMapSubstitution()) , Splitter(t))
       println(result)
-      assert( result.size == 94 ) // verify this result
+      assert( result.lengthCompare(94) == 0 ) // verify this result
 
       val datalog=  ReWriter.generateDatalog(result )
       println(datalog.mkString(".\n"))
@@ -371,25 +371,27 @@ class  ReWriterTest extends FunSpec{
 
     it("should rewrite  for queries  with 300 ont of deep.t-tdgs.dlp"){
       val test:TreeDecompositionTest  = new TreeDecompositionTest
-      val t:TreeDecomposition = test.buildTestTreeDecomposition(s"$pathToBenchmark300/queries/queries.gml", s"$pathToBenchmark300/queries/queries.cq")
+      val t:TreeDecomposition = test.buildTestTreeDecomposition(s"$pathToBenchmark300/queries/queries.gml",
+        s"$pathToBenchmark300/queries/queries.cq")
 
       val result: Seq[RuleTemplate] = new ReWriter(ontBenchmark300Dep).generateRewriting(Type(new TreeMapSubstitution()) , Splitter(t))
       println(result)
-      assert( result.size == 80 ) // verify this result
+      assert( result.lengthCompare(80) == 0 ) // verify this result
 
       val datalog=  ReWriter.generateDatalog(result )
       println(datalog.mkString(".\n"))
-      assert(datalog.size== 11)
+      assert(datalog.lengthCompare(11) == 0)
 
     }
 
 
     it("should rewrite the query for queries for NDL-SQL"){
-      val test:TreeDecompositionTest  = new TreeDecompositionTest
+//      val test:TreeDecompositionTest  = new TreeDecompositionTest
 
 
       assert(!ontBenchmarkNDL_SQL.isEmpty)
-//      val t:TreeDecomposition = test.buildTestTreeDecomposition(s"$pathToBenchmarkNDL_SQL/queries/queries.gml", s"$pathToBenchmarkNDL_SQL/queries/queries.cq")
+//      val t:TreeDecomposition = test.buildTestTreeDecomposition(s"$pathToBenchmarkNDL_SQL/queries/queries.gml",
+      // s"$pathToBenchmarkNDL_SQL/queries/queries.cq")
 //
 //      val result: Seq[RuleTemplate] = new ReWriter(ontBenchmark300Dep).generateRewriting(Type(new TreeMapSubstitution()) , Splitter(t))
 //      println(result)
@@ -416,7 +418,7 @@ class  ReWriterTest extends FunSpec{
       println(rules)
 
 
-      val vertices =  rules.flatMap(r =>  r.getHead.getTerms.asScala.toList :::  r.getBody.getTerms.asScala.toList ).toSet.toList
+      val vertices =  rules.flatMap(r => r.getHead.getTerms.asScala.toList ::: r.getBody.getTerms.asScala.toList).distinct
 
       println( vertices.map( v=> s"vertex($v)").mkString(".\n" ) )
 
