@@ -56,9 +56,8 @@ class FlinkTest01 extends FunSpec {
 
 
   private def myJoin( firstRelation: DataSet[(String, String)], secondRelation: DataSet[(String, String)] ) ={
-    firstRelation.join(secondRelation).where(_._2).equalTo(_._1).map(p=> (p._1._1, p._2._2 ))
+    firstRelation.join(secondRelation).where(1).equalTo(0).map(p=> (p._1._1, p._2._2 ))
   }
-
 
 
   describe("Flink TESTS") {
