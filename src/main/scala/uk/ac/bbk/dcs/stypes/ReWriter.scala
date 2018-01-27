@@ -371,16 +371,47 @@ object ReWriter {
 
   def generateFlinkScript(datalog: List[Clause]): String = {
     val grouped = datalog.groupBy(p => p.head.getPredicate)
-    grouped.map(clause => s"lazy val ${clause._1.getIdentifier} = ${getScriptFromSameHeadClauses(clause._2)}").mkString("\n")
+    grouped.map(clause => s"lazy val ${clause._1.getIdentifier}_v_ = ${getScriptFromSameHeadClauses(clause._2)}")
+      .mkString("\n")
   }
 
-  def getScriptFromSameHeadClauses(datalog: List[Clause]): String = {
+  def getScriptFromSameHeadClauses(clauses: List[Clause]): String = {
+    // TODO IMPLEMENT this code
 
-    def commonTerms(a: Clause, b: Clause): (List[Int], List[Int]) = (List(1), List(1)) // TODO implementation
+    def commonTerms(atom1: Atom, atom2: Atom): (List[Int], List[Int]) = (List(0), List(1)) // TODO implementation
 
-    val clausePairs = for (d1 <- datalog; d2 <- datalog; if d1 != d2) yield ((d1, d2), commonTerms(d1, d2))
-    clausePairs.map(pair => s"${pair._1._1.head.getPredicate.getIdentifier}.join(${pair._1._1.head.getPredicate.getIdentifier})" +
-      s".where(${pair._2._1.mkString(",")}).equalTo(${pair._2._2.mkString(",")}").mkString(".")
+    def getAtomsJoinPairs(clause: Clause) = {
+
+
+      val tuples = for (atom1 <- clause.body; atom2 <- clause.body; if atom1 != atom2 )
+        yield ((atom1, atom2), commonTerms(atom1, atom2))
+      tuples
+    }
+
+    def getUnionScript(clauses: List[Clause], acc: List[String]): List[String] = clauses match {
+      case List() => acc.reverse
+      case clause :: xs =>
+        val atomsJoinPairs = getAtomsJoinPairs(clause)
+        if (atomsJoinPairs.isEmpty && clause.body.nonEmpty)
+          getUnionScript(xs, clause.body.head.getPredicate.getIdentifier.toString:: acc)
+        else {
+          // TODO !!!  this should be a cumulative function composition such as:
+          // ((atom1.join(atom2).where...).join(atom3).where(..)..).join(....
+          val items = atomsJoinPairs.map(pair =>
+            if (pair._2._1.nonEmpty) {
+              s"${pair._1._1.getPredicate.getIdentifier}.join(${pair._1._2.getPredicate.getIdentifier})" +
+                s".where(${pair._2._1.mkString(",")}).equalTo(${pair._2._2.mkString(",")})"
+
+            } else {
+              ""
+            })
+          getUnionScript(xs, items.mkString(".") :: acc)
+        }
+
+
+    }
+
+    getUnionScript(clauses, List()).mkString("\nunion\n")
 
   }
 
@@ -461,7 +492,9 @@ class ReWriter(ontology: RuleSet) {
           //val sameAreEqual = canonicalModel.asScala.toList.map(atom => isMixed(atom.getTerms().asScala.toList) )
 
           val expression: Seq[Seq[(Term, Term)]] = canonicalModel.asScala.toList
-            .filter(atom => atom.getPredicate.equals(currentAtom.getPredicate) && isMixed(atom.getTerms().asScala.toList) && currentAtomCompatible(currentAtom, atom))
+            .filter(atom => atom.getPredicate.equals(currentAtom.getPredicate)
+              && isMixed(atom.getTerms().asScala.toList)
+              && currentAtomCompatible(currentAtom, atom))
             .map(atom => getEqualities(currentAtom.getTerms.asScala.toList, atom.getTerms.asScala.toList, List()))
 
           visitBagAtoms(xs, arrayGeneratingAtoms(index) :: expression :: acc)
