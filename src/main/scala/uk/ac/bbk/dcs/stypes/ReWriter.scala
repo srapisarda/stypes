@@ -142,12 +142,17 @@ object ReWriter {
           case x: Atom =>
             if (tail.isEmpty) List(List(x))
             else OpenUpBrackets(tail).map(a => x :: a)
-          case x: Seq[Seq[(Term, Term)]] =>
-            if (tail.isEmpty)
-              x.toList.map(coe => EqualityAtomConjunction(coe.toList))
-            else
-              cartesianProduct(x, OpenUpBrackets(tail))
-
+          case x: Seq[Any] =>
+            x.head match {
+              case y: Seq[Any] =>
+                y.head match {
+                  case _ @ (_:Term, _:Term) =>
+                    if (tail.isEmpty)
+                      x.toList.map(coe => EqualityAtomConjunction(coe.asInstanceOf[Seq[(Term, Term)]].toList))
+                    else
+                      cartesianProduct(x.asInstanceOf[Seq[Seq[(Term, Term)]]], OpenUpBrackets(tail))
+                }
+            }
         }
       }
     }
@@ -174,7 +179,7 @@ object ReWriter {
         def remove(l: List[Atom]): Boolean = l match {
           case List() => false
           case x :: xs => x.getPredicate match {
-            case p: DatalogPredicate =>
+            case _: DatalogPredicate =>
               !defined.contains(x.getPredicate) || remove(xs)
             case _ =>
               remove(xs)
@@ -219,7 +224,7 @@ object ReWriter {
       def visitPredicates(datalog: List[Atom], acc: (List[Atom], Boolean)): (List[Atom], Boolean) = datalog match {
         case List() => (acc._1.reverse, acc._2)
         case atom :: xs => atom.getPredicate match {
-          case p: DatalogPredicate =>
+          case _: DatalogPredicate =>
             if (substitutionTable.contains(atom))
               visitPredicates(xs, (substitutionTable(atom) ::: acc._1, true))
             else
@@ -278,8 +283,8 @@ object ReWriter {
                   createSubstitutionList(xs, (atom.t1, atom.t2) :: acc)
                 else
                   createSubstitutionList(xs, acc)
-              else  if ( atom.t1.isInstanceOf[QueryTerm]  && atom.t2.isInstanceOf[QueryTerm] && ! atom.t1.equals(atom.t2) )
-                createSubstitutionList(xs,  (atom.t1, atom.t2 ):: acc)
+              else if (atom.t1.isInstanceOf[QueryTerm] && atom.t2.isInstanceOf[QueryTerm] && !atom.t1.equals(atom.t2))
+                createSubstitutionList(xs, (atom.t1, atom.t2) :: acc)
 
               else
                 createSubstitutionList(xs, acc)
@@ -292,9 +297,9 @@ object ReWriter {
           case List() => acc
           case x :: xs => x match {
             case atom: Equality =>
-              if (atom.t1.equals(atom.t2) ) removeEqualityWithSameTerms(xs, acc)
+              if (atom.t1.equals(atom.t2)) removeEqualityWithSameTerms(xs, acc)
               else removeEqualityWithSameTerms(xs, x :: acc)
-            case _ => if (! acc.contains(x) ) removeEqualityWithSameTerms(xs, x :: acc) else  removeEqualityWithSameTerms(xs, acc)
+            case _ => if (!acc.contains(x)) removeEqualityWithSameTerms(xs, x :: acc) else removeEqualityWithSameTerms(xs, acc)
           }
         }
 
@@ -322,14 +327,15 @@ object ReWriter {
 
         Clause(head, body)
 
-       if (substitutionSetMap.isEmpty) Clause(head, body)
-       else equalityClauseSubstitution(Clause(head, body))
+        if (substitutionSetMap.isEmpty) Clause(head, body)
+        else equalityClauseSubstitution(Clause(head, body))
 
       }
 
       datalog.map(equalityClauseSubstitution)
     }
-    if ( datalog.isEmpty) {
+
+    if (datalog.isEmpty) {
       datalog
     }
     else {
@@ -341,14 +347,14 @@ object ReWriter {
 
   def generateFlinkScript(datalog: List[Clause]): String = {
     val grouped = datalog.groupBy(p => p.head.getPredicate)
-    grouped.map( clause => s"lazy val ${clause._1.getIdentifier} = ${getScriptFromSameHeadClauses(clause._2)}" ).mkString("\n")
+    grouped.map(clause => s"lazy val ${clause._1.getIdentifier} = ${getScriptFromSameHeadClauses(clause._2)}").mkString("\n")
   }
 
-  def getScriptFromSameHeadClauses( datalog:List[Clause] ) : String  = {
+  def getScriptFromSameHeadClauses(datalog: List[Clause]): String = {
 
-    def commonTerms(a:Clause,b:Clause): ( List[Int], List[Int]) = (List(1), List(1)) // TODO implementation
+    def commonTerms(a: Clause, b: Clause): (List[Int], List[Int]) = (List(1), List(1)) // TODO implementation
 
-    val clausePairs  =  for( d1 <- datalog; d2 <- datalog; if d1 != d2  ) yield ((d1, d2), commonTerms(d1, d2))
+    val clausePairs = for (d1 <- datalog; d2 <- datalog; if d1 != d2) yield ((d1, d2), commonTerms(d1, d2))
     clausePairs.map(pair => s"${pair._1._1.head.getPredicate.getIdentifier}.join(${pair._1._1.head.getPredicate.getIdentifier})" +
       s".where(${pair._2._1.mkString(",")}).equalTo(${pair._2._2.mkString(",")}").mkString(".")
 
