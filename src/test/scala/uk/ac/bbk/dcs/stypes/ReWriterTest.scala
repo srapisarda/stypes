@@ -385,6 +385,20 @@ class  ReWriterTest extends FunSpec{
     }
 
 
+    it("should generate Flink script"){
+      val test:TreeDecompositionTest  = new TreeDecompositionTest
+      val t:TreeDecomposition = test.buildTestTreeDecomposition(s"$pathToBenchmark300/queries/queries.gml",
+        s"$pathToBenchmark300/queries/queries.cq")
+
+      val datalog=  ReWriter.generateDatalog(
+        new ReWriter(ontBenchmark300Dep).generateRewriting(Type(new TreeMapSubstitution()) , Splitter(t)) )
+
+      val res = ReWriter.generateFlinkScript(datalog)
+      assert(res!=null)
+
+    }
+
+
     it("should rewrite the query for queries for NDL-SQL"){
 //      val test:TreeDecompositionTest  = new TreeDecompositionTest
 

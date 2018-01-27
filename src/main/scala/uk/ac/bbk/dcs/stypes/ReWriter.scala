@@ -339,6 +339,21 @@ object ReWriter {
     }
   }
 
+  def generateFlinkScript(datalog: List[Clause]): String = {
+    val grouped = datalog.groupBy(p => p.head.getPredicate)
+    grouped.map( clause => s"lazy val ${clause._1.getIdentifier} = ${getScriptFromSameHeadClauses(clause._2)}" ).mkString("\n")
+  }
+
+  def getScriptFromSameHeadClauses( datalog:List[Clause] ) : String  = {
+
+    def commonTerms(a:Clause,b:Clause): ( List[Int], List[Int]) = (List(1), List(1)) // TODO implementation
+
+    val clausePairs  =  for( d1 <- datalog; d2 <- datalog; if d1 != d2  ) yield ((d1, d2), commonTerms(d1, d2))
+    clausePairs.map(pair => s"${pair._1._1.head.getPredicate.getIdentifier}.join(${pair._1._1.head.getPredicate.getIdentifier})" +
+      s".where(${pair._2._1.mkString(",")}).equalTo(${pair._2._2.mkString(",")}").mkString(".")
+
+  }
+
 }
 
 class ReWriter(ontology: RuleSet) {
