@@ -412,10 +412,12 @@ class  ReWriterTest extends FunSpec{
 
       val datalog=  ReWriter.generateDatalog(
         new ReWriter(ontBenchmark300Dep).generateRewriting(Type(new TreeMapSubstitution()) , Splitter(t)) )
+      println(s"datalog:\n${datalog.mkString(".\n")}.")
 
       val res = ReWriter.generateFlinkScript(datalog)
-      assert(res!=null)
 
+      assert(res!=null)
+      print(s"Flink:\n$res")
     }
 
 

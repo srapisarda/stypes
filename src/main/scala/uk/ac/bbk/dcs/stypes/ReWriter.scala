@@ -370,51 +370,47 @@ object ReWriter {
   }
 
   def generateFlinkScript(datalog: List[Clause]): String = {
+
+    def getScriptFromSameHeadClauses(clauses: List[Clause]): String = {
+      // TODO IMPLEMENT this code
+
+      def getCommonTerms(atom1: List[Atom], atom2: Atom): (List[Int], List[Int]) =
+        (List(0), List(1)) // TODO implementation this is just a mock
+
+      def visitBody(atoms: List[Atom], visited: List[Atom] = List(), query: String = ""): String = atoms match {
+        case List() => query;
+        case x :: xs =>
+          if (visited.isEmpty)
+            visitBody(xs, x :: visited, x.getPredicate.getIdentifier.toString)
+          else {
+            val commonTerms = getCommonTerms(visited, x)
+            val queryConditions =
+              if (commonTerms._1.isEmpty) ""
+              else s".where(${commonTerms._1.mkString(",")}).equalTo(${commonTerms._2.mkString(",")})"
+
+            visitBody(xs, x :: visited,
+              s"($query.join(${x.getPredicate.getIdentifier})$queryConditions)"
+            )
+          }
+      }
+
+      def getUnionScript(clauses: List[Clause], acc: List[String]): List[String] = clauses match {
+        case List() => acc.reverse
+        case x :: xs =>
+          val queryClause = visitBody(x.body)
+          val dot = if (xs.isEmpty) "" else "."
+          getUnionScript(xs, s"$queryClause$dot" :: acc)
+
+      }
+
+      getUnionScript(clauses, List()).mkString("union.")
+
+    }
+
     val grouped = datalog.groupBy(p => p.head.getPredicate)
     grouped.map(clause => s"lazy val ${clause._1.getIdentifier}_v_ = ${getScriptFromSameHeadClauses(clause._2)}")
       .mkString("\n")
   }
-
-  def getScriptFromSameHeadClauses(clauses: List[Clause]): String = {
-    // TODO IMPLEMENT this code
-
-    def commonTerms(atom1: Atom, atom2: Atom): (List[Int], List[Int]) = (List(0), List(1)) // TODO implementation
-
-    def getAtomsJoinPairs(clause: Clause) = {
-
-
-      val tuples = for (atom1 <- clause.body; atom2 <- clause.body; if atom1 != atom2 )
-        yield ((atom1, atom2), commonTerms(atom1, atom2))
-      tuples
-    }
-
-    def getUnionScript(clauses: List[Clause], acc: List[String]): List[String] = clauses match {
-      case List() => acc.reverse
-      case clause :: xs =>
-        val atomsJoinPairs = getAtomsJoinPairs(clause)
-        if (atomsJoinPairs.isEmpty && clause.body.nonEmpty)
-          getUnionScript(xs, clause.body.head.getPredicate.getIdentifier.toString:: acc)
-        else {
-          // TODO !!!  this should be a cumulative function composition such as:
-          // ((atom1.join(atom2).where...).join(atom3).where(..)..).join(....
-          val items = atomsJoinPairs.map(pair =>
-            if (pair._2._1.nonEmpty) {
-              s"${pair._1._1.getPredicate.getIdentifier}.join(${pair._1._2.getPredicate.getIdentifier})" +
-                s".where(${pair._2._1.mkString(",")}).equalTo(${pair._2._2.mkString(",")})"
-
-            } else {
-              ""
-            })
-          getUnionScript(xs, items.mkString(".") :: acc)
-        }
-
-
-    }
-
-    getUnionScript(clauses, List()).mkString("\nunion\n")
-
-  }
-
 }
 
 class ReWriter(ontology: RuleSet) {
