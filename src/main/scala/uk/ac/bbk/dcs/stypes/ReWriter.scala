@@ -20,6 +20,8 @@ package uk.ac.bbk.dcs.stypes
  * #L%
  */
 
+import java.util.UUID
+
 import fr.lirmm.graphik.graal.api.core._
 import fr.lirmm.graphik.graal.core.DefaultAtom
 import fr.lirmm.graphik.graal.core.atomset.graph.DefaultInMemoryGraphAtomSet
@@ -27,9 +29,6 @@ import fr.lirmm.graphik.graal.forward_chaining.DefaultChase
 
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
-
-
-
 
 
 /**
@@ -170,7 +169,7 @@ object ReWriter {
             x.head match {
               case y: Seq[Any] =>
                 y.head match {
-                  case _ @ (_:Term, _:Term) =>
+                  case _@(_: Term, _: Term) =>
                     if (tail.isEmpty)
                       x.toList.map(coe => EqualityAtomConjunction(coe.asInstanceOf[Seq[(Term, Term)]].toList))
                     else
@@ -374,25 +373,57 @@ object ReWriter {
     def getScriptFromSameHeadClauses(clauses: List[Clause]): String = {
       // TODO IMPLEMENT this code
 
-      def getCommonTerms(atom1: List[Atom], atom2: Atom): (List[Int], List[Int]) =
-        (List(0), List(1)) // TODO implementation this is just a mock
+      def mapPositionTerm(terms: Seq[Term], acc: Map[Term, List[Int]] = Map(), index: Int = -1): Map[Term, List[Int]] =
+        terms match {
+          case List() => acc
+          case x :: xs =>
+            val idx = index + 1
+            val mappedTerm = if (acc.contains(x)) x -> (idx :: acc(x)).reverse else x -> List(idx)
+            mapPositionTerm(xs, acc + mappedTerm, idx)
+        }
 
-      def visitBody(atoms: List[Atom], visited: List[Atom] = List(), query: String = ""): String = atoms match {
+
+      def visitBody(atoms: List[Atom], lhs: Option[Atom] = None, query: String = ""): String = atoms match {
         case List() => query;
-        case x :: xs =>
-          if (visited.isEmpty)
-            visitBody(xs, x :: visited, x.getPredicate.getIdentifier.toString)
+        case rhs :: xs =>
+          if (lhs.isEmpty)
+            visitBody(xs, Some(rhs), rhs.getPredicate.getIdentifier.toString)
           else {
-            val commonTerms = getCommonTerms(visited, x)
-            val queryConditions =
-              if (commonTerms._1.isEmpty) ""
-              else s".where(${commonTerms._1.mkString(",")}).equalTo(${commonTerms._2.mkString(",")})"
+            val rhsTermsPosMap = mapPositionTerm(rhs.getTerms.asScala.toList)
+            val lhsTermsPosMap = mapPositionTerm(lhs.get.getTerms.asScala.toList)
 
-            visitBody(xs, x :: visited,
-              s"($query.join(${x.getPredicate.getIdentifier})$queryConditions)"
+            val commonPairs =
+              for (rt <- rhsTermsPosMap; if lhsTermsPosMap.contains(rt._1))
+                yield (rt._2.head, lhsTermsPosMap(rt._1).head)
+
+            val queryConditions =
+              if (commonPairs.isEmpty) ""
+              else s".where(${commonPairs.keys.mkString(",")}).equalTo(${commonPairs.values.mkString(",")})"
+
+
+            val lhsTermsProjection = lhsTermsPosMap.map(p => s"t._1.${p._2.head + 1}")
+
+            val rhsTermsNotInLhl = rhsTermsPosMap
+              .filter(p => !lhsTermsPosMap.contains(p._1))
+
+            val rhsTermsProjection = rhsTermsNotInLhl.map(p => s"t._2.${p._2.head + 1}")
+
+            val leftProjection = lhsTermsProjection.mkString(",")
+            val rightProjection = if (rhsTermsProjection.isEmpty) "" else s", ${rhsTermsProjection.mkString(",")}"
+
+            val mappedTerms = s".map(t=> $leftProjection$rightProjection)"
+
+            val termProjection = lhsTermsPosMap.keys ++ rhsTermsNotInLhl.keys
+
+            val mergedAtom = new DefaultAtom(new Predicate(UUID.randomUUID().toString, termProjection.size),
+              termProjection.toList.asJava)
+
+            visitBody(xs, Some(mergedAtom),
+              s"($query.join(${rhs.getPredicate.getIdentifier})$queryConditions$mappedTerms)"
             )
           }
       }
+
 
       def getUnionScript(clauses: List[Clause], acc: List[String]): List[String] = clauses match {
         case List() => acc.reverse
@@ -411,6 +442,7 @@ object ReWriter {
     grouped.map(clause => s"lazy val ${clause._1.getIdentifier}_v_ = ${getScriptFromSameHeadClauses(clause._2)}")
       .mkString("\n")
   }
+
 }
 
 class ReWriter(ontology: RuleSet) {
