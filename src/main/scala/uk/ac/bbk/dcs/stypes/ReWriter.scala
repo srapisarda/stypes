@@ -439,7 +439,7 @@ object ReWriter {
     }
 
     val grouped = datalog.groupBy(p => p.head.getPredicate)
-    grouped.map(clause => s"lazy val ${clause._1.getIdentifier}_v_ = ${getScriptFromSameHeadClauses(clause._2)}")
+    grouped.map(clause => s"lazy val ${clause._1.getIdentifier} = ${getScriptFromSameHeadClauses(clause._2)}")
       .mkString("\n")
   }
 
