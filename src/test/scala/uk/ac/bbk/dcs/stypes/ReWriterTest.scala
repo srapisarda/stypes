@@ -22,7 +22,7 @@ package uk.ac.bbk.dcs.stypes
 
 import java.io.{BufferedWriter, File, FileWriter}
 
-import fr.lirmm.graphik.graal.api.core.{Predicate, Rule, Term}
+import fr.lirmm.graphik.graal.api.core.{Atom, Predicate, Rule, Term}
 import fr.lirmm.graphik.graal.core.ruleset.LinkedListRuleSet
 import fr.lirmm.graphik.graal.core.term.DefaultTermFactory
 import fr.lirmm.graphik.graal.core.{DefaultAtom, TreeMapSubstitution}
@@ -54,6 +54,7 @@ class  ReWriterTest extends FunSpec{
   private val ontology5 = getOntology("src/main/resources/ont-5.dlp")
   private val ontCar = getOntology("src/main/resources/ont-car.dlp")
   private val ontBenchmark100Dep = getOntology(s"$pathToBenchmark100/dependencies/deep.t-tgds.dlp")
+  private val ontBenchmark100All = getOntology(s"$pathToBenchmark100/dependencies/all-tgds.dlp")
   private val ontBenchmark100sDep = getOntology(s"$pathToBenchmark100/dependencies/deep.st-tgds.dlp")
   private val ontBenchmark300Dep = getOntology(s"$pathToBenchmark300/dependencies/deep.t-tgds.dlp")
   private val ontBenchmarkNDL_SQL = getOntology(s"$pathToBenchmarkNDL_SQL/dependencies/15-tw.dlp")
@@ -79,7 +80,25 @@ class  ReWriterTest extends FunSpec{
     ontology
   }
 
-
+  private def getDatalogRewriting (filename:String ): List[Clause] = {
+    // 2 - Parse Animals.dlp (A Dlgp file with rules and facts)
+    val dlgpParser = new DlgpParser(new File(filename))
+    // val store = new DefaultRdbmsStore(new HSQLDBDriver("test", null))
+    val clauses = dlgpParser.asScala.toList
+    clauses.map {
+      case rule: Rule =>
+        val head: Atom = {
+          val atom = rule.getHead.asScala.head
+          if (atom.getTerms.size==1 &&
+              (  atom.getTerm(0).getType.equals(Term.Type.LITERAL) ||
+                atom.getTerm(0).getType.equals(Term.Type.CONSTANT)))
+            new DefaultAtom(new Predicate(atom.getPredicate.getIdentifier.toString, 0))
+          else atom
+        }
+        val body: List[Atom] = rule.getBody.asScala.toList
+        Clause(head,body)
+    }
+  }
 
   def getMockTypeEpsilon: Type = {
     val s1 = new TreeMapSubstitution
@@ -203,7 +222,7 @@ class  ReWriterTest extends FunSpec{
       assert( result.lengthCompare(4) == 0 ) // verify this result
 
       val datalog=  ReWriter.generateDatalog(result )
-      println(datalog.mkString(".\n"))
+     printDatalog(datalog)
       assert(datalog.lengthCompare(3) == 0)
     }
 
@@ -217,7 +236,7 @@ class  ReWriterTest extends FunSpec{
       assert( result.lengthCompare(5) == 0 ) // verify this result
 
       val datalog=  ReWriter.generateDatalog(result )
-      println(datalog.mkString(".\n"))
+     printDatalog(datalog)
       assert(datalog.lengthCompare(5) == 0)
 
     }
@@ -231,7 +250,7 @@ class  ReWriterTest extends FunSpec{
       assert( result.lengthCompare(5) == 0 ) // verify this result
 
       val datalog=  ReWriter.generateDatalog(result )
-      println(datalog.mkString(".\n"))
+     printDatalog(datalog)
       assert(datalog.lengthCompare(7) == 0)
 
     }
@@ -246,7 +265,7 @@ class  ReWriterTest extends FunSpec{
       //assert( result.size == 5 ) // verify this result
 
       val datalog=  ReWriter.generateDatalog(result )
-      println(datalog.mkString(".\n"))
+     printDatalog(datalog)
      // assert(datalog.size==7)
 
     }
@@ -260,7 +279,7 @@ class  ReWriterTest extends FunSpec{
       assert( result.lengthCompare(63) == 0 ) // verify this result
 
       val datalog=  ReWriter.generateDatalog(result )
-      println(datalog.mkString(".\n"))
+     printDatalog(datalog)
       assert(datalog.lengthCompare(13) == 0)
 
     }
@@ -275,7 +294,7 @@ class  ReWriterTest extends FunSpec{
       assert( result.lengthCompare(2) == 0 ) // verify this result
 
       val datalog=  ReWriter.generateDatalog(result )
-      println(datalog.mkString(".\n"))
+      printDatalog(datalog)
       assert(datalog.lengthCompare(2) == 0)
 
     }
@@ -342,6 +361,11 @@ class  ReWriterTest extends FunSpec{
         s"$pathToBenchmark100/dependencies/deep.t-tgds-test.dlp")
     }
 
+    it("should rewrite the benchmark 100 tgd all-tgds.txt. "){
+      transform2Dlp(s"$pathToBenchmark100/dependencies/all-tgds.txt",
+        s"$pathToBenchmark100/dependencies/all-tgds-test.dlp")
+    }
+
     it("should rewrite the benchmark 100/1000 tgd deep.st-tgds.txt."){
 
       transform2Dlp(s"$pathToBenchmark100/dependencies/deep.st-tgds.txt",
@@ -359,6 +383,8 @@ class  ReWriterTest extends FunSpec{
         s"$pathToBenchmark300/dependencies/deep.t-tgds-test.dlp")
     }
 
+
+
     it("should rewrite the query for q01 with ont of deep.t-tdgs.dlp"){
       val test:TreeDecompositionTest  = new TreeDecompositionTest
       val t:TreeDecomposition = test.buildTestTreeDecomposition(s"$pathToBenchmark100/queries/q01.gml",
@@ -369,7 +395,8 @@ class  ReWriterTest extends FunSpec{
       assert( result.lengthCompare(3) == 0 ) // verify this result
 
       val datalog=  ReWriter.generateDatalog(result )
-      println(datalog.mkString(".\n"))
+
+      printDatalog(datalog)
       assert(datalog.lengthCompare(3) == 0)
 
     }
@@ -384,7 +411,7 @@ class  ReWriterTest extends FunSpec{
       assert( result.lengthCompare(94) == 0 ) // verify this result
 
       val datalog=  ReWriter.generateDatalog(result )
-      println(datalog.mkString(".\n"))
+      printDatalog(datalog)
       //assert(datalog.size==3)
 
     }
@@ -399,20 +426,26 @@ class  ReWriterTest extends FunSpec{
       assert( result.lengthCompare(80) == 0 ) // verify this result
 
       val datalog=  ReWriter.generateDatalog(result )
-      println(datalog.mkString(".\n"))
+     printDatalog(datalog)
       assert(datalog.lengthCompare(11) == 0)
 
     }
 
+    ignore("should rewrite query q01.cq  using 100 ont of all-tdgs.dlp"){
+          val test:TreeDecompositionTest  = new TreeDecompositionTest
+          val t:TreeDecomposition = test.buildTestTreeDecomposition(s"$pathToBenchmark100/queries/q01.gml",
+            s"$pathToBenchmark100/queries/q01.cq")
 
-    it("should generate Flink script"){
-      val test:TreeDecompositionTest  = new TreeDecompositionTest
-      val t:TreeDecomposition = test.buildTestTreeDecomposition(s"$pathToBenchmark300/queries/queries.gml",
-        s"$pathToBenchmark300/queries/queries.cq")
+          val datalog=  ReWriter.generateDatalog(
+            new ReWriter(ontBenchmark100All).generateRewriting(Type(new TreeMapSubstitution()) , Splitter(t)) )
+      printDatalog(datalog)
+      assert(datalog.lengthCompare(22) == 0)
+    }
 
-      val datalog=  ReWriter.generateDatalog(
-        new ReWriter(ontBenchmark300Dep).generateRewriting(Type(new TreeMapSubstitution()) , Splitter(t)) )
-      println(s"datalog:\n${datalog.mkString(".\n")}.")
+    it("should generate Flink script using all-tgds-rewriting-using-q01.dlp"){
+      val datalog = getDatalogRewriting(s"$pathToBenchmark100/rewriting/all-tgds-rewriting-using-q01.dlp")
+      printDatalog(datalog)
+
 
       val res = ReWriter.generateFlinkScript(datalog)
 
@@ -420,6 +453,7 @@ class  ReWriterTest extends FunSpec{
       print(s"Flink:\n$res")
     }
 
+    
 
     it("should rewrite the query for queries for NDL-SQL"){
 //      val test:TreeDecompositionTest  = new TreeDecompositionTest
@@ -434,7 +468,7 @@ class  ReWriterTest extends FunSpec{
 //      assert( result.size == 80 ) // verify this result
 //
 //      val datalog=  ReWriter.generateDatalog(result )
-//      println(datalog.mkString(".\n"))
+//     printDatalog(datalog)
 //      assert(datalog.size== 11)
 
     }
@@ -470,9 +504,12 @@ class  ReWriterTest extends FunSpec{
 
        print ( edges.map( h => s"edge$h"  ).mkString(".\n" ) )
     }
-
+    
   }
-
+  
+  private def printDatalog(datalog:List[Clause]):Unit= 
+    println(s"${datalog.mkString(".\n")}.".replaceAll("""\[\d+\]""", ""))
+  
 }
 
 

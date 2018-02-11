@@ -10,6 +10,8 @@ val sparkVersion = "2.2.0"
 
 val flinkVersion = "1.4.0"
 
+val playVersion = "2.6.8"
+
 libraryDependencies ++= Seq( "fr.lirmm.graphik" % "graal-core" % graalVersion
                 ,"fr.lirmm.graphik" % "graal-forward-chaining" % graalVersion
                 ,"fr.lirmm.graphik" % "graal-backward-chaining" % graalVersion
@@ -23,4 +25,6 @@ libraryDependencies ++= Seq( "fr.lirmm.graphik" % "graal-core" % graalVersion
                 ,"org.apache.spark" %% "spark-core" % sparkVersion
                 ,"org.apache.spark" %% "spark-sql" % sparkVersion
                 ,"org.apache.flink" %% "flink-streaming-scala" % flinkVersion
+                ,"com.typesafe.play" %% "play-json" % playVersion
+                , "com.fasterxml.jackson.core" % "jackson-core" % "2.9.4"
             )

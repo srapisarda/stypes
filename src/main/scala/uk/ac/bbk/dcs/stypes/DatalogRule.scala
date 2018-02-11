@@ -22,9 +22,9 @@ package uk.ac.bbk.dcs.stypes
 
 import fr.lirmm.graphik.graal.api.core.{Atom, Predicate, Term}
 import fr.lirmm.graphik.graal.core.DefaultAtom
+import play.api.libs.json._
 
-import scala.collection.JavaConverters._
-
+import scala.collection.JavaConverters._ // Combinator syntax
 
 /**
   *
@@ -51,8 +51,42 @@ case class Clause(head: Atom, body: List[Atom]) extends DatalogRule {
   override def toString: String = s"$head :- ${body.map(a => a).mkString(", ")}"
 }
 
-trait BinaryOperator  {
+object ClauseSerialiser {
+
+  implicit val termWriter = new Writes[Term] {
+    override def writes(term: Term): JsValue = Json.obj(
+      "label" -> term.getLabel
+    )
+  }
+
+  implicit val predicateWriter = new Writes[Predicate] {
+    override def writes(predicate: Predicate): JsValue = Json.obj(
+      "identifier" -> predicate.getIdentifier.toString,
+      "arity" -> predicate.getArity
+    )
+  }
+
+  implicit val atomWriter = new Writes[Atom] {
+    override def writes(atom: Atom): JsValue = Json.obj(
+      "predicate" -> atom.getPredicate,
+      "terms" -> atom.getTerms.asScala
+    )
+  }
+
+  implicit val clauseWrites = new Writes[Clause] {
+    override def writes(clause: Clause) = Json.obj(
+      "head" -> clause.head,
+      "body" -> clause.body
+    )
+  }
+
+
+}
+
+
+trait BinaryOperator {
   def t1: Any
+
   def t2: Any
 }
 
@@ -62,10 +96,9 @@ case class Equality(t1: Term, t2: Term) extends DefaultAtom(Equality.getAtom(t1,
 
 object Equality {
   val predicateName: String = "EQ"
-  def getAtom(t1: Term, t2: Term): Atom =  new DefaultAtom(new Predicate(Equality.predicateName, 2), List(t1, t2).asJava)
+
+  def getAtom(t1: Term, t2: Term): Atom = new DefaultAtom(new Predicate(Equality.predicateName, 2), List(t1, t2).asJava)
 }
 
-case class DatalogPredicate(identifier: Any, arity: Int, isGoalPredicate:Boolean=false ) extends Predicate(identifier, arity)
-
-
+case class DatalogPredicate(identifier: Any, arity: Int, isGoalPredicate: Boolean = false) extends Predicate(identifier, arity)
 
