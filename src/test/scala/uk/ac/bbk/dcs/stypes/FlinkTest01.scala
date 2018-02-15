@@ -58,9 +58,24 @@ class FlinkTest01 extends FunSpec {
     (line.head.toLong, line.last.toLong)
   }
 
+  private  def  stringMapper1: (String) => (String) = (p: String) => {
+    val line = p.split(',')
+    line.head
+  }
+
    private  def  stringMapper: (String) => (String, String) = (p: String) => {
     val line = p.split(',')
     (line.head, line.last)
+  }
+
+  private  def  stringMapper3: (String) => (String, String, String) = (p: String) => {
+    val line = p.split(',')
+    (line(0), line(1), line(2))
+  }
+
+  private  def  stringMapper4: (String) => (String, String, String, String) = (p: String) => {
+    val line = p.split(',')
+    (line(0), line(1), line(2), line(3))
   }
 
 
@@ -68,7 +83,7 @@ class FlinkTest01 extends FunSpec {
     val line = p.split(',')
     Relation2(line.head.toLong, line.last.toLong)
   }
-  private val a: DataSet[(String, String)] = env.readTextFile(s"$pathToBenchmarkNDL_SQL/data/20mb-a.txt").map(stringMapper)
+  private val a = env.readTextFile(s"$pathToBenchmarkNDL_SQL/data/20mb-a.txt").map(stringMapper)
   private val b: DataSet[(String, String)] = env.readTextFile(s"$pathToBenchmarkNDL_SQL/data/20mb-b.txt").map(stringMapper)
   private val r: DataSet[(String, String)] = env.readTextFile(s"$pathToBenchmarkNDL_SQL/data/20mb-r.txt").map(stringMapper)
   private val s: DataSet[(String, String)] = env.readTextFile(s"$pathToBenchmarkNDL_SQL/data/20mb-s.txt").map(stringMapper)

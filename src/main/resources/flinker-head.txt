@@ -1,0 +1,24 @@
+val conf = new Configuration()
+conf.setInteger("taskmanager.numberOfTaskSlots",4)
+private val env = ExecutionEnvironment.createLocalEnvironment(conf)
+env.setParallelism(4)
+
+private  def  stringMapper1: (String) => (String) = (p: String) => {
+  val line = p.split(',')
+  line.head
+}
+
+ private  def  stringMapper: (String) => (String, String) = (p: String) => {
+  val line = p.split(',')
+  (line.head, line.last)
+}
+
+private  def  stringMapper3: (String) => (String, String, String) = (p: String) => {
+  val line = p.split(',')
+  (line(0), line(1), line(2))
+}
+
+private  def  stringMapper4: (String) => (String, String, String, String) = (p: String) => {
+  val line = p.split(',')
+  (line(0), line(1), line(2), line(3))
+}

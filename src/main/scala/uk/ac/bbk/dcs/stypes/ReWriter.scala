@@ -29,7 +29,7 @@ import fr.lirmm.graphik.graal.forward_chaining.DefaultChase
 
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
-
+import scala.io.Source
 
 /**
   * Created by
@@ -184,7 +184,8 @@ object ReWriter {
       x.flatMap(equalityConj => res.map((t: List[Atom]) => EqualityAtomConjunction(equalityConj.toList) ++ t)).toList
     }
 
-    def visitRewriting(rewriting: List[RuleTemplate], acc: (List[List[Clause]], Map[Int, Int], Int)): (List[List[Clause]], Map[Int, Int], Int) =
+    def visitRewriting(rewriting: List[RuleTemplate], acc: (List[List[Clause]], Map[Int, Int], Int)):
+    (List[List[Clause]], Map[Int, Int], Int) =
       rewriting match {
         case List() => acc
         case x :: xs =>
@@ -210,7 +211,7 @@ object ReWriter {
         }
 
         val ret = datalog.filter(rule => !remove(rule.body))
-        (ret, ret.size != datalog.size)
+        (ret, ret.lengthCompare(datalog.size) != 0)
       }
 
       val removalOutcome = removalHelper(datalog)
@@ -237,7 +238,7 @@ object ReWriter {
         .sortBy(_.head.getPredicate)
         .map(p => (p.head.getPredicate, 1L))
         .groupBy(_._1)
-        .filter(c => c._1 != goalPredicate && c._2.size == 1)
+        .filter(c => c._1 != goalPredicate && c._2.lengthCompare(1) == 0)
         .keys.toList
 
       val substitutionTable: Map[Atom, List[Atom]] = datalog
@@ -368,27 +369,36 @@ object ReWriter {
     }
   }
 
-  def generateFlinkScript(datalog: List[Clause]): String = {
+  def generateFlinkScript(datalog: List[Clause], dataSources: Map[String, String]): String = {
 
-    def getScriptFromSameHeadClauses(clauses: List[Clause]): String = {
+    def getScriptFromSameHeadClauses(clauses: List[Clause], matchedDataSources: Map[Predicate, String]):
+    (Map[Predicate, String], String) = {
       // TODO IMPLEMENT this code
 
-      def mapPositionTerm(terms: Seq[Term], acc: Map[Term, List[Int]] = Map(), index: Int = -1): Map[Term, List[Int]] =
-        terms match {
-          case List() => acc
-          case x :: xs =>
-            val idx = index + 1
-            val mappedTerm = if (acc.contains(x)) x -> (idx :: acc(x)).reverse else x -> List(idx)
-            mapPositionTerm(xs, acc + mappedTerm, idx)
-        }
+      def mapPositionTerm(terms: Seq[Term], acc: Map[Term, List[Int]] = Map(), index: Int = -1): Map[Term, List[Int]] = terms match {
+        case List() => acc
+        case x :: xs =>
+          val idx = index + 1
+          val mappedTerm = if (acc.contains(x)) x -> (idx :: acc(x)).reverse else x -> List(idx)
+          mapPositionTerm(xs, acc + mappedTerm, idx)
+      }
 
-
-      def visitBody(atoms: List[Atom], lhs: Option[Atom] = None, query: String = ""): String = atoms match {
-        case List() => query;
+      def visitClauseBody(atoms: List[Atom], acc: (Map[Predicate, String], String),
+                          lhs: Option[Atom] = None): (Map[Predicate, String], String) = atoms match {
+        case List() => acc;
         case rhs :: xs =>
-          if (lhs.isEmpty)
-            visitBody(xs, Some(rhs), rhs.getPredicate.getIdentifier.toString)
-          else {
+          val matchedDataSources = acc._1
+          val query = acc._2
+
+          val ds =
+            if (!matchedDataSources.contains(rhs.getPredicate) &&
+              dataSources.contains(rhs.getPredicate.getIdentifier.toString))
+              matchedDataSources + (rhs.getPredicate -> dataSources(rhs.getPredicate.getIdentifier.toString))
+            else matchedDataSources
+
+          if (lhs.isEmpty) {
+            visitClauseBody(xs, (ds, rhs.getPredicate.getIdentifier.toString), Some(rhs))
+          } else {
             val rhsTermsPosMap = mapPositionTerm(rhs.getTerms.asScala.toList)
             val lhsTermsPosMap = mapPositionTerm(lhs.get.getTerms.asScala.toList)
 
@@ -399,7 +409,6 @@ object ReWriter {
             val queryConditions =
               if (commonPairs.isEmpty) ""
               else s".where(${commonPairs.keys.mkString(",")}).equalTo(${commonPairs.values.mkString(",")})"
-
 
             val lhsTermsProjection = lhsTermsPosMap.map(p => s"t._1.${p._2.head + 1}")
 
@@ -418,29 +427,56 @@ object ReWriter {
             val mergedAtom = new DefaultAtom(new Predicate(UUID.randomUUID().toString, termProjection.size),
               termProjection.toList.asJava)
 
-            visitBody(xs, Some(mergedAtom),
-              s"($query.join(${rhs.getPredicate.getIdentifier})$queryConditions$mappedTerms)"
-            )
+            visitClauseBody(xs, (ds, s"($query.join(${rhs.getPredicate.getIdentifier})$queryConditions$mappedTerms)"), Some(mergedAtom))
           }
       }
 
+      def getUnionScript(clauses: List[Clause], acc: (Map[Predicate, String], List[String])):
+      (Map[Predicate, String], List[String]) =
+        clauses match {
+          case List() => acc
+          case x :: xs =>
+            val queryClause: (Map[Predicate, String], String) = visitClauseBody(x.body, (acc._1, ""))
+            val scripts = acc._2
+            val map:Map[Predicate, String] = acc._1 ++ queryClause._1
+            getUnionScript(xs, (map, s"${queryClause._2}" :: scripts))
 
-      def getUnionScript(clauses: List[Clause], acc: List[String]): List[String] = clauses match {
-        case List() => acc.reverse
-        case x :: xs =>
-          val queryClause = visitBody(x.body)
-          val dot = if (xs.isEmpty) "" else "."
-          getUnionScript(xs, s"$queryClause$dot" :: acc)
+        }
 
-      }
+      val scriptsAndDataSources = getUnionScript(clauses, (matchedDataSources, List()))
 
-      getUnionScript(clauses, List()).mkString("union.")
+      (scriptsAndDataSources._1, scriptsAndDataSources._2.mkString(".union."))
 
     }
 
-    val grouped = datalog.groupBy(p => p.head.getPredicate)
-    grouped.map(clause => s"lazy val ${clause._1.getIdentifier} = ${getScriptFromSameHeadClauses(clause._2)}")
-      .mkString("\n")
+    def mapPredicateGroups(grouped: List[(Predicate, List[Clause])], acc: (Map[Predicate, String], List[String]) = (Map(), List()))
+    : (Map[Predicate, String], List[String]) = grouped match {
+      case List() => acc
+      case x :: xs =>
+        val script = getScriptFromSameHeadClauses(x._2, acc._1)
+        val map: Map[Predicate, String]= acc._1 ++ script._1
+        mapPredicateGroups(xs, (map, s"lazy val ${x._1.getIdentifier}= ${script._2}" :: acc._2))
+
+    }
+
+    val grouped: List[(Predicate, List[Clause])] = datalog.groupBy(p => p.head.getPredicate).toList
+    val result = mapPredicateGroups(grouped)
+
+    //    grouped.map(clause => s"lazy val ${clause._1.getIdentifier} = ${getScriptFromSameHeadClauses(clause._2, Map())._2}")
+    //      .mkString("\n")
+
+
+    "class FlinkRewriting{\n\n" +
+    Source.fromFile("src/main/resources/flinker-head.txt").mkString +
+      "\n\n//DATA\n" +
+    result._1.map( p=> {
+      val variable =  s"lazy val ${p._1.getIdentifier.toString} = "
+      val data = "env.readTextFile(\"" + p._2 + "\")" + s".map(stringMapper${p._1.getArity})"
+      variable + data
+    })
+      .mkString("\n") + "\n\n" + result._2.mkString("\n") +
+      "\n\n}"
+
   }
 
 }
@@ -448,7 +484,10 @@ object ReWriter {
 class ReWriter(ontology: RuleSet) {
 
   val generatingAtoms: List[Atom] = ReWriter.makeGeneratingAtoms(ontology)
+  println(s"generating  canonical models")
+  val t1: Long = System.nanoTime()
   val canonicalModels: List[AtomSet] = ReWriter.canonicalModelList(ontology, generatingAtoms)
+  println(s"elapsed time for generating the canonical models: ${(System.nanoTime() - t1) / 1000000}ms")
   private val arrayGeneratingAtoms = generatingAtoms.toVector
 
   /**
@@ -552,7 +591,8 @@ class ReWriter(ontology: RuleSet) {
     val types = typeExtender.collectTypes
     //val body = new LinkedListAtomSet
     //val rule :Rule = new DefaultRule()
-    types.map(s => new RuleTemplate(splitter, borderType, s, generatingAtoms, this)).flatMap(ruleTemplate => ruleTemplate :: ruleTemplate.GetAllSubordinateRules)
+    types.map(s => new RuleTemplate(splitter, borderType, s, generatingAtoms, this))
+      .flatMap(ruleTemplate => ruleTemplate :: ruleTemplate.GetAllSubordinateRules)
   }
 
 }
