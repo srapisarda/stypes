@@ -410,24 +410,24 @@ object ReWriter {
               if (commonPairs.isEmpty) ""
               else s".where(${commonPairs.keys.mkString(",")}).equalTo(${commonPairs.values.mkString(",")})"
 
-            val lhsTermsProjection = lhsTermsPosMap.map(p => s"t._1.${p._2.head + 1}")
+            val lhsTermsProjection = lhsTermsPosMap.map(p => s"t._1._${p._2.head + 1}")
 
             val rhsTermsNotInLhl = rhsTermsPosMap
               .filter(p => !lhsTermsPosMap.contains(p._1))
 
-            val rhsTermsProjection = rhsTermsNotInLhl.map(p => s"t._2.${p._2.head + 1}")
+            val rhsTermsProjection = rhsTermsNotInLhl.map(p => s"t._2._${p._2.head + 1}")
 
             val leftProjection = lhsTermsProjection.mkString(",")
             val rightProjection = if (rhsTermsProjection.isEmpty) "" else s", ${rhsTermsProjection.mkString(",")}"
 
-            val mappedTerms = s".map(t=> $leftProjection$rightProjection)"
+            val mappedTerms = s".map(t=> ($leftProjection$rightProjection))"
 
             val termProjection = lhsTermsPosMap.keys ++ rhsTermsNotInLhl.keys
 
             val mergedAtom = new DefaultAtom(new Predicate(UUID.randomUUID().toString, termProjection.size),
               termProjection.toList.asJava)
 
-            visitClauseBody(xs, (ds, s"($query.join(${rhs.getPredicate.getIdentifier})$queryConditions$mappedTerms)"), Some(mergedAtom))
+            visitClauseBody(xs, (ds, s"$query.join(${rhs.getPredicate.getIdentifier})$queryConditions$mappedTerms"), Some(mergedAtom))
           }
       }
 
@@ -445,8 +445,7 @@ object ReWriter {
 
       val scriptsAndDataSources = getUnionScript(clauses, (matchedDataSources, List()))
 
-      (scriptsAndDataSources._1, scriptsAndDataSources._2.mkString(".union."))
-
+      (scriptsAndDataSources._1, scriptsAndDataSources._2.reduce( (a1, a2) => s"($a1 union $a2)\n") )
     }
 
     def mapPredicateGroups(grouped: List[(Predicate, List[Clause])], acc: (Map[Predicate, String], List[String]) = (Map(), List()))
@@ -455,7 +454,7 @@ object ReWriter {
       case x :: xs =>
         val script = getScriptFromSameHeadClauses(x._2, acc._1)
         val map: Map[Predicate, String]= acc._1 ++ script._1
-        mapPredicateGroups(xs, (map, s"lazy val ${x._1.getIdentifier}= ${script._2}" :: acc._2))
+        mapPredicateGroups(xs, (map, s"private lazy val ${x._1.getIdentifier}= ${script._2}" :: acc._2))
 
     }
 
@@ -466,11 +465,11 @@ object ReWriter {
     //      .mkString("\n")
 
 
-    "class FlinkRewriting{\n\n" +
+    "import org.apache.flink.api.scala._\nimport org.apache.flink.configuration.Configuration\n\nobject FlinkRewriter extends App {\n\n" +
     Source.fromFile("src/main/resources/flinker-head.txt").mkString +
       "\n\n//DATA\n" +
     result._1.map( p=> {
-      val variable =  s"lazy val ${p._1.getIdentifier.toString} = "
+      val variable =  s"private lazy val ${p._1.getIdentifier.toString} = "
       val data = "env.readTextFile(\"" + p._2 + "\")" + s".map(stringMapper${p._1.getArity})"
       variable + data
     })
