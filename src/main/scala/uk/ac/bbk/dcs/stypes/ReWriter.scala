@@ -371,9 +371,10 @@ object ReWriter {
 
   def generateFlinkScript(datalog: List[Clause], dataSources: Map[String, String]): String = {
 
+    lazy val unknownData = "@@unknownData@@"
+
     def getScriptFromSameHeadClauses(clauses: List[Clause], matchedDataSources: Map[Predicate, String]):
     (Map[Predicate, String], String) = {
-      // TODO IMPLEMENT this code
 
       def mapPositionTerm(terms: Seq[Term], acc: Map[Term, List[Int]] = Map(), index: Int = -1): Map[Term, List[Int]] = terms match {
         case List() => acc
@@ -394,7 +395,7 @@ object ReWriter {
             if (!matchedDataSources.contains(rhs.getPredicate)) {
               if (dataSources.contains(rhs.getPredicate.getIdentifier.toString))
                 matchedDataSources + (rhs.getPredicate -> dataSources(rhs.getPredicate.getIdentifier.toString))
-              else matchedDataSources + (rhs.getPredicate -> "@@uknown@@")
+              else matchedDataSources + (rhs.getPredicate -> unknownData)
             } else matchedDataSources
 
           if (lhs.isEmpty) {
@@ -403,28 +404,30 @@ object ReWriter {
             val rhsTermsPosMap = mapPositionTerm(rhs.getTerms.asScala.toList)
             val lhsTermsPosMap = mapPositionTerm(lhs.get.getTerms.asScala.toList)
 
-            val commonPairs =
-              for (rt <- rhsTermsPosMap; if lhsTermsPosMap.contains(rt._1))
-                yield (rt._2.head, lhsTermsPosMap(rt._1).head)
+            val commonPairs:List[(Int, Int)]=
+              (for (rt <- rhsTermsPosMap; if lhsTermsPosMap.contains(rt._1))
+                yield
+                  for ( l <- lhsTermsPosMap(rt._1) ;  r <- rt._2  )
+                    yield (l, r) ).toList.flatten
 
+            // condition
             val queryConditions =
               if (commonPairs.isEmpty) ""
-              else s".where(${commonPairs.keys.mkString(",")}).equalTo(${commonPairs.values.mkString(",")})"
+              else s".where(${commonPairs.map(_._1).mkString(",")}).equalTo(${commonPairs.map(_._2).mkString(",")})"
 
-            val lhsTermsProjection = lhsTermsPosMap.map(p => s"t._1._${p._2.head + 1}")
-
+            // projection
+            // todo: this projection is wrong
+            val lhsTermsProjection = commonPairs.map(_._1).map(p =>  s"t._1._${p + 1}")
             val rhsTermsNotInLhl = rhsTermsPosMap
               .filter(p => !lhsTermsPosMap.contains(p._1))
 
             val rhsTermsProjection = rhsTermsNotInLhl.map(p => s"t._2._${p._2.head + 1}")
-
             val leftProjection = lhsTermsProjection.mkString(",")
             val rightProjection = if (rhsTermsProjection.isEmpty) "" else s", ${rhsTermsProjection.mkString(",")}"
-
             val mappedTerms = s".map(t=> ($leftProjection$rightProjection))"
-
             val termProjection = lhsTermsPosMap.keys ++ rhsTermsNotInLhl.keys
 
+            // new relation
             val mergedAtom = new DefaultAtom(new Predicate(UUID.randomUUID().toString, termProjection.size),
               termProjection.toList.asJava)
 
@@ -478,8 +481,7 @@ object ReWriter {
         // data mapping
         .map(p => {
         val variable =  s"private lazy val ${p._1.getIdentifier.toString}  = "
-          val data =   if (p._2 == "@@uknown@@") s"unknownData${p._1.getArity}" else    "env.readTextFile(\"" + p._2 + "\")" + s".map(stringMapper${p._1.getArity})"
-
+          val data =   if (p._2 == unknownData) s"unknownData${p._1.getArity}" else    "env.readTextFile(\"" + p._2 + "\")" + s".map(stringMapper${p._1.getArity})"
           variable + data
         })
         //Rewriting
