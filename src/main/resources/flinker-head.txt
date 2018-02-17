@@ -22,3 +22,23 @@ private  def  stringMapper4: (String) => (String, String, String, String) = (p: 
   val line = p.split(',')
   (line(0), line(1), line(2), line(3))
 }
+
+private  def  unknownData1 ={
+  val ds: DataSet[(String)] =  env.fromElements()
+  ds
+}
+
+private  def  unknownData2 ={
+  val ds: DataSet[(String, String)] =  env.fromElements()
+  ds
+}
+
+private  def  unknownData3 ={
+  val ds: DataSet[(String, String, String)] =  env.fromElements()
+  ds
+}
+
+private  def  unknownData4 ={
+  val ds: DataSet[(String, String, String, String)] =  env.fromElements()
+  ds
+}

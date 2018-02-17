@@ -391,10 +391,11 @@ object ReWriter {
           val query = acc._2
 
           val ds =
-            if (!matchedDataSources.contains(rhs.getPredicate) &&
-              dataSources.contains(rhs.getPredicate.getIdentifier.toString))
-              matchedDataSources + (rhs.getPredicate -> dataSources(rhs.getPredicate.getIdentifier.toString))
-            else matchedDataSources
+            if (!matchedDataSources.contains(rhs.getPredicate)) {
+              if (dataSources.contains(rhs.getPredicate.getIdentifier.toString))
+                matchedDataSources + (rhs.getPredicate -> dataSources(rhs.getPredicate.getIdentifier.toString))
+              else matchedDataSources + (rhs.getPredicate -> "@@uknown@@")
+            } else matchedDataSources
 
           if (lhs.isEmpty) {
             visitClauseBody(xs, (ds, rhs.getPredicate.getIdentifier.toString), Some(rhs))
@@ -438,14 +439,14 @@ object ReWriter {
           case x :: xs =>
             val queryClause: (Map[Predicate, String], String) = visitClauseBody(x.body, (acc._1, ""))
             val scripts = acc._2
-            val map:Map[Predicate, String] = acc._1 ++ queryClause._1
+            val map: Map[Predicate, String] = acc._1 ++ queryClause._1
             getUnionScript(xs, (map, s"${queryClause._2}" :: scripts))
 
         }
 
       val scriptsAndDataSources = getUnionScript(clauses, (matchedDataSources, List()))
 
-      (scriptsAndDataSources._1, scriptsAndDataSources._2.reduce( (a1, a2) => s"($a1 union $a2)\n") )
+      (scriptsAndDataSources._1, scriptsAndDataSources._2.reduce((a1, a2) => s"($a1 union $a2)\n"))
     }
 
     def mapPredicateGroups(grouped: List[(Predicate, List[Clause])], acc: (Map[Predicate, String], List[String]) = (Map(), List()))
@@ -453,7 +454,7 @@ object ReWriter {
       case List() => acc
       case x :: xs =>
         val script = getScriptFromSameHeadClauses(x._2, acc._1)
-        val map: Map[Predicate, String]= acc._1 ++ script._1
+        val map: Map[Predicate, String] = acc._1 ++ script._1
         mapPredicateGroups(xs, (map, s"private lazy val ${x._1.getIdentifier}= ${script._2}" :: acc._2))
 
     }
@@ -466,14 +467,23 @@ object ReWriter {
 
 
     "import org.apache.flink.api.scala._\nimport org.apache.flink.configuration.Configuration\n\nobject FlinkRewriter extends App {\n\n" +
-    Source.fromFile("src/main/resources/flinker-head.txt").mkString +
+      Source.fromFile("src/main/resources/flinker-head.txt").mkString +
       "\n\n//DATA\n" +
-    result._1.map( p=> {
-      val variable =  s"private lazy val ${p._1.getIdentifier.toString} = "
-      val data = "env.readTextFile(\"" + p._2 + "\")" + s".map(stringMapper${p._1.getArity})"
-      variable + data
-    })
-      .mkString("\n") + "\n\n" + result._2.mkString("\n") +
+      result._1
+        // filter all predicates already defined as head in any declared clause
+        // because it is not necessary to declare something that will be declared later
+        .filter(p =>
+          !datalog.exists(
+            clause => clause.head.getPredicate.getIdentifier == p._1.getIdentifier))
+        // data mapping
+        .map(p => {
+        val variable =  s"private lazy val ${p._1.getIdentifier.toString}  = "
+          val data =   if (p._2 == "@@uknown@@") s"unknownData${p._1.getArity}" else    "env.readTextFile(\"" + p._2 + "\")" + s".map(stringMapper${p._1.getArity})"
+
+          variable + data
+        })
+        //Rewriting
+        .mkString("\n") + "\n\nRewriting\n" + result._2.mkString("\n") +
       "\n\n}"
 
   }

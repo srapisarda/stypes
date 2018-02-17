@@ -64,7 +64,7 @@ object FlinkRewriterTest extends App {
     line.head
   }
 
-  private  def  stringMapper: (String) => (String, String) = (p: String) => {
+  private  def  stringMapper2: (String) => (String, String) = (p: String) => {
     val line = p.split(',')
     (line.head, line.last)
   }
@@ -79,6 +79,27 @@ object FlinkRewriterTest extends App {
     (line(0), line(1), line(2), line(3))
   }
 
+
+  private  def  unknownData1 ={
+    val ds: DataSet[(String)] =  env.fromElements()
+    ds
+  }
+
+  private  def  unknownData2 ={
+    val ds: DataSet[(String, String)] =  env.fromElements()
+    ds
+  }
+
+  private  def  unknownData3 ={
+    val ds: DataSet[(String, String, String)] =  env.fromElements()
+    ds
+  }
+
+  private  def  unknownData4 ={
+    val ds: DataSet[(String, String, String, String)] =  env.fromElements()
+    ds
+  }
+
   //DATA
   private lazy val v760 = env.readTextFile(s"$dataFolder/v760.csv").map(stringMapper4)
   private lazy val v515 = env.readTextFile(s"$dataFolder/v515.csv").map(stringMapper4)
@@ -86,6 +107,7 @@ object FlinkRewriterTest extends App {
   private lazy val v14 = env.readTextFile( s"$dataFolder/v14.csv").map(stringMapper4)
   private lazy val v781 = env.readTextFile(s"$dataFolder/v781.csv").map(stringMapper4)
   private lazy val v763 = env.readTextFile(s"$dataFolder/v763.csv").map(stringMapper4)
+  private lazy val m139004  = unknownData4
   private lazy val v466 = env.readTextFile(s"$dataFolder/v466.csv").map(stringMapper4)
   private lazy val v199 = env.readTextFile(s"$dataFolder/v199.csv").map(stringMapper4)
   private lazy val v308 = env.readTextFile(s"$dataFolder/v308.csv").map(stringMapper4)
@@ -93,6 +115,8 @@ object FlinkRewriterTest extends App {
   private lazy val v762 = env.readTextFile(s"$dataFolder/v762.csv").map(stringMapper4)
   private lazy val v174 = env.readTextFile(s"$dataFolder/v174.csv").map(stringMapper4)
   private lazy val v748 = env.readTextFile(s"$dataFolder/v748.csv").map(stringMapper4)
+  private lazy val m249004  = unknownData4
+  private lazy val m56004  = unknownData4
   private lazy val v653 = env.readTextFile(s"$dataFolder/v653.csv").map(stringMapper4)
   private lazy val v929 = env.readTextFile(s"$dataFolder/v929.csv").map(stringMapper4)
   private lazy val v635 = env.readTextFile(s"$dataFolder/v635.csv").map(stringMapper4)
@@ -100,10 +124,7 @@ object FlinkRewriterTest extends App {
   private lazy val v197: DataSet[(String, String, String, String)] = env.readTextFile(s"$dataFolder/v197.csv").map(stringMapper4)
   private lazy val v22 = env.readTextFile(s"$dataFolder/v22.csv").map(stringMapper4)
 
-  private val m56004: DataSet[(String, String, String, String)] =  env.fromElements()
-  private val m139004: DataSet[(String, String, String, String)] =  env.fromElements()
 
-  private val m249004: DataSet[(String, String, String, String)] =  env.fromElements()
 
   private lazy val p6= (((((((((((v905 union v22)
     union v781)
