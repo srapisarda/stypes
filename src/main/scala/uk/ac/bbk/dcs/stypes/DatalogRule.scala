@@ -22,7 +22,6 @@ package uk.ac.bbk.dcs.stypes
 
 import fr.lirmm.graphik.graal.api.core.{Atom, Predicate, Term}
 import fr.lirmm.graphik.graal.core.DefaultAtom
-import play.api.libs.json._
 
 import scala.collection.JavaConverters._ // Combinator syntax
 
@@ -51,37 +50,6 @@ case class Clause(head: Atom, body: List[Atom]) extends DatalogRule {
   override def toString: String = s"$head :- ${body.map(a => a).mkString(", ")}"
 }
 
-object ClauseSerialiser {
-
-  implicit val termWriter = new Writes[Term] {
-    override def writes(term: Term): JsValue = Json.obj(
-      "label" -> term.getLabel
-    )
-  }
-
-  implicit val predicateWriter = new Writes[Predicate] {
-    override def writes(predicate: Predicate): JsValue = Json.obj(
-      "identifier" -> predicate.getIdentifier.toString,
-      "arity" -> predicate.getArity
-    )
-  }
-
-  implicit val atomWriter = new Writes[Atom] {
-    override def writes(atom: Atom): JsValue = Json.obj(
-      "predicate" -> atom.getPredicate,
-      "terms" -> atom.getTerms.asScala
-    )
-  }
-
-  implicit val clauseWrites = new Writes[Clause] {
-    override def writes(clause: Clause) = Json.obj(
-      "head" -> clause.head,
-      "body" -> clause.body
-    )
-  }
-
-
-}
 
 
 trait BinaryOperator {

@@ -52,8 +52,6 @@ import org.apache.flink.configuration.Configuration
   */
 object FlinkRewriterTest extends App {
 
-  val dataFolder="src/main/resources/benchmark/100/data"
-  
   val conf = new Configuration()
   conf.setInteger("taskmanager.numberOfTaskSlots",4)
   private val env = ExecutionEnvironment.createLocalEnvironment(conf)
@@ -64,7 +62,7 @@ object FlinkRewriterTest extends App {
     line.head
   }
 
-  private  def  stringMapper2: (String) => (String, String) = (p: String) => {
+  private  def  stringMapper: (String) => (String, String) = (p: String) => {
     val line = p.split(',')
     (line.head, line.last)
   }
@@ -78,7 +76,6 @@ object FlinkRewriterTest extends App {
     val line = p.split(',')
     (line(0), line(1), line(2), line(3))
   }
-
 
   private  def  unknownData1 ={
     val ds: DataSet[(String)] =  env.fromElements()
@@ -101,56 +98,56 @@ object FlinkRewriterTest extends App {
   }
 
   //DATA
-  private lazy val v760 = env.readTextFile(s"$dataFolder/v760.csv").map(stringMapper4)
-  private lazy val v515 = env.readTextFile(s"$dataFolder/v515.csv").map(stringMapper4)
-  private lazy val v905 = env.readTextFile(s"$dataFolder/v905.csv").map(stringMapper4)
-  private lazy val v14 = env.readTextFile( s"$dataFolder/v14.csv").map(stringMapper4)
-  private lazy val v781 = env.readTextFile(s"$dataFolder/v781.csv").map(stringMapper4)
-  private lazy val v763 = env.readTextFile(s"$dataFolder/v763.csv").map(stringMapper4)
+  private lazy val v760  = env.readTextFile("/Users/rapissal/development/uni/stypes/src/main/resources/benchmark/100/data/v760.csv").map(stringMapper4)
+  private lazy val v515  = env.readTextFile("/Users/rapissal/development/uni/stypes/src/main/resources/benchmark/100/data/v515.csv").map(stringMapper4)
+  private lazy val v905  = env.readTextFile("/Users/rapissal/development/uni/stypes/src/main/resources/benchmark/100/data/v905.csv").map(stringMapper4)
+  private lazy val v14  = env.readTextFile("/Users/rapissal/development/uni/stypes/src/main/resources/benchmark/100/data/v14.csv").map(stringMapper4)
+  private lazy val v781  = env.readTextFile("/Users/rapissal/development/uni/stypes/src/main/resources/benchmark/100/data/v781.csv").map(stringMapper4)
+  private lazy val v763  = env.readTextFile("/Users/rapissal/development/uni/stypes/src/main/resources/benchmark/100/data/v763.csv").map(stringMapper4)
   private lazy val m139004  = unknownData4
-  private lazy val v466 = env.readTextFile(s"$dataFolder/v466.csv").map(stringMapper4)
-  private lazy val v199 = env.readTextFile(s"$dataFolder/v199.csv").map(stringMapper4)
-  private lazy val v308 = env.readTextFile(s"$dataFolder/v308.csv").map(stringMapper4)
-  private lazy val v708 = env.readTextFile(s"$dataFolder/v708.csv").map(stringMapper4)
-  private lazy val v762 = env.readTextFile(s"$dataFolder/v762.csv").map(stringMapper4)
-  private lazy val v174 = env.readTextFile(s"$dataFolder/v174.csv").map(stringMapper4)
-  private lazy val v748 = env.readTextFile(s"$dataFolder/v748.csv").map(stringMapper4)
+  private lazy val v466  = env.readTextFile("/Users/rapissal/development/uni/stypes/src/main/resources/benchmark/100/data/v466.csv").map(stringMapper4)
+  private lazy val v199  = env.readTextFile("/Users/rapissal/development/uni/stypes/src/main/resources/benchmark/100/data/v199.csv").map(stringMapper4)
+  private lazy val v308  = env.readTextFile("/Users/rapissal/development/uni/stypes/src/main/resources/benchmark/100/data/v308.csv").map(stringMapper4)
+  private lazy val v708  = env.readTextFile("/Users/rapissal/development/uni/stypes/src/main/resources/benchmark/100/data/v708.csv").map(stringMapper4)
+  private lazy val v762  = env.readTextFile("/Users/rapissal/development/uni/stypes/src/main/resources/benchmark/100/data/v762.csv").map(stringMapper4)
+  private lazy val v174  = env.readTextFile("/Users/rapissal/development/uni/stypes/src/main/resources/benchmark/100/data/v174.csv").map(stringMapper4)
+  private lazy val v748  = env.readTextFile("/Users/rapissal/development/uni/stypes/src/main/resources/benchmark/100/data/v748.csv").map(stringMapper4)
   private lazy val m249004  = unknownData4
   private lazy val m56004  = unknownData4
-  private lazy val v653 = env.readTextFile(s"$dataFolder/v653.csv").map(stringMapper4)
-  private lazy val v929 = env.readTextFile(s"$dataFolder/v929.csv").map(stringMapper4)
-  private lazy val v635 = env.readTextFile(s"$dataFolder/v635.csv").map(stringMapper4)
-  private lazy val v51 = env.readTextFile( s"$dataFolder/v51.csv").map(stringMapper4)
-  private lazy val v197: DataSet[(String, String, String, String)] = env.readTextFile(s"$dataFolder/v197.csv").map(stringMapper4)
-  private lazy val v22 = env.readTextFile(s"$dataFolder/v22.csv").map(stringMapper4)
+  private lazy val v653  = env.readTextFile("/Users/rapissal/development/uni/stypes/src/main/resources/benchmark/100/data/v653.csv").map(stringMapper4)
+  private lazy val v929  = env.readTextFile("/Users/rapissal/development/uni/stypes/src/main/resources/benchmark/100/data/v929.csv").map(stringMapper4)
+  private lazy val v635  = env.readTextFile("/Users/rapissal/development/uni/stypes/src/main/resources/benchmark/100/data/v635.csv").map(stringMapper4)
+  private lazy val v51  = env.readTextFile("/Users/rapissal/development/uni/stypes/src/main/resources/benchmark/100/data/v51.csv").map(stringMapper4)
+  private lazy val v197  = env.readTextFile("/Users/rapissal/development/uni/stypes/src/main/resources/benchmark/100/data/v197.csv").map(stringMapper4)
+  private lazy val v22  = env.readTextFile("/Users/rapissal/development/uni/stypes/src/main/resources/benchmark/100/data/v22.csv").map(stringMapper4)
+
+  //Rewriting
+  private lazy val p6= (((((((((((v905.map(t=> (t._2,t._2)) union v22.map(t=> (t._1,t._1)))
+    union v781.map(t=> (t._1,t._1)))
+    union v51.map(t=> (t._1,t._1)))
+    union v653.map(t=> (t._1,t._1)))
+    union m56004.map(t=> (t._2,t._2)))
+    union v308.map(t=> (t._1,t._1)))
+    union v466.map(t=> (t._1,t._1)))
+    union v762.map(t=> (t._1,t._1)))
+    union v635.map(t=> (t._2,t._2)))
+    union v197.map(t=> (t._1,t._1)))
+    union m139004.map(t=> (t._1,t._1)))
+
+  private lazy val p1= (((((((((p6.join(v929).where(0,0).equalTo(0,2).count()>0 || p6.join(v14).where(0).equalTo(0).count()>0)
+    || p6.join(v748).where(0).equalTo(0).count()>0)
+    || p6.join(v515).where(0).equalTo(0).count()>0)
+    || p6.join(v708).where(0).equalTo(1).count()>0)
+    || m249004.join(p6).where(0).equalTo(0).count()>0)
+    || p6.join(v760).where(0).equalTo(1).count()>0)
+    || p6.join(v174).where(0).equalTo(3).count()>0)
+    || p6.join(v199).where(0,0).equalTo(0,1).count()>0)
+    || p6.join(v763).where(0).equalTo(0).count()>0)
 
 
+  println(s"p6: ${p6.print()}")
 
-  private lazy val p6= (((((((((((v905 union v22)
-    union v781)
-    union v51)
-    union v653)
-    union m56004)
-    union v308)
-    union v466)
-    union v762)
-    union v635)
-    union v197)
-    union m139004)
-
-  private lazy val p1= (((((((((p6.join(v929).where(0).equalTo(0).map(t=> (t._1._1, t._2._2, t._2._3, t._2._4)) union p6.join(v14).where(0).equalTo(0).map(t=> (t._1._1, t._2._2,t._2._3,t._2._4)))
-    union p6.join(v748).where(0).equalTo(0).map(t=> (t._1._1, t._2._2,t._2._3,t._2._4)))
-    union p6.join(v515).where(0).equalTo(0).map(t=> (t._1._1, t._2._2,t._2._3,t._2._4)))
-    union p6.join(v708).where(1).equalTo(0).map(t=> (t._1._1, t._2._1,t._2._3,t._2._4)))
-    union m249004.join(p6).where(0).equalTo(0).map(t=> (t._1._1,t._1._2,t._1._3,t._1._4)))
-    union p6.join(v760).where(1).equalTo(0).map(t=> (t._1._1, t._2._1,t._2._3,t._2._4)))
-    union p6.join(v174).where(3).equalTo(0).map(t=> (t._1._1, t._2._1,t._2._2,t._2._3)))
-    union p6.join(v199).where(0).equalTo(0).map(t=> (t._1._1, t._2._2, t._2._3,t._2._4)))
-    union p6.join(v763).where(0).equalTo(0).map(t=> (t._1._1, t._2._2,t._2._3,t._2._4)))
-
-
-    p6.print()
-
+  println(s"p1: $p1")
 
 
 }
