@@ -384,7 +384,45 @@ object ReWriter {
           mapPositionTerm(xs, acc + mappedTerm, idx)
       }
 
-      def visitClauseBody(atoms: List[Atom], acc: (Map[Predicate, String], String),
+      def getProjection(head: Atom,  lhsTermsPosMap:Map[Term, List[Int]],  rhsTermsPosMap: Map[Term, List[Int]]): (List[Term], String) = {
+        def projectAtLeastTuple2( proj: List[String] ) = if (proj.lengthCompare(1)==0)  List(proj.head, proj.head) else proj
+
+        val terms: List[Term] = (lhsTermsPosMap.keys ++ rhsTermsPosMap.keys).toList
+        val termsToProject = getTermsToProject( head, terms  )
+        val projection =
+          if ( termsToProject.isEmpty )
+            (List(), "")
+          else{
+
+            if ( rhsTermsPosMap.isEmpty){
+              val lhsProjection = termsToProject.get
+                .filter(term => lhsTermsPosMap.contains(term))
+                .map(term => lhsTermsPosMap(term).head)
+                .map(p => s"t._${p + 1}")
+
+              (termsToProject.get, s".map(t=> (${projectAtLeastTuple2(lhsProjection).mkString(",")}))")
+
+            }else {
+              val rhsTermsNotInLhl = rhsTermsPosMap
+                .filter(p => !lhsTermsPosMap.contains(p._1))
+
+              val lhsProjection = termsToProject.get
+                .filter(term => lhsTermsPosMap.contains(term))
+                .map(term => lhsTermsPosMap(term).head)
+                .map(p => s"t._1._${p + 1}")
+
+              val rhsTermsProjection = termsToProject.get
+                .filter(term => rhsTermsPosMap.contains(term))
+                .map(term => rhsTermsNotInLhl(term).head)
+                .map(p => s"t._2._${p + 1}")
+
+              (termsToProject.get, s".map(t=> (${projectAtLeastTuple2(lhsProjection ++ rhsTermsProjection).mkString(",")}))")
+            }
+          }
+        projection
+      }
+
+      def visitClauseBody(atoms: List[Atom], head: Atom, acc: (Map[Predicate, String], String),
                           lhs: Option[Atom] = None): (Map[Predicate, String], String) = atoms match {
         case List() => acc;
         case rhs :: xs =>
@@ -399,40 +437,40 @@ object ReWriter {
             } else matchedDataSources
 
           if (lhs.isEmpty) {
-            visitClauseBody(xs, (ds, rhs.getPredicate.getIdentifier.toString), Some(rhs))
+            val mappedTerms =  getProjection(head,  mapPositionTerm(rhs.getTerms.asScala.toList), Map() )
+            visitClauseBody(xs, head, (ds, rhs.getPredicate.getIdentifier.toString + mappedTerms._2), Some(rhs))
           } else {
-            val rhsTermsPosMap = mapPositionTerm(rhs.getTerms.asScala.toList)
             val lhsTermsPosMap = mapPositionTerm(lhs.get.getTerms.asScala.toList)
-
-            val commonPairs:List[(Int, Int)]=
+            val rhsTermsPosMap = mapPositionTerm(rhs.getTerms.asScala.toList)
+            val commonPairs: List[(Int, Int)] =
               (for (rt <- rhsTermsPosMap; if lhsTermsPosMap.contains(rt._1))
                 yield
-                  for ( l <- lhsTermsPosMap(rt._1) ;  r <- rt._2  )
-                    yield (l, r) ).toList.flatten
+                  for (l <- lhsTermsPosMap(rt._1); r <- rt._2)
+                    yield (l, r)).toList.flatten
 
+
+            // check for arity on the head
+            val postBooleanCondition =  if (head.getPredicate.getArity>0 ) "" else ".count()>0"
             // condition
             val queryConditions =
               if (commonPairs.isEmpty) ""
-              else s".where(${commonPairs.map(_._1).mkString(",")}).equalTo(${commonPairs.map(_._2).mkString(",")})"
-
+              else s".where(${commonPairs.map(_._1).mkString(",")}).equalTo(${commonPairs.map(_._2).mkString(",")})$postBooleanCondition"
             // projection
-            // todo: this projection is wrong
-            val lhsTermsProjection = commonPairs.map(_._1).map(p =>  s"t._1._${p + 1}")
-            val rhsTermsNotInLhl = rhsTermsPosMap
-              .filter(p => !lhsTermsPosMap.contains(p._1))
-
-            val rhsTermsProjection = rhsTermsNotInLhl.map(p => s"t._2._${p._2.head + 1}")
-            val leftProjection = lhsTermsProjection.mkString(",")
-            val rightProjection = if (rhsTermsProjection.isEmpty) "" else s", ${rhsTermsProjection.mkString(",")}"
-            val mappedTerms = s".map(t=> ($leftProjection$rightProjection))"
-            val termProjection = lhsTermsPosMap.keys ++ rhsTermsNotInLhl.keys
-
+            val mappedTerms =  getProjection(head, lhsTermsPosMap, mapPositionTerm(rhs.getTerms.asScala.toList) )
             // new relation
-            val mergedAtom = new DefaultAtom(new Predicate(UUID.randomUUID().toString, termProjection.size),
-              termProjection.toList.asJava)
+            val mergedAtom = new DefaultAtom(new Predicate(UUID.randomUUID().toString, mappedTerms._1.size),
+              mappedTerms._1.asJava)
 
-            visitClauseBody(xs, (ds, s"$query.join(${rhs.getPredicate.getIdentifier})$queryConditions$mappedTerms"), Some(mergedAtom))
+            visitClauseBody(xs, head, (ds, s"$query.join(${rhs.getPredicate.getIdentifier})$queryConditions${mappedTerms._2}"), Some(mergedAtom))
           }
+
+      }
+
+      def getTermsToProject( head:Atom, bodyTerms: => List[Term]) = {
+        if (head.getPredicate.getArity > 0) {
+          Some(bodyTerms.filter(p => head.getTerms.asScala
+            .map(_.getIdentifier.toString).contains(p.getIdentifier.toString)).distinct)
+        } else None
       }
 
       def getUnionScript(clauses: List[Clause], acc: (Map[Predicate, String], List[String])):
@@ -440,7 +478,7 @@ object ReWriter {
         clauses match {
           case List() => acc
           case x :: xs =>
-            val queryClause: (Map[Predicate, String], String) = visitClauseBody(x.body, (acc._1, ""))
+            val queryClause: (Map[Predicate, String], String) = visitClauseBody(x.body, x.head, (acc._1, ""))
             val scripts = acc._2
             val map: Map[Predicate, String] = acc._1 ++ queryClause._1
             getUnionScript(xs, (map, s"${queryClause._2}" :: scripts))
@@ -448,8 +486,8 @@ object ReWriter {
         }
 
       val scriptsAndDataSources = getUnionScript(clauses, (matchedDataSources, List()))
-
-      (scriptsAndDataSources._1, scriptsAndDataSources._2.reduce((a1, a2) => s"($a1 union $a2)\n"))
+      lazy val binaryOperator = if ( clauses.head.head.getPredicate.getArity > 0 ) "union" else "||"
+      (scriptsAndDataSources._1, scriptsAndDataSources._2.reduce((a1, a2) => s"($a1 $binaryOperator $a2)\n"))
     }
 
     def mapPredicateGroups(grouped: List[(Predicate, List[Clause])], acc: (Map[Predicate, String], List[String]) = (Map(), List()))
@@ -468,7 +506,6 @@ object ReWriter {
     //    grouped.map(clause => s"lazy val ${clause._1.getIdentifier} = ${getScriptFromSameHeadClauses(clause._2, Map())._2}")
     //      .mkString("\n")
 
-
     "import org.apache.flink.api.scala._\nimport org.apache.flink.configuration.Configuration\n\nobject FlinkRewriter extends App {\n\n" +
       Source.fromFile("src/main/resources/flinker-head.txt").mkString +
       "\n\n//DATA\n" +
@@ -476,16 +513,16 @@ object ReWriter {
         // filter all predicates already defined as head in any declared clause
         // because it is not necessary to declare something that will be declared later
         .filter(p =>
-          !datalog.exists(
-            clause => clause.head.getPredicate.getIdentifier == p._1.getIdentifier))
+        !datalog.exists(
+          clause => clause.head.getPredicate.getIdentifier == p._1.getIdentifier))
         // data mapping
         .map(p => {
-        val variable =  s"private lazy val ${p._1.getIdentifier.toString}  = "
-          val data =   if (p._2 == unknownData) s"unknownData${p._1.getArity}" else    "env.readTextFile(\"" + p._2 + "\")" + s".map(stringMapper${p._1.getArity})"
-          variable + data
-        })
+        val variable = s"private lazy val ${p._1.getIdentifier.toString}  = "
+        val data = if (p._2 == unknownData) s"unknownData${p._1.getArity}" else "env.readTextFile(\"" + p._2 + "\")" + s".map(stringMapper${p._1.getArity})"
+        variable + data
+      })
         //Rewriting
-        .mkString("\n") + "\n\nRewriting\n" + result._2.mkString("\n") +
+        .mkString("\n") + "\n\n//Rewriting\n" + result._2.mkString("\n") +
       "\n\n}"
 
   }
