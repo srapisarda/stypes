@@ -25,6 +25,4 @@ libraryDependencies ++= Seq( "fr.lirmm.graphik" % "graal-core" % graalVersion
                 ,"org.apache.spark" %% "spark-core" % sparkVersion
                 ,"org.apache.spark" %% "spark-sql" % sparkVersion
                 ,"org.apache.flink" %% "flink-streaming-scala" % flinkVersion
-                ,"com.typesafe.play" %% "play-json" % playVersion
-                , "com.fasterxml.jackson.core" % "jackson-core" % "2.9.4"
             )

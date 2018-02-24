@@ -31,7 +31,7 @@ import org.scalatest.FunSpec
   */
 class SparkTest01 extends FunSpec {
   private val pathToBenchmarkNDL_SQL = "src/main/resources/benchmark/NDL-SQL"
-  private val config = new SparkConf().setAppName("SparkTest03").setMaster("local[4]") // .set("spark.driver.memory", "4g") // .set("spark.executor.memory", "1g")
+  private val config = new SparkConf().setAppName("SparkTest03").setMaster("local[4]")//.set("spark.executor.memory", "1g")
   private val sc = SparkContext.getOrCreate(config)
 
   sc.setCheckpointDir(s"$pathToBenchmarkNDL_SQL/data")
