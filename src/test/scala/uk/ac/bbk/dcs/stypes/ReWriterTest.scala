@@ -22,8 +22,7 @@ package uk.ac.bbk.dcs.stypes
 
 import java.io.{BufferedWriter, File, FileWriter}
 
-import fr.lirmm.graphik.graal.api.core.{Atom, Predicate, Rule, Term}
-import fr.lirmm.graphik.graal.core.ruleset.LinkedListRuleSet
+import fr.lirmm.graphik.graal.api.core.{Predicate, Rule, Term}
 import fr.lirmm.graphik.graal.core.term.DefaultTermFactory
 import fr.lirmm.graphik.graal.core.{DefaultAtom, TreeMapSubstitution}
 import fr.lirmm.graphik.graal.io.dlp.DlgpParser
@@ -47,58 +46,19 @@ class ReWriterTest extends FunSpec {
   private val pathToBenchmark100 = "src/main/resources/benchmark/100"
   private val pathToBenchmark300 = "src/main/resources/benchmark/300"
   private val pathToBenchmarkNDL_SQL = "src/main/resources/benchmark/NDL-SQL"
-  private val ontology1 = getOntology("src/main/resources/ont-1.dlp")
-  private val ontology2 = getOntology("src/main/resources/ont-2.dlp")
-  private val ontology3 = getOntology("src/main/resources/ont-3.dlp")
-  private val ontology4 = getOntology("src/main/resources/ont-4.dlp")
-  private val ontology5 = getOntology("src/main/resources/ont-5.dlp")
-  private val ontCar = getOntology("src/main/resources/ont-car.dlp")
-  private val ontBenchmark100Dep = getOntology(s"$pathToBenchmark100/dependencies/deep.t-tgds.dlp")
-  private val ontBenchmark100All = getOntology(s"$pathToBenchmark100/dependencies/all-tgds.dlp")
-  private val ontBenchmark100sDep = getOntology(s"$pathToBenchmark100/dependencies/deep.st-tgds.dlp")
-  private val ontBenchmark300Dep = getOntology(s"$pathToBenchmark300/dependencies/deep.t-tgds.dlp")
-  private val ontBenchmarkNDL_SQL = getOntology(s"$pathToBenchmarkNDL_SQL/dependencies/15-tw.dlp")
-  ///private val ontBenchmark300Dep = getOntology(s"${pathTo300Dep}deep.t-tgds.dlp")
+  private val ontology1 = ReWriter.getOntology("src/main/resources/ont-1.dlp")
+  private val ontology2 = ReWriter.getOntology("src/main/resources/ont-2.dlp")
+  private val ontology3 = ReWriter.getOntology("src/main/resources/ont-3.dlp")
+  private val ontology4 = ReWriter.getOntology("src/main/resources/ont-4.dlp")
+  private val ontology5 = ReWriter.getOntology("src/main/resources/ont-5.dlp")
+  private val ontCar = ReWriter.getOntology("src/main/resources/ont-car.dlp")
+  private val ontBenchmark100Dep = ReWriter.getOntology(s"$pathToBenchmark100/dependencies/deep.t-tgds.dlp")
+  private val ontBenchmark100All = ReWriter.getOntology(s"$pathToBenchmark100/dependencies/all-tgds.dlp")
+  private val ontBenchmark100sDep = ReWriter.getOntology(s"$pathToBenchmark100/dependencies/deep.st-tgds.dlp")
+  private val ontBenchmark300Dep = ReWriter.getOntology(s"$pathToBenchmark300/dependencies/deep.t-tgds.dlp")
+  private val ontBenchmarkNDL_SQL = ReWriter.getOntology(s"$pathToBenchmarkNDL_SQL/dependencies/15-tw.dlp")
 
-  // 1 - Create a relational database store with HSQLDB (An InMemory Java
-  // database system),
-  //  val store = new DefaultRdbmsStore(new HSQLDBDriver("test", null))
 
-  private def getOntology(filename: String) = {
-    // 2 - Parse Animals.dlp (A Dlgp file with rules and facts)
-    val dlgpParser = new DlgpParser(new File(filename))
-    // val store = new DefaultRdbmsStore(new HSQLDBDriver("test", null))
-    val ontology = new LinkedListRuleSet
-    while (dlgpParser.hasNext) {
-      dlgpParser.next match {
-        // case atom: Atom => store.add(atom)
-        case rule: Rule => ontology.add(rule)
-        case _ => // println("do nothing")
-      }
-    }
-
-    ontology
-  }
-
-  private def getDatalogRewriting(filename: String): List[Clause] = {
-    // 2 - Parse Animals.dlp (A Dlgp file with rules and facts)
-    val dlgpParser = new DlgpParser(new File(filename))
-    // val store = new DefaultRdbmsStore(new HSQLDBDriver("test", null))
-    val clauses = dlgpParser.asScala.toList
-    clauses.map {
-      case rule: Rule =>
-        val head: Atom = {
-          val atom = rule.getHead.asScala.head
-          if (atom.getTerms.size == 1 &&
-            (atom.getTerm(0).getType.equals(Term.Type.LITERAL) ||
-              atom.getTerm(0).getType.equals(Term.Type.CONSTANT)))
-            new DefaultAtom(new Predicate(atom.getPredicate.getIdentifier.toString, 0))
-          else atom
-        }
-        val body: List[Atom] = rule.getBody.asScala.toList
-        Clause(head, body)
-    }
-  }
 
   def getMockTypeEpsilon: Type = {
     val s1 = new TreeMapSubstitution
@@ -440,7 +400,7 @@ class ReWriterTest extends FunSpec {
     }
 
     it("should generate Flink script using all-tgds-rewriting-using-q01.dlp") {
-      val datalog = getDatalogRewriting(s"$pathToBenchmark100/rewriting/all-tgds-rewriting-using-q01.dlp")
+      val datalog = ReWriter.getDatalogRewriting(s"$pathToBenchmark100/rewriting/all-tgds-rewriting-using-q01.dlp")
       printDatalog(datalog)
 
       val dataList = getListOfFiles(s"$pathToBenchmark100/data")

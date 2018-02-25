@@ -20,12 +20,15 @@ package uk.ac.bbk.dcs.stypes
  * #L%
  */
 
+import java.io.File
 import java.util.UUID
 
 import fr.lirmm.graphik.graal.api.core._
 import fr.lirmm.graphik.graal.core.DefaultAtom
 import fr.lirmm.graphik.graal.core.atomset.graph.DefaultInMemoryGraphAtomSet
+import fr.lirmm.graphik.graal.core.ruleset.LinkedListRuleSet
 import fr.lirmm.graphik.graal.forward_chaining.DefaultChase
+import fr.lirmm.graphik.graal.io.dlp.DlgpParser
 
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
@@ -525,6 +528,37 @@ object ReWriter {
         .mkString("\n") + "\n\n//Rewriting\n" + result._2.mkString("\n") +
       "\n\n}"
 
+  }
+
+  def getOntology(filename: String): LinkedListRuleSet = {
+    val dlgpParser = new DlgpParser(new File(filename))
+    val ontology = new LinkedListRuleSet
+    while (dlgpParser.hasNext) {
+      dlgpParser.next match {
+        case rule: Rule => ontology.add(rule)
+        case _ => // it does anything
+      }
+    }
+
+    ontology
+  }
+
+  def getDatalogRewriting(filename: String): List[Clause] = {
+    val dlgpParser = new DlgpParser(new File(filename))
+    val clauses = dlgpParser.asScala.toList
+    clauses.map {
+      case rule: Rule =>
+        val head: Atom = {
+          val atom = rule.getHead.asScala.head
+          if (atom.getTerms.size == 1 &&
+            (atom.getTerm(0).getType.equals(Term.Type.LITERAL) ||
+              atom.getTerm(0).getType.equals(Term.Type.CONSTANT)))
+            new DefaultAtom(new Predicate(atom.getPredicate.getIdentifier.toString, 0))
+          else atom
+        }
+        val body: List[Atom] = rule.getBody.asScala.toList
+        Clause(head, body)
+    }
   }
 
 }
