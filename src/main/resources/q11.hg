@@ -1,0 +1,22 @@
+vertex( ?m297004_c1 ).
+vertex( ?m297004_c2 ).
+vertex( ?m286004_c0 ).
+vertex( ?m252004_c2 ).
+vertex( ?m165004_c2 ).
+vertex( ?m165004_c3 ).
+vertex( ?m297004_c3 ).
+vertex( ?m203004_c2 ).
+vertex( ?m252004_c3 ).
+vertex( ?m203004_c3 ).
+vertex( ?m286004_c2 ).
+vertex( ?m286004_c3 ).
+vertex( ?m286004_c1 ).
+vertex( ?m252004_c0 ).
+vertex( ?m203004_c1 ).
+vertex( ?m165004_c1 ).
+
+edge( ?m286004_c0,?m286004_c1,?m286004_c2,?m286004_c3 ).
+edge( ?m252004_c0,?m286004_c0,?m252004_c2,?m252004_c3 ).
+edge( ?m286004_c0,?m165004_c1,?m165004_c2,?m165004_c3 ).
+edge( ?m286004_c0,?m297004_c1,?m297004_c2,?m297004_c3 ).
+edge( ?m286004_c0,?m203004_c1,?m203004_c2,?m203004_c3 ).
