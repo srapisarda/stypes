@@ -23,21 +23,61 @@ package uk.ac.bbk.dcs.stypes
 import com.tinkerpop.blueprints.Graph
 import com.tinkerpop.blueprints.impls.tg.TinkerGraph
 import com.tinkerpop.blueprints.util.io.gml.GMLReader
-import fr.lirmm.graphik.graal.api.core.Predicate
+import fr.lirmm.graphik.graal.api.core.{Predicate, Rule}
 import fr.lirmm.graphik.graal.api.factory.TermFactory
 import fr.lirmm.graphik.graal.core.DefaultAtom
+import fr.lirmm.graphik.graal.core.ruleset.LinkedListRuleSet
 import fr.lirmm.graphik.graal.core.term.DefaultTermFactory
+import fr.lirmm.graphik.graal.io.dlp.DlgpParser
 import org.junit.Assert
 import org.scalatest.FunSpec
 
 import scala.io.Source
 import scala.reflect.io.File
 import scala.util.matching.Regex
+import scala.collection.JavaConverters._
 
 /**
   * Created by Salvatore Rapisarda on 27/04/2017.
   */
 class TreeDecompositionTest extends FunSpec {
+
+  describe("Tree decomposition commons ") {
+
+    it("should a common operation correctly 2 ") {
+      val t = buildTestTreeDecomposition2("src/main/resources/q11.gml", "src/main/resources/q11.txt")
+      assert(t.getRoot.atoms.size==1)
+    }
+
+    it("should make common operation correctly") {
+
+      val t = buildTestTreeDecomposition("src/main/resources/Q7.gml", "src/main/resources/Q7.cq")
+
+      Assert.assertNotNull(t)
+      assert(Set("X2", "X3") == t.getRoot.variables.map(_.getIdentifier))
+      //      System.out.println("root: " + t.getRoot.variables)
+      Assert.assertEquals(2, t.getChildes.size)
+      Assert.assertEquals(7, t.getSize)
+      //      // assert splitter atoms's terms
+      val separator: TreeDecomposition = t.getSeparator
+      separator.getRoot.variables.foreach(term =>
+        assert(Set("X3", "X4").contains(term.getIdentifier.asInstanceOf[String])))
+
+      //
+      val s = Splitter(t)
+
+      println(s)
+
+      val terms = t.getAllTerms()
+      assert(terms.size == 8)
+
+    }
+
+
+
+  }
+
+
 
   def buildTestTreeDecomposition(fileGML: String, fileCQ: String): TreeDecomposition = {
 
@@ -68,31 +108,23 @@ class TreeDecompositionTest extends FunSpec {
 
   }
 
-  describe("Tree decomposition commons ") {
-    it("should make common operation correctly") {
+  def buildTestTreeDecomposition2(fileGML: String, fileCQWithHead: String): TreeDecomposition = {
 
-      val t = buildTestTreeDecomposition("src/main/resources/Q7.gml", "src/main/resources/Q7.cq")
+    val textQueries = File(fileCQWithHead).lines()
+      .map( line  =>  line .replaceAll( "<-", ":-" ).replace("?", "") ).mkString("\n")
 
-      Assert.assertNotNull(t)
-      assert(Set("X2", "X3") == t.getRoot.variables.map(_.getIdentifier))
-      //      System.out.println("root: " + t.getRoot.variables)
-      Assert.assertEquals(2, t.getChildes.size)
-      Assert.assertEquals(7, t.getSize)
-      //      // assert splitter atoms's terms
-      val separator: TreeDecomposition = t.getSeparator
-      separator.getRoot.variables.foreach(term =>
-        assert(Set("X3", "X4").contains(term.getIdentifier.asInstanceOf[String])))
-
-      //
-      val s = Splitter(t)
-
-      println(s)
-
-      val terms = t.getAllTerms()
-      assert(terms.size == 8)
-
+    val rules:List[Rule] = new DlgpParser(textQueries).asScala.toList.map{
+      case rule:Rule => rule
     }
+    val atoms = rules.head.getBody.asScala
+
+    val graph: Graph = new TinkerGraph
+    val in = File(fileGML).inputStream()
+
+    GMLReader.inputGraph(graph, in)
+    new TreeDecomposition(atoms.toSet, graph, null, mode = true)
 
   }
+
 
 }

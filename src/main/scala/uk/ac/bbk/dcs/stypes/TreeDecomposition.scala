@@ -25,6 +25,7 @@ import com.tinkerpop.blueprints.impls.tg.TinkerGraph
 import com.tinkerpop.blueprints.{Edge, Graph, Vertex}
 import fr.lirmm.graphik.graal.api.core.{Atom, Predicate, Term}
 import fr.lirmm.graphik.graal.core.DefaultAtom
+import fr.lirmm.graphik.graal.core.term.DefaultTermFactory
 
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
@@ -43,7 +44,7 @@ class TreeDecomposition {
   private var childes: List[TreeDecomposition] = _
 
 
-  def this(cqAtoms: Set[Atom], graph: Graph, v: Vertex) {
+  def this(cqAtoms: Set[Atom], graph: Graph, v: Vertex, mode: Boolean = false) {
     this()
 
     // checks preconditions
@@ -57,7 +58,7 @@ class TreeDecomposition {
       graph.getVertices.asScala.head
     }
 
-    root = getBagFromVertex(vertex)
+    root =  if (mode) getBagFromVertexTD(vertex) else getBagFromVertexHTD(vertex)
 
 
     // TODO:  review this
@@ -65,7 +66,7 @@ class TreeDecomposition {
       .asScala.map(edge =>
           new TreeDecomposition(cqAtoms,
                 getSubGraph(graph, vertex, edge),
-                edge.getVertex(IN)))
+                edge.getVertex(IN), mode))
       .toList
 
   }
@@ -102,7 +103,7 @@ class TreeDecomposition {
     items.replace("{", "").replace("}", "").split(',').map(_.trim).toList
 
 
-  private def getBagFromVertex(vertex: Vertex): Bag = {
+  private def getBagFromVertexHTD(vertex: Vertex): Bag = {
     val label: String = vertex.getProperty("label")
     val predicateAndVariables: Array[String] = label.split(" {4}")
     if (predicateAndVariables.length != 2) throw new RuntimeException("Incorrect vertex label.")
@@ -114,6 +115,20 @@ class TreeDecomposition {
     // regular expression
     val atomsRenamed = atoms.map( renameAtom  )
     Bag(atomsRenamed, terms)
+
+  }
+
+  private def getBagFromVertexTD(vertex: Vertex): Bag = {
+    val label: String = vertex.getProperty("label")
+    val predicateAndVariables: Array[String] = label.split(" {4}")
+    if (predicateAndVariables.length != 2) throw new RuntimeException("Incorrect vertex label.")
+    val variables: List[String] = getSpittedItems(predicateAndVariables(1)).map(_.toLowerCase.replace("?", ""))
+    val atoms: Set[Atom] =
+      mapCqAtoms.filter(atom =>
+        variables.distinct.sorted.containsSlice(
+          atom._2.getTerms.asScala.toList.distinct.sorted.map(_.getIdentifier.toString))).values.toSet
+    val terms: Set[Term] = variables.map(v=> DefaultTermFactory.instance().createVariable(v)).toSet
+    Bag(atoms,terms)
 
   }
 
