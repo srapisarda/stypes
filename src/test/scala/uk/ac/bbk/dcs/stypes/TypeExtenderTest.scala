@@ -138,7 +138,7 @@ class TypeExtenderTest extends FunSpec {
 
   def testExtension( s: Type, opBag: Option[Bag] ): TypeExtender ={
     val test:TreeDecompositionTest  = new TreeDecompositionTest
-    val t:TreeDecomposition= test.buildTestTreeDecomposition("src/main/resources/Q7.gml", "src/main/resources/Q7.cq")
+    val t:TreeDecomposition= TreeDecomposition.getHyperTreeDecomposition("src/main/resources/Q7.gml", "src/main/resources/Q7.cq")
     val reWriter  = new ReWriter(ontology)
     val canonicalModels =  reWriter.canonicalModels
 

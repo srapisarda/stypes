@@ -22,13 +22,19 @@ package uk.ac.bbk.dcs.stypes
 
 import com.tinkerpop.blueprints.Direction.{IN, OUT}
 import com.tinkerpop.blueprints.impls.tg.TinkerGraph
+import com.tinkerpop.blueprints.util.io.gml.GMLReader
 import com.tinkerpop.blueprints.{Edge, Graph, Vertex}
-import fr.lirmm.graphik.graal.api.core.{Atom, Predicate, Term}
+import fr.lirmm.graphik.graal.api.core.{Atom, Predicate, Rule, Term}
+import fr.lirmm.graphik.graal.api.factory.TermFactory
 import fr.lirmm.graphik.graal.core.DefaultAtom
 import fr.lirmm.graphik.graal.core.term.DefaultTermFactory
+import fr.lirmm.graphik.graal.io.dlp.DlgpParser
 
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
+import scala.io.Source
+import scala.reflect.io.File
+import scala.util.matching.Regex
 
 /**
   * Created by :
@@ -207,4 +213,50 @@ class TreeDecomposition {
   }
 
 
+}
+
+object TreeDecomposition{
+  def getHyperTreeDecomposition(fileGML: String, fileCQ: String): TreeDecomposition = {
+    val pattern: Regex = "(?<=\\()[^)]+(?=\\))".r
+    val tf: TermFactory = DefaultTermFactory.instance
+    val atoms = Source.fromFile(fileCQ).getLines().map(
+      line => {
+        val termss = pattern
+          .findAllIn(line)
+          .flatMap(p => p.split(","))
+          .toList.map(_.trim)
+        val terms = termss.map(tf.createVariable(_))
+
+        val predicateName = line.split('(').head
+        val predicate: Predicate = new Predicate(predicateName, terms.length)
+
+        new DefaultAtom(predicate, terms: _*)
+      }
+    )
+
+    val graph: Graph = new TinkerGraph
+    val in = File(fileGML).inputStream()
+
+    GMLReader.inputGraph(graph, in)
+    new TreeDecomposition(atoms.toSet, graph, null, false)
+
+  }
+
+  def getTreeDecomposition(fileGML: String, fileCQWithHead: String): TreeDecomposition = {
+
+    val textQueries = File(fileCQWithHead).lines()
+      .map( line  =>  line .replaceAll( "<-", ":-" ).replace("?", "") ).mkString("\n")
+
+    val rules:List[Rule] = new DlgpParser(textQueries).asScala.toList.map{
+      case rule:Rule => rule
+    }
+    val atoms = rules.head.getBody.asScala
+
+    val graph: Graph = new TinkerGraph
+    val in = File(fileGML).inputStream()
+
+    GMLReader.inputGraph(graph, in)
+    new TreeDecomposition(atoms.toSet, graph, null, mode = true)
+
+  }
 }
