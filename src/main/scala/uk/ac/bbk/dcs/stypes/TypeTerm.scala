@@ -36,21 +36,29 @@ import fr.lirmm.graphik.util.URI
 
 object TypeTermFactory {
 
-  def createOntologyVariable(identifier: Any): OntologyTerm = OntologyTerm(DefaultTermFactory.instance().createVariable(identifier))
+  def createOntologyVariable(identifier: Any): OntologyTerm =
+    OntologyTerm(DefaultTermFactory.instance().createVariable(identifier))
 
-  def createOntologyLiteral(value: Any): OntologyTerm  = OntologyTerm(DefaultTermFactory.instance().createLiteral(value))
+  def createOntologyLiteral(value: Any): OntologyTerm  =
+    OntologyTerm(DefaultTermFactory.instance().createLiteral(value))
 
-  def createOntologyLiteral(datatype: URI, value: Any): OntologyTerm  = OntologyTerm(DefaultTermFactory.instance().createLiteral(datatype, value))
+  def createOntologyLiteral(dataType: URI, value: Any): OntologyTerm  =
+    OntologyTerm(DefaultTermFactory.instance().createLiteral(dataType, value))
 
-  def createOntologyConstant(identifier: Any) : OntologyTerm = OntologyTerm(DefaultTermFactory.instance().createConstant(identifier))
+  def createOntologyConstant(identifier: Any) : OntologyTerm =
+    OntologyTerm(DefaultTermFactory.instance().createConstant(identifier))
 
-  def createQueryVariable(identifier: Any) : QueryTerm = QueryTerm(DefaultTermFactory.instance().createVariable(identifier))
+  def createQueryVariable(identifier: Any) : QueryTerm =
+    QueryTerm(DefaultTermFactory.instance().createVariable(identifier))
 
-  def createQueryLiteral(value: Any): QueryTerm = QueryTerm(DefaultTermFactory.instance().createLiteral(value))
+  def createQueryLiteral(value: Any): QueryTerm =
+    QueryTerm(DefaultTermFactory.instance().createLiteral(value))
 
-  def createQueryLiteral(datatype: URI, value: Any): QueryTerm = QueryTerm(DefaultTermFactory.instance().createLiteral(datatype, value))
+  def createQueryLiteral(dataType: URI, value: Any): QueryTerm =
+    QueryTerm(DefaultTermFactory.instance().createLiteral(dataType, value))
 
-  def createQueryConstant(identifier: Any): QueryTerm = QueryTerm(DefaultTermFactory.instance().createConstant(identifier))
+  def createQueryConstant(identifier: Any): QueryTerm =
+    QueryTerm(DefaultTermFactory.instance().createConstant(identifier))
 
 }
 

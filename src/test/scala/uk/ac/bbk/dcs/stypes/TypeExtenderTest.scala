@@ -41,15 +41,15 @@ class TypeExtenderTest extends FunSpec {
       assert(te!=null)
       assert(te.children.nonEmpty)
       assert(te.children.head.children.isEmpty)
-      assert(te.types.size==1)
+      assert(te.types.lengthCompare(1) == 0)
     }
 
     it("should  create the children properly on EPSILON individual ") {
       val te = testExtension(getMockEpsilonType, None)
       assert(te!=null)
-      assert(te.children.length == 3)
+      assert(te.children.lengthCompare(3) == 0)
       assert(te.children.head.children.isEmpty)
-      assert(te.types.size==3)
+      assert(te.types.lengthCompare(3) == 0)
     }
 
 
@@ -57,20 +57,20 @@ class TypeExtenderTest extends FunSpec {
       val ret = getMockFilterAtoms(true)
       val te = testExtension(ret._1, Some(ret._2))
       assert(te.isValid)
-      assert(te.types.size==1)
+      assert(te.types.lengthCompare(1) == 0)
     }
 
     it ( "should filter the atoms and return false ") {
       val ret = getMockFilterAtoms(false)
       val te = testExtension(ret._1, Some(ret._2))
       assert(!te.children.head.isValid)
-      assert(te.types.size==0)
+      assert(te.types.isEmpty)
     }
 
     it("should  collect the leave types from the extender ") {
       val extender = testExtension(getEmptyType, None)
       val types = extender.collectTypes
-      assert(types.size == 5)
+      assert(types.lengthCompare(5) == 0)
     }
 
 
@@ -137,7 +137,6 @@ class TypeExtenderTest extends FunSpec {
   }
 
   def testExtension( s: Type, opBag: Option[Bag] ): TypeExtender ={
-    val test:TreeDecompositionTest  = new TreeDecompositionTest
     val t:TreeDecomposition= TreeDecomposition.getHyperTreeDecomposition("src/main/resources/Q7.gml", "src/main/resources/Q7.cq")
     val reWriter  = new ReWriter(ontology)
     val canonicalModels =  reWriter.canonicalModels

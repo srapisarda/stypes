@@ -54,12 +54,10 @@ class TreeDecompositionTest extends FunSpec {
 
       println(s)
 
-      val terms = t.getAllTerms()
+      val terms = t.getAllTerms
       assert(terms.size == 8)
 
     }
-
-
 
   }
 

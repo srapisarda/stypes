@@ -48,6 +48,6 @@ case class Splitter(root: TreeDecomposition) {
     s"(root: $root, children: $children)"
   }
 
-  def getAllTerms : Set[Term] = root.getAllTerms()
+  def getAllTerms : Set[Term] = root.getAllTerms
 
 }

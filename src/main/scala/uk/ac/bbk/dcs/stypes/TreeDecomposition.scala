@@ -191,7 +191,7 @@ class TreeDecomposition {
     new TreeDecomposition(mapCqAtoms, root, childes )
   }
 
-  def getAllTerms() : Set[Term] =  getAllTerms(this.childes) ++ this.root.variables
+  def getAllTerms: Set[Term] =  getAllTerms(this.childes) ++ this.root.variables
 
   private def getAllTerms(list: List[TreeDecomposition]) : Set[Term] =  {
 
