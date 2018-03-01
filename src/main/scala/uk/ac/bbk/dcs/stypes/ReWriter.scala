@@ -26,7 +26,6 @@ import java.util.UUID
 import fr.lirmm.graphik.graal.api.core._
 import fr.lirmm.graphik.graal.core.DefaultAtom
 import fr.lirmm.graphik.graal.core.atomset.graph.DefaultInMemoryGraphAtomSet
-import fr.lirmm.graphik.graal.core.ruleset.LinkedListRuleSet
 import fr.lirmm.graphik.graal.forward_chaining.DefaultChase
 import fr.lirmm.graphik.graal.io.dlp.DlgpParser
 
@@ -49,7 +48,7 @@ object ReWriter {
     * @param ontology a RuleSet
     * @return List[Atom]
     */
-  def makeGeneratingAtoms(ontology: RuleSet): List[Atom] = {
+  def makeGeneratingAtoms(ontology: List[Rule]): List[Atom] = {
 
     @tailrec
     def visitRuleSet(rules: List[Rule], acc: List[Atom]): List[Atom] = rules match {
@@ -75,7 +74,7 @@ object ReWriter {
 
     }
 
-    visitRuleSet(ontology.asScala.toList, List())
+    visitRuleSet(ontology, List())
 
   }
 
@@ -85,10 +84,10 @@ object ReWriter {
     * @param ontology a RuleSet
     * @return a List[AtomSet]
     */
-  def canonicalModelList(ontology: RuleSet): List[AtomSet] =
+  def canonicalModelList(ontology: List[Rule]): List[AtomSet] =
     canonicalModelList(ontology, makeGeneratingAtoms(ontology))
 
-  private def canonicalModelList(ontology: RuleSet, generatingAtomList: List[Atom]): List[AtomSet] = {
+  private def canonicalModelList(ontology: List[Rule], generatingAtomList: List[Atom]): List[AtomSet] = {
 
     @tailrec
     def canonicalModelList(generatingAtomList: List[Atom], acc: List[AtomSet]): List[AtomSet] = generatingAtomList match {
@@ -99,7 +98,7 @@ object ReWriter {
     def buildChase(atom: Atom): AtomSet = {
       val store: AtomSet = new DefaultInMemoryGraphAtomSet
       store.add(atom)
-      val chase = new DefaultChase(ontology, store)
+      val chase = new DefaultChase(ontology.asJava, store)
       chase.execute()
 
       store
@@ -464,7 +463,8 @@ object ReWriter {
             val mergedAtom = new DefaultAtom(new Predicate(UUID.randomUUID().toString, mappedTerms._1.size),
               mappedTerms._1.asJava)
 
-            visitClauseBody(xs, head, (ds, s"$query.join(${rhs.getPredicate.getIdentifier})$queryConditions${mappedTerms._2}"), Some(mergedAtom))
+            visitClauseBody(xs, head,
+              (ds, s"$query.join(${rhs.getPredicate.getIdentifier})$queryConditions${mappedTerms._2}"), Some(mergedAtom))
           }
 
       }
@@ -521,7 +521,11 @@ object ReWriter {
         // data mapping
         .map(p => {
         val variable = s"private lazy val ${p._1.getIdentifier.toString}  = "
-        val data = if (p._2 == unknownData) s"unknownData${p._1.getArity}" else "env.readTextFile(\"" + p._2 + "\")" + s".map(stringMapper${p._1.getArity})"
+
+        val data =
+          if (p._2 == unknownData)
+            s"unknownData${p._1.getArity}" else "env.readTextFile(\"" + p._2 + "\")" + s".map(stringMapper${p._1.getArity})"
+
         variable + data
       })
         //Rewriting
@@ -530,17 +534,9 @@ object ReWriter {
 
   }
 
-  def getOntology(filename: String): LinkedListRuleSet = {
-    val dlgpParser = new DlgpParser(new File(filename))
-    val ontology = new LinkedListRuleSet
-    while (dlgpParser.hasNext) {
-      dlgpParser.next match {
-        case rule: Rule => ontology.add(rule)
-        case _ => // it does anything
-      }
-    }
-
-    ontology
+  def getOntology(filename: String): List[Rule] = {
+    for ( rule <-  new DlgpParser(new File(filename)).asScala.toList; if rule.isInstanceOf[Rule] )
+      yield rule.asInstanceOf[Rule]
   }
 
   def getDatalogRewriting(filename: String): List[Clause] = {
@@ -563,7 +559,7 @@ object ReWriter {
 
 }
 
-class ReWriter(ontology: RuleSet) {
+class ReWriter(ontology: List[Rule]) {
 
   val generatingAtoms: List[Atom] = ReWriter.makeGeneratingAtoms(ontology)
   println(s"generating  canonical models")

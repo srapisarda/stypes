@@ -325,8 +325,7 @@ class ReWriterTest extends FunSpec {
 
 
     it("should rewrite the query for q01 with ont of deep.t-tdgs.dlp") {
-      val test: TreeDecompositionTest = new TreeDecompositionTest
-      val t: TreeDecomposition = TreeDecomposition.getHyperTreeDecomposition(s"$pathToBenchmark100/queries/q01.gml",
+       val t: TreeDecomposition = TreeDecomposition.getHyperTreeDecomposition(s"$pathToBenchmark100/queries/q01.gml",
         s"$pathToBenchmark100/queries/q01.cq")
 
       val result: Seq[RuleTemplate] = new ReWriter(ontBenchmark100Dep).generateRewriting(Type(new TreeMapSubstitution()), Splitter(t))
@@ -356,7 +355,6 @@ class ReWriterTest extends FunSpec {
     }
 
     it("should rewrite  for queries  with 300 ont of deep.t-tdgs.dlp") {
-      val test: TreeDecompositionTest = new TreeDecompositionTest
       val t: TreeDecomposition = TreeDecomposition.getHyperTreeDecomposition(s"$pathToBenchmark300/queries/queries.gml",
         s"$pathToBenchmark300/queries/queries.cq")
 
@@ -380,6 +378,16 @@ class ReWriterTest extends FunSpec {
       assert(datalog.lengthCompare(22) == 0)
     }
 
+
+    ignore("should rewrite query q11.cq  using 100 ont of all-tdgs.dlp") {
+      val t: TreeDecomposition = TreeDecomposition.getTreeDecomposition(s"src/main/resources/q11.gml", "src/main/resources/q11.txt")
+      val datalog = ReWriter.generateDatalog(
+        new ReWriter(ontBenchmark100All).generateRewriting(Type(new TreeMapSubstitution()), Splitter(t)))
+      printDatalog(datalog)
+      assert(datalog.lengthCompare(22) == 0)
+    }
+
+
     it("should generate Flink script using all-tgds-rewriting-using-q01.dlp") {
       val datalog = ReWriter.getDatalogRewriting(s"$pathToBenchmark100/rewriting/all-tgds-rewriting-using-q01.dlp")
       printDatalog(datalog)
@@ -398,7 +406,7 @@ class ReWriterTest extends FunSpec {
       //      val test:TreeDecompositionTest  = new TreeDecompositionTest
 
 
-      assert(!ontBenchmarkNDL_SQL.isEmpty)
+      assert(ontBenchmarkNDL_SQL.nonEmpty)
 //      val t:TreeDecomposition = test.buildTestTreeDecomposition(s"$pathToBenchmarkNDL_SQL/queries/queries.gml",
 // s"$pathToBenchmarkNDL_SQL/queries/queries.cq")
 //

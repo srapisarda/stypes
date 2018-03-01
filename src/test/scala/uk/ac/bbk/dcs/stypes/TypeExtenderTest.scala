@@ -20,13 +20,10 @@ package uk.ac.bbk.dcs.stypes
  * #L%
  */
 
-import java.io.File
-
-import fr.lirmm.graphik.graal.api.core.{Atom, Predicate, Rule, Term}
-import fr.lirmm.graphik.graal.core.{DefaultAtom, TreeMapSubstitution}
-import fr.lirmm.graphik.graal.core.ruleset.LinkedListRuleSet
+import fr.lirmm.graphik.graal.api.core.{Atom, Predicate, Term}
 import fr.lirmm.graphik.graal.core.term.DefaultTermFactory
-import fr.lirmm.graphik.graal.io.dlp.{DlgpParser, DlgpWriter}
+import fr.lirmm.graphik.graal.core.{DefaultAtom, TreeMapSubstitution}
+import fr.lirmm.graphik.graal.io.dlp.DlgpWriter
 import org.scalatest.FunSpec
 
 /**
@@ -72,24 +69,12 @@ class TypeExtenderTest extends FunSpec {
       val types = extender.collectTypes
       assert(types.lengthCompare(5) == 0)
     }
-
-
-
   }
 
 
   // 0 - Create a Dlgp writer and a structure to store rules.
   private val writer = new DlgpWriter
-  private val ontology = new LinkedListRuleSet
-
-  // 2 - Parse Animals.dlp (A Dlgp file with rules and facts)
-  val dlgpParser = new DlgpParser(new File("src/main/resources/ont-1.dlp" ))
-  while (dlgpParser.hasNext) {
-    dlgpParser.next match {
-      case rule: Rule => ontology.add(rule)
-      case  _ =>  // println("do nothing")
-    }
-  }
+  private val ontology = ReWriter.getOntology("src/main/resources/ont-1.dlp")
 
   def getMockEpsilonType: Type = {
     val s1 = new TreeMapSubstitution

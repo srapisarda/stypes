@@ -33,6 +33,8 @@ class TreeDecompositionTest extends FunSpec {
     it("should a common operation correctly 2 ") {
       val t = buildTestTreeDecomposition("src/main/resources/q11.gml", "src/main/resources/q11.txt")
       assert(t.getRoot.atoms.size==1)
+
+
     }
 
     it("should make common operation correctly") {

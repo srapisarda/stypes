@@ -214,7 +214,7 @@ case class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Vector[Ato
       if ( notEpsilon.isEmpty)
         true
       else {
-        val canonicalModelIndex =  notEpsilon.head.asInstanceOf[ConstantType].identifier._1
+        val canonicalModelIndex =   notEpsilon.head.asInstanceOf[ConstantType].identifier._1
         val res = areAllEqualCanonicalModelIndex(canonicalModelIndex, notEpsilon.tail)
         if ( !res) false
         else {
