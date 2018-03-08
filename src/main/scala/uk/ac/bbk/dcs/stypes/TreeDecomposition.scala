@@ -250,7 +250,14 @@ object TreeDecomposition{
     val rules:List[Rule] = new DlgpParser(textQueries).asScala.toList.map{
       case rule:Rule => rule
     }
-    val atoms = rules.head.getBody.asScala
+
+    //val atoms = rules.head.getBody.asScala
+
+    val atoms = rules.head.getBody.asScala.map(atom => {
+      val terms: List[Term] = atom.getTerms.asScala.toList.map(t => DefaultTermFactory.instance().createVariable(t.getIdentifier))
+      new DefaultAtom(atom.getPredicate, terms.asJava)
+    })
+
 
     val graph: Graph = new TinkerGraph
     val in = File(fileGML).inputStream()
