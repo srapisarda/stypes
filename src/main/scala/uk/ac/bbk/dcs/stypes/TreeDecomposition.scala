@@ -242,7 +242,7 @@ object TreeDecomposition{
 
   }
 
-  def getTreeDecomposition(fileGML: String, fileCQWithHead: String): TreeDecomposition = {
+  def getTreeDecomposition(fileGML: String, fileCQWithHead: String): ( TreeDecomposition , List[Term] ) = {
 
     val textQueries = File(fileCQWithHead).lines()
       .map( line  =>  line .replaceAll( "<-", ":-" ).replace("?", "") ).mkString("\n")
@@ -263,7 +263,7 @@ object TreeDecomposition{
     val in = File(fileGML).inputStream()
 
     GMLReader.inputGraph(graph, in)
-    new TreeDecomposition(atoms.toSet, graph, null, mode = true)
+    (new TreeDecomposition(atoms.toSet, graph, null, mode = true), rules.head.getHead.getTerms.asScala.toList)
 
   }
 }

@@ -67,7 +67,7 @@ class TreeDecompositionTest extends FunSpec {
     TreeDecomposition.getHyperTreeDecomposition(fileGML, fileCQ)
 
   private def buildTestTreeDecomposition(fileGML: String, fileCQWithHead: String): TreeDecomposition = {
-    TreeDecomposition.getTreeDecomposition(fileGML, fileCQWithHead)
+    TreeDecomposition.getTreeDecomposition(fileGML, fileCQWithHead)._1
   }
 
 

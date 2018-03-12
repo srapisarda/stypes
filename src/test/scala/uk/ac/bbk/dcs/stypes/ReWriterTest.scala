@@ -178,7 +178,7 @@ class ReWriterTest extends FunSpec {
 
     it("should rewrite the query for q-3 with ont-3") {
       val t: TreeDecomposition = TreeDecomposition.getHyperTreeDecomposition("src/main/resources/Q3.gml", "src/main/resources/Q3.cq")
-      val result: Seq[RuleTemplate] = new ReWriter(ontology3).generateRewriting(Type(new TreeMapSubstitution()), Splitter(t))
+      val result: Seq[RuleTemplate] = new ReWriter(ontology3).generateRewriting(Type(new TreeMapSubstitution()), Splitter(t) )
       println(result)
       assert(result.lengthCompare(5) == 0) // verify this result
       val datalog = ReWriter.generateDatalog(result)
@@ -205,11 +205,11 @@ class ReWriterTest extends FunSpec {
 
       val result: Seq[RuleTemplate] = new ReWriter(ontology4).generateRewriting(Type(new TreeMapSubstitution()), Splitter(t))
       println(result)
-      //assert( result.size == 5 ) // verify this result
+      assert( result.lengthCompare(6 )== 0 ) // verify this result
 
       val datalog = ReWriter.generateDatalog(result)
       printDatalog(datalog)
-      // assert(datalog.size==7)
+       assert(datalog.lengthCompare(9 ) == 0)
 
     }
 
@@ -379,10 +379,22 @@ class ReWriterTest extends FunSpec {
     }
 
 
-    ignore("should rewrite query q11.cq  using 100 ont of all-tdgs.dlp") {
-      val t: TreeDecomposition = TreeDecomposition.getTreeDecomposition(s"src/main/resources/q11.gml", "src/main/resources/q11.txt")
+
+    it("should rewrite query q11.cq  using 100 ont of tdgs.dlp") {
+      val  result: (TreeDecomposition, List[Term]) = TreeDecomposition.getTreeDecomposition(s"src/main/resources/q11.gml", "src/main/resources/q11.txt")
+
       val datalog = ReWriter.generateDatalog(
-        new ReWriter(ontBenchmark100All).generateRewriting(Type(new TreeMapSubstitution()), Splitter(t)))
+        new ReWriter(ontBenchmark100Dep).generateRewriting(Type(new TreeMapSubstitution()), Splitter(result._1), result._2))
+      printDatalog(datalog)
+      assert(datalog.lengthCompare(1) == 0)
+    }
+
+
+    ignore("should rewrite query q11.cq  using 100 ont of all-tdgs.dlp") {
+      val  result: (TreeDecomposition, List[Term]) = TreeDecomposition.getTreeDecomposition(s"src/main/resources/q11.gml", "src/main/resources/q11.txt")
+
+      val datalog = ReWriter.generateDatalog(
+        new ReWriter(ontBenchmark100All).generateRewriting(Type(new TreeMapSubstitution()), Splitter(result._1), result._2))
       printDatalog(datalog)
       assert(datalog.lengthCompare(22) == 0)
     }
