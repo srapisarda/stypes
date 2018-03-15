@@ -22,7 +22,7 @@ package uk.ac.bbk.dcs.stypes
 
 import java.io.{BufferedWriter, File, FileWriter}
 
-import fr.lirmm.graphik.graal.api.core.{Predicate, Rule, Term}
+import fr.lirmm.graphik.graal.api.core.{Predicate, Rule, Term, Variable}
 import fr.lirmm.graphik.graal.core.term.DefaultTermFactory
 import fr.lirmm.graphik.graal.core.{DefaultAtom, TreeMapSubstitution}
 import fr.lirmm.graphik.graal.io.dlp.DlgpParser
@@ -381,21 +381,24 @@ class ReWriterTest extends FunSpec {
 
 
     it("should rewrite query q11.cq  using 100 ont of tdgs.dlp") {
-      val  result: (TreeDecomposition, List[Term]) = TreeDecomposition.getTreeDecomposition(s"src/main/resources/q11.gml", "src/main/resources/q11.txt")
+      val  result: (TreeDecomposition, List[Variable]) =
+        TreeDecomposition.getTreeDecomposition(s"src/main/resources/q11.gml", "src/main/resources/q11.txt")
 
+      val answerVariables = result._2
       val datalog = ReWriter.generateDatalog(
-        new ReWriter(ontBenchmark100Dep).generateRewriting(Type(new TreeMapSubstitution()), Splitter(result._1), result._2))
+        new ReWriter(ontBenchmark100Dep).generateRewriting(Type.getInstance(answerVariables), Splitter(result._1)))
       printDatalog(datalog)
       assert(datalog.lengthCompare(1) == 0)
     }
 
 
     ignore("should rewrite query q11.cq  using 100 ont of all-tdgs.dlp") {
-      val  result: (TreeDecomposition, List[Term]) = TreeDecomposition.getTreeDecomposition(s"src/main/resources/q11.gml", "src/main/resources/q11.txt")
+      val  result: (TreeDecomposition, List[Variable]) = TreeDecomposition.getTreeDecomposition(s"src/main/resources/q11.gml", "src/main/resources/q11.txt")
+      val answerVariables = result._2
 
       val datalog = ReWriter.generateDatalog(
-        new ReWriter(ontBenchmark100All).generateRewriting(Type(new TreeMapSubstitution()), Splitter(result._1), result._2))
-      printDatalog(datalog)
+        new ReWriter(ontBenchmark100All).generateRewriting(Type.getInstance(answerVariables), Splitter(result._1)))
+
       assert(datalog.lengthCompare(22) == 0)
     }
 

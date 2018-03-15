@@ -29,29 +29,35 @@ import fr.lirmm.graphik.graal.homomorphism.StaticHomomorphism
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 
-object TypeExtender {
-
-  private def addAnswerVariableToHomomorphism( answerVariables: List[Term], hom: Substitution ) : Substitution = answerVariables match {
-    case List() =>  hom
-    case x::xs =>
-      hom.put(x, ConstantType.EPSILON)
-      addAnswerVariableToHomomorphism(xs, hom)
-  }
-
-
-  def buildTypeExtender(bag: Bag, hom: Substitution, canonicalModels: Vector[AtomSet], answerVariables: List[Term] = List())
-  : TypeExtender = {
-
-    val variableToBeMapped = bag.variables.filter(p => !hom.getTerms.contains(p)).toList
-    val answerVariablesIdentifiers = answerVariables.map(_.getIdentifier.toString)
-    answerVariables.filter(p => answerVariablesIdentifiers.contains(p.getIdentifier.toString))
-
-    new TypeExtender(bag,
-      addAnswerVariableToHomomorphism(answerVariables.filter(p => answerVariablesIdentifiers.contains(p.getIdentifier.toString)), hom),
-      canonicalModels, bag.atoms.toList, variableToBeMapped.filter(p => !hom.getTerms.contains(p)), answerVariables)
-
-  }
-}
+//object TypeExtender {
+//
+//  def  transformAnswerVariablesToBorderType(answerVariables: List[Term]  ) : Substitution= {
+//    val hom: Substitution =  new TreeMapSubstitution()
+//    addAnswerVariableToHomomorphism(answerVariables, hom )
+//    hom
+//  }
+//
+//  private def addAnswerVariableToHomomorphism( answerVariables: List[Term], hom: Substitution ) : Substitution = answerVariables match {
+//    case List() =>  hom
+//    case x::xs =>
+//      hom.put(x, ConstantType.EPSILON)
+//      addAnswerVariableToHomomorphism(xs, hom)
+//  }
+//
+//
+//  def buildTypeExtender(bag: Bag, hom: Substitution, canonicalModels: Vector[AtomSet], answerVariables: List[Term] = List())
+//  : TypeExtender = {
+//
+//    val variableToBeMapped = bag.variables.filter(p => !hom.getTerms.contains(p)).toList
+//    val answerVariablesIdentifiers = answerVariables.map(_.getIdentifier.toString)
+//    answerVariables.filter(p => answerVariablesIdentifiers.contains(p.getIdentifier.toString))
+//
+//    new TypeExtender(bag,
+//      addAnswerVariableToHomomorphism(answerVariables.filter(p => answerVariablesIdentifiers.contains(p.getIdentifier.toString)), hom),
+//      canonicalModels, bag.atoms.toList, variableToBeMapped.filter(p => !hom.getTerms.contains(p)), answerVariables)
+//
+//  }
+//}
 
 
 /**
@@ -67,12 +73,11 @@ object TypeExtender {
 
 
 case class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Vector[AtomSet],
-                   atomsToBeMapped: List[Atom], variableToBeMapped:List[Term], answerVariables: List[Term] = List() ) {
+                   atomsToBeMapped: List[Atom], variableToBeMapped:List[Term] ) {
 
-//  def this(bag: Bag, hom: Substitution, canonicalModels: Vector[AtomSet],  answerVariables: List[Term] = List()  ) = {
-//     this(bag, hom, canonicalModels, bag.atoms.toList, bag.variables.filter(p => !hom.getTerms.contains(p)).toList,
-//      answerVariables)
-//  }
+  def this(bag: Bag, hom: Substitution, canonicalModels: Vector[AtomSet] ) = {
+     this(bag, hom, canonicalModels, bag.atoms.toList, bag.variables.filter(p => !hom.getTerms.contains(p)).toList)
+  }
 
 
 

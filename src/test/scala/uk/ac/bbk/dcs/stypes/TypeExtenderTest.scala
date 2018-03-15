@@ -126,7 +126,7 @@ class TypeExtenderTest extends FunSpec {
     val reWriter  = new ReWriter(ontology)
     val canonicalModels =  reWriter.canonicalModels
 
-    TypeExtender.buildTypeExtender(  if(opBag.isDefined) opBag.get else t.getRoot,  s.homomorphism , canonicalModels.toVector )
+    new TypeExtender(  if(opBag.isDefined) opBag.get else t.getRoot,  s.homomorphism , canonicalModels.toVector )
   }
 
 

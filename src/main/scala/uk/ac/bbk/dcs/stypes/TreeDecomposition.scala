@@ -24,7 +24,7 @@ import com.tinkerpop.blueprints.Direction.{IN, OUT}
 import com.tinkerpop.blueprints.impls.tg.TinkerGraph
 import com.tinkerpop.blueprints.util.io.gml.GMLReader
 import com.tinkerpop.blueprints.{Edge, Graph, Vertex}
-import fr.lirmm.graphik.graal.api.core.{Atom, Predicate, Rule, Term}
+import fr.lirmm.graphik.graal.api.core._
 import fr.lirmm.graphik.graal.api.factory.TermFactory
 import fr.lirmm.graphik.graal.core.DefaultAtom
 import fr.lirmm.graphik.graal.core.term.DefaultTermFactory
@@ -242,7 +242,7 @@ object TreeDecomposition{
 
   }
 
-  def getTreeDecomposition(fileGML: String, fileCQWithHead: String): ( TreeDecomposition , List[Term] ) = {
+  def getTreeDecomposition(fileGML: String, fileCQWithHead: String): ( TreeDecomposition , List[Variable] ) = {
 
     val textQueries = File(fileCQWithHead).lines()
       .map( line  =>  line .replaceAll( "<-", ":-" ).replace("?", "") ).mkString("\n")
@@ -263,7 +263,7 @@ object TreeDecomposition{
     val in = File(fileGML).inputStream()
 
     GMLReader.inputGraph(graph, in)
-    (new TreeDecomposition(atoms.toSet, graph, null, mode = true), rules.head.getHead.getTerms.asScala.toList)
-
+    (new TreeDecomposition(atoms.toSet, graph, null, mode = true),
+      rules.head.getHead.getTerms.asScala.toList.map(p=> DefaultTermFactory.instance().createVariable( p.getIdentifier)) )
   }
 }

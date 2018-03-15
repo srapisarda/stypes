@@ -20,7 +20,7 @@ package uk.ac.bbk.dcs.stypes
  * #L%
  */
 
-import fr.lirmm.graphik.graal.api.core.{Atom, Substitution, Term}
+import fr.lirmm.graphik.graal.api.core.{Atom, Substitution, Term, Variable}
 import fr.lirmm.graphik.graal.core.TreeMapSubstitution
 import uk.ac.bbk.dcs.stypes.ConstantType.EPSILON
 
@@ -34,25 +34,23 @@ import scala.collection.JavaConverters._
   *
   * on 26/04/2017.
   */
-case class Type( homomorphism: Substitution ){
-
+case class Type(homomorphism: Substitution) {
 
   def getVar1: List[Term] =
     homomorphism.getTerms.asScala
       .filter((t: Term) =>
-        homomorphism.createImageOf(t).equals( ConstantType.EPSILON)).toList
+        homomorphism.createImageOf(t).equals(ConstantType.EPSILON)).toList
 
-  def getVar2 (atoms: Vector[Atom]): List[Term] = {
+  def getVar2(atoms: Vector[Atom]): List[Term] = {
     val anonymousVariables = homomorphism.getTerms.asScala
       .filter((t: Term) =>
-        ! homomorphism.createImageOf(t).equals(ConstantType.EPSILON)).toList
+        !homomorphism.createImageOf(t).equals(ConstantType.EPSILON)).toList
 
-     anonymousVariables.flatMap( t => atoms(homomorphism.createImageOf(t).asInstanceOf[ConstantType].getIdentifier._1).getTerms.asScala.toSet )
+    anonymousVariables.flatMap(t => atoms(homomorphism.createImageOf(t).asInstanceOf[ConstantType].getIdentifier._1).getTerms.asScala.toSet)
 
   }
 
-  def getVar(atoms: List[Atom]):List[Term] = getVar1:::getVar2(atoms.toVector)
-
+  def getVar(atoms: List[Atom]): List[Term] = getVar1 ::: getVar2(atoms.toVector)
 
   /**
     * This method returns the type domain
@@ -61,7 +59,6 @@ case class Type( homomorphism: Substitution ){
     */
   def getDomain: Set[Term] =
     homomorphism.getTerms.asScala.toSet
-
 
   /**
     * This method makes a union of the self object and the type
@@ -75,14 +72,13 @@ case class Type( homomorphism: Substitution ){
     if (t == null)
       Type(this.homomorphism)
 
-   // val genAtoms = this.genAtoms ++ t.genAtoms //  genAtomBuilder.build
+    // val genAtoms = this.genAtoms ++ t.genAtoms //  genAtomBuilder.build
 
     val substitution = new TreeMapSubstitution(homomorphism)
     substitution.put(t.homomorphism)
 
     Type(substitution)
   }
-
 
   /**
     * This method  returns the projection of a give type on to a set of variables
@@ -98,10 +94,10 @@ case class Type( homomorphism: Substitution ){
         homomorphismProj.put(term, variable)
     })
 
-//    val genAtomProj =
-//      genAtoms.filter(entry => dest.contains(entry._1))
+    //    val genAtomProj =
+    //      genAtoms.filter(entry => dest.contains(entry._1))
 
-    Type( homomorphismProj)
+    Type(homomorphismProj)
   }
 
   /**
@@ -110,54 +106,67 @@ case class Type( homomorphism: Substitution ){
     * @param atom is the atom to check
     * @return true or false
     */
-  def  areAllEpsilon(atom:Atom):Boolean =
+  def areAllEpsilon(atom: Atom): Boolean =
     visitBagAtoms(atom.getTerms.asScala.toList,
-      x =>  ! EPSILON.equals( homomorphism.createImageOf(x).asInstanceOf[Any] ))
+      x => !EPSILON.equals(homomorphism.createImageOf(x).asInstanceOf[Any]))
 
   /**
     * It check that all the terms of the atom are ConstantType
-    *  Anonymous individuals or ar not epsilon
-    *
+    * Anonymous individuals or ar not epsilon
     *
     * @param atom is the atom to check
     * @return true or false
     */
-  def  areAllAnonymous(atom:Atom):Boolean =
+  def areAllAnonymous(atom: Atom): Boolean =
     visitBagAtoms(atom.getTerms.asScala.toList,
-      (x) => EPSILON.equals( homomorphism.createImageOf(x).asInstanceOf[Any] ) )
-
+      (x) => EPSILON.equals(homomorphism.createImageOf(x).asInstanceOf[Any]))
 
   @tailrec
-  private def visitBagAtoms(terms: List[Term], f: Term => Boolean  ): Boolean = terms match {
+  private def visitBagAtoms(terms: List[Term], f: Term => Boolean): Boolean = terms match {
     case List() => true
-    case x::xs => if ( f(x)) false else visitBagAtoms(xs, f)
+    case x :: xs => if (f(x)) false else visitBagAtoms(xs, f)
 
   }
 
-
-
-  def getFirstAnonymousIndex(atom:Atom): Int ={
+  def getFirstAnonymousIndex(atom: Atom): Int = {
 
     @tailrec
-    def visitBagAtoms(terms: List[Term] ): Int = terms match {
+    def visitBagAtoms(terms: List[Term]): Int = terms match {
       case List() => -1
-      case x::xs =>
-        if (  EPSILON.equals( homomorphism.createImageOf(x).asInstanceOf[Any] )  )  visitBagAtoms(xs)
-        else  homomorphism.createImageOf(x) match  {
-          case el:ConstantType => el.getIdentifier._1
+      case x :: xs =>
+        if (EPSILON.equals(homomorphism.createImageOf(x).asInstanceOf[Any])) visitBagAtoms(xs)
+        else homomorphism.createImageOf(x) match {
+          case el: ConstantType => el.getIdentifier._1
           case _ => -1
         }
 
     }
 
-    visitBagAtoms( atom.getTerms.asScala.toList )
+    visitBagAtoms(atom.getTerms.asScala.toList)
 
   }
 
-
-
   override def toString: String = {
     s"(homomorphism: $homomorphism)"
+  }
+
+}
+
+object  Type {
+
+  def getInstance(answerVariables: List[Variable]) = {
+    def transformAnswerVariablesToBorderType(answerVariables: List[Variable]): Substitution = {
+      val hom: Substitution = new TreeMapSubstitution()
+      addAnswerVariableToHomomorphism(answerVariables, hom)
+    }
+    def addAnswerVariableToHomomorphism(answerVariables: List[Variable], hom: Substitution): Substitution = answerVariables match {
+      case List() => hom
+      case x :: xs =>
+        hom.put( x, ConstantType.EPSILON)
+        addAnswerVariableToHomomorphism(xs, hom)
+    }
+    val homomorphism =transformAnswerVariablesToBorderType (answerVariables)
+    Type( homomorphism)
   }
 
 }

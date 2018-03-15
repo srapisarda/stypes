@@ -664,9 +664,8 @@ class ReWriter(ontology: List[Rule]) {
     visitBagAtoms(bag.atoms.toList, List())
   }
 
-  def generateRewriting(borderType: Type, splitter: Splitter, answerVariables: List[Term] = List() ): List[RuleTemplate] = {
-    val typeExtender =  TypeExtender.buildTypeExtender(splitter.getSplittingVertex, borderType.homomorphism, canonicalModels.toVector,
-      answerVariables)
+  def generateRewriting(borderType: Type, splitter: Splitter): List[RuleTemplate] = {
+    val typeExtender =  new TypeExtender(splitter.getSplittingVertex, borderType.homomorphism, canonicalModels.toVector)
     val types = typeExtender.collectTypes
     //val body = new LinkedListAtomSet
     //val rule :Rule = new DefaultRule()
