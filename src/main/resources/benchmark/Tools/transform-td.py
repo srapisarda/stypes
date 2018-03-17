@@ -29,7 +29,10 @@ def getLevel(line):
 # Getting the file name from command line arguments
 
 if (len(sys.argv) < 2):
-    print "Usage: python transform-td.py filename.htd"
+    if sys.version_info >= (3, 0):
+        print("Usage: python transform-td.py filename.htd")
+    else:
+        print "Usage: python transform-td.py filename.htd"
     exit()
 else:
     filename = sys.argv[1]
@@ -53,31 +56,54 @@ for line in f :
 
 # Defining printing functions
 def printNode(n):
-    print '  node ['
-    print '    id', n
-    print '    label "{}    {', ', '.join(bags[n].getVariables() ), '}"'
-    print '    vgj ['
-    print '      labelPosition "in"'
-    print '      shape "Rectangle"'
-    print '    ]'
-    print '  ]'
-    print
+    if sys.version_info >= (3, 0):
+        print('  node [')
+        print('    id', n)
+        print('    label "{}    {', ', '.join(bags[n].getVariables() ), '}"')
+        print('    vgj [')
+        print('      labelPosition "in"')
+        print('      shape "Rectangle"');
+        print('    ]')
+        print('  ]')
+        print()
+    else:
+        print '  node ['
+        print '    id', n
+        print '    label "{}    {', ', '.join(bags[n].getVariables() ), '}"'
+        print '    vgj ['
+        print '      labelPosition "in"'
+        print '      shape "Rectangle"'
+        print '    ]'
+        print '  ]'
+        print
     
 def printEdge(i,j):
-    print '  edge ['
-    print '    source',i
-    print '    target',j
-    print '  ]'
-    print
+    if sys.version_info >= (3, 0):
+        print('  edge [')
+        print('    source',i)
+        print('    target',j)
+        print('  ]')
+        print()
+    else:
+        print '  edge ['
+        print '    source',i
+        print '    target',j
+        print '  ]'
+        print
 
 
     
 # Printing the graph
-    
-print 'graph ['
-print
-print 'directed 0'
-print
+if sys.version_info >= (3, 0):
+    print( 'graph [' )
+    print()
+    print( 'directed 0' )
+    print()
+else:
+    print 'graph ['
+    print
+    print 'directed 0'
+    print
 
 for n in bags :
     printNode(n)
@@ -85,7 +111,10 @@ for n in bags :
 for (i,j) in edges:
     printEdge(i,j)
 
-print ']'
+if sys.version_info >= (3, 0):
+    print (']')
+else:
+    print ']'
     
 
 
