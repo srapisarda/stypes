@@ -1,7 +1,7 @@
-t1 (?a,?b,?c) :- s(?a,?b,?c).
-w1 (?a,?b) :- s(?a,?b,?c).
-t2(?a,?b) :- t1(?a,?b,?c)  .
-t3(?a,?b,?C) :- t2(?a,?b) .
-t2(?b,?b) :- t3(?a,?b,?c) .
-w2(?a,?b) :- w1(?a,?b) .
-w1(?b,?b) :- w2(?a,?b) .
+t1(A,B,C) :- s(A,B,C).
+w1(A,B) :- s(A,B,C).
+t2(A,B) :- t1(A,B,C)  .
+t3(A,B,C) :- t2(A, B) .
+t2(B,B) :- t3(A,B,C) .
+w2(A,B) :- w1(A,B) .
+w1(B,B) :- w2(A,B) .

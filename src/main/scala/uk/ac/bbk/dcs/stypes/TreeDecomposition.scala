@@ -48,7 +48,7 @@ class TreeDecomposition {
   private var mapCqAtoms: Map[Predicate, Atom] = _
   private var root: Bag = _
   private var childes: List[TreeDecomposition] = _
-
+  private var cqAtoms: Set[Atom] = _
 
   def this(cqAtoms: Set[Atom], graph: Graph, v: Vertex, mode: Boolean = false) {
     this()
@@ -56,7 +56,7 @@ class TreeDecomposition {
     // checks preconditions
     if (graph.getVertices.asScala.isEmpty)
       throw new RuntimeException("Vertex cannot be null!!") // Todo: Add proper exception
-
+    this.cqAtoms = cqAtoms
     this.mapCqAtoms = cqAtoms.map(atom => atom.getPredicate -> atom).toMap
     val vertex: Vertex = if (v != null) {
       v
@@ -130,9 +130,9 @@ class TreeDecomposition {
     if (predicateAndVariables.length != 2) throw new RuntimeException("Incorrect vertex label.")
     val variables: List[String] = getSpittedItems(predicateAndVariables(1)).map(_.toLowerCase.replace("?", ""))
     val atoms: Set[Atom] =
-      mapCqAtoms.filter(atom =>
+      cqAtoms.filter(atom =>
         variables.distinct.sorted.containsSlice(
-          atom._2.getTerms.asScala.toList.distinct.sorted.map(_.getIdentifier.toString))).values.toSet
+          atom.getTerms.asScala.toList.distinct.sorted.map(_.getIdentifier.toString)))
     val terms: Set[Term] = variables.map(v=> DefaultTermFactory.instance().createVariable(v)).toSet
     Bag(atoms,terms)
 

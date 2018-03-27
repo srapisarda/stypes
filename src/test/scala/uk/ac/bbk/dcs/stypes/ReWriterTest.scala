@@ -52,6 +52,9 @@ class ReWriterTest extends FunSpec {
   private val ontology4 = ReWriter.getOntology("src/main/resources/ont-4.dlp")
   private val ontology5 = ReWriter.getOntology("src/main/resources/ont-5.dlp")
   private val ontCar = ReWriter.getOntology("src/main/resources/ont-car.dlp")
+  private val ontLines = ReWriter.getOntology("src/main/resources/lines.dlp")
+  private val ontTGDsAll = ReWriter.getOntology("src/main/resources/tgds-all.dlp")
+
   private val ontBenchmark100Dep = ReWriter.getOntology(s"$pathToBenchmark100/dependencies/deep.t-tgds.dlp")
   private val ontBenchmark100All = ReWriter.getOntology(s"$pathToBenchmark100/dependencies/all-tgds.dlp")
   private val ontBenchmark100sDep = ReWriter.getOntology(s"$pathToBenchmark100/dependencies/deep.st-tgds.dlp")
@@ -390,6 +393,31 @@ class ReWriterTest extends FunSpec {
       printDatalog(datalog)
       assert(datalog.lengthCompare(1) == 0)
     }
+
+
+    it("should rewrite query q09.cq  using  lines.dlp") {
+      val  result: (TreeDecomposition, List[Variable]) =
+        TreeDecomposition.getTreeDecomposition(s"src/main/resources/q09.gml", "src/main/resources/q09.cq")
+
+      val answerVariables = result._2
+      val datalog = ReWriter.generateDatalog(
+        new ReWriter(ontLines)
+          .generateRewriting(Type.getInstance(answerVariables), Splitter(result._1)))
+      printDatalog(datalog)
+      assert(datalog.lengthCompare(13) == 0)
+    }
+
+    it("should rewrite query q1.cq  using  tgds-all.dlp") {
+      val  result: (TreeDecomposition, List[Variable]) =
+        TreeDecomposition.getTreeDecomposition(s"src/main/resources/Q1.gml", "src/main/resources/Q1.cq")
+
+      val answerVariables = result._2
+      val datalog = ReWriter.generateDatalog(
+        new ReWriter(ontTGDsAll).generateRewriting(Type.getInstance(answerVariables), Splitter(result._1)))
+      printDatalog(datalog)
+      // assert(datalog.lengthCompare(1) == 0)
+    }
+
 
 
     ignore("should rewrite query q11.cq  using 100 ont of all-tdgs.dlp") {

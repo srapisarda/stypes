@@ -210,7 +210,9 @@ object ReWriter {
           }
         }
 
-        val ret = datalog.filter(rule => !remove(rule.body))
+        val ret = datalog.
+          filter(rule => !remove(rule.body))
+
         (ret, ret.lengthCompare(datalog.size) != 0)
       }
 
