@@ -26,13 +26,13 @@ else
     FILE_GML=$FILE_PATH"/"$FILE_NAME".gml"
 
     echo "creating $FILE_HG from $FILE_TXT ..."
-    python create_hg.py < $FILE_TXT > $FILE_HG
+    python3 create_hg.py < $FILE_TXT > $FILE_HG
 
     echo "creating $FILE_HTD from $FILE_HG ..."
-    ./htd_main_mac --input lp < $FILE_HG --output human > $FILE_HTD
+    ./htd_main-1.2.0 --input lp < $FILE_HG --output human > $FILE_HTD
 
     echo "creating $FILE_GML from $FILE_HTD ..."
-    python transform-td.py $FILE_HTD > $FILE_GML
+    python3 transform-td.py $FILE_HTD > $FILE_GML
 
     echo "all done."
 
