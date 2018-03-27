@@ -31,8 +31,6 @@ def getLevel(line):
 if (len(sys.argv) < 2):
     if sys.version_info >= (3, 0):
         print("Usage: python transform-td.py filename.htd")
-    else:
-        print "Usage: python transform-td.py filename.htd"
     exit()
 else:
     filename = sys.argv[1]
@@ -66,16 +64,6 @@ def printNode(n):
         print('    ]')
         print('  ]')
         print()
-    else:
-        print '  node ['
-        print '    id', n
-        print '    label "{}    {', ', '.join(bags[n].getVariables() ), '}"'
-        print '    vgj ['
-        print '      labelPosition "in"'
-        print '      shape "Rectangle"'
-        print '    ]'
-        print '  ]'
-        print
     
 def printEdge(i,j):
     if sys.version_info >= (3, 0):
@@ -84,12 +72,6 @@ def printEdge(i,j):
         print('    target',j)
         print('  ]')
         print()
-    else:
-        print '  edge ['
-        print '    source',i
-        print '    target',j
-        print '  ]'
-        print
 
 
     
@@ -99,11 +81,6 @@ if sys.version_info >= (3, 0):
     print()
     print( 'directed 0' )
     print()
-else:
-    print 'graph ['
-    print
-    print 'directed 0'
-    print
 
 for n in bags :
     printNode(n)
@@ -113,8 +90,6 @@ for (i,j) in edges:
 
 if sys.version_info >= (3, 0):
     print (']')
-else:
-    print ']'
     
 
 

@@ -35,18 +35,12 @@ while c :
 ############# Printing Answer #######################
 
 for currentVariable in vars:
-    if sys.version_info >= (3, 0):
-        print("vertex(", currentVariable, ").")
-    else:
-        print "vertex(", currentVariable, ")."
+    print("vertex(", currentVariable, ").")
 
 print
 
 for currentEdge in edges :
-    if sys.version_info >= (3, 0):
-        print("edge(", ",".join(currentEdge), ").")
-    else:
-        print "edge(", ",".join(currentEdge), ")."
+    print("edge(", ",".join(currentEdge), ").")
     
 
 
