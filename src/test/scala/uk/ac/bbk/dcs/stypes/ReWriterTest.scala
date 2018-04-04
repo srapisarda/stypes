@@ -418,7 +418,11 @@ class ReWriterTest extends FunSpec {
       // assert(datalog.lengthCompare(1) == 0)
     }
 
-
+    it("should create additional rules"){
+      val rules = ReWriter.createAdditionalRules(ontTGDsAll)
+      println(rules.mkString("\n"))
+      assert(23==rules.length)
+    }
 
     ignore("should rewrite query q11.cq  using 100 ont of all-tdgs.dlp") {
       val  result: (TreeDecomposition, List[Variable]) = TreeDecomposition.getTreeDecomposition(s"src/main/resources/q11.gml", "src/main/resources/q11.txt")
