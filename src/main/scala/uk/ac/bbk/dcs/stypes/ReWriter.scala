@@ -24,7 +24,7 @@ import java.io.File
 import java.util.UUID
 
 import fr.lirmm.graphik.graal.api.core._
-import fr.lirmm.graphik.graal.core.DefaultAtom
+import fr.lirmm.graphik.graal.core.{DefaultAtom, DefaultRule}
 import fr.lirmm.graphik.graal.core.atomset.graph.DefaultInMemoryGraphAtomSet
 import fr.lirmm.graphik.graal.forward_chaining.DefaultChase
 import fr.lirmm.graphik.graal.io.dlp.DlgpParser
@@ -48,13 +48,13 @@ object ReWriter {
     * @param ontology a RuleSet
     * @return List[Atom]
     */
-  def makeGeneratingAtoms(ontology: List[Rule]): List[Atom] = {
+  def makeGeneratingAtoms(ontology: List[Rule], includeAllAtoms:Boolean=false): List[Atom] = {
 
     @tailrec
     def visitRuleSet(rules: List[Rule], acc: List[Atom]): List[Atom] = rules match {
       case List() => acc
       case x :: xs =>
-        if (containsExistentialQuantifier(x)) visitRuleSet(xs, acc ::: x.getBody.asScala.toList)
+        if (includeAllAtoms || containsExistentialQuantifier(x) ) visitRuleSet(xs, acc ::: x.getBody.asScala.toList)
         else visitRuleSet(xs, acc)
     }
 
@@ -77,6 +77,33 @@ object ReWriter {
     visitRuleSet(ontology, List())
 
   }
+
+  /**
+    * Creates additional rules form an existing [[List]] of [[Rule]]
+    *
+    * @param ontology which contains a [[List]] of [[Rule]]
+    * @return a [[List]] of [[Rule]]
+    */
+  def createAdditionalRules(ontology: List[Rule]): List[Rule] ={
+    val generatingAtoms = makeGeneratingAtoms(ontology, includeAllAtoms = true)
+
+    def collectRules( generatingAtom : Atom ): List[Rule] = {
+      val canonicalModel: AtomSet = canonicalModelList(ontology, List(generatingAtom)).head
+      for (atom <- canonicalModel.asScala.toList; if atom!=generatingAtom && !atom.getTerms.asScala.exists(isAnonymous))
+        yield {
+          val rule = new DefaultRule
+          val body = new DefaultInMemoryGraphAtomSet()
+          body.add(generatingAtom)
+          rule.setBody(body)
+          val head = new DefaultInMemoryGraphAtomSet()
+          head.add(atom)
+          rule.setHead(head)
+          rule
+        }
+    }
+    generatingAtoms.flatMap(collectRules)
+  }
+
 
   /**
     * Generates canonical models for each of the generating atoms
