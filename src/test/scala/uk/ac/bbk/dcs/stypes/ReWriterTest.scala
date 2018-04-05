@@ -408,28 +408,29 @@ class ReWriterTest extends FunSpec {
     }
 
     it("should rewrite query q1.cq  using  tgds-all.dlp") {
-      val  result: (TreeDecomposition, List[Variable]) =
+      val  decomposedQuery: (TreeDecomposition, List[Variable]) =
         TreeDecomposition.getTreeDecomposition(s"src/main/resources/Q1.gml", "src/main/resources/Q1.cq")
 
-      val answerVariables = result._2
-      val datalog = ReWriter.generateDatalog(
-        new ReWriter(ontTGDsAll).generateRewriting(Type.getInstance(answerVariables), Splitter(result._1)))
+      val datalog = new  ReWriter(ontTGDsAll).rewrite(decomposedQuery, true)
+
       printDatalog(datalog)
-      // assert(datalog.lengthCompare(1) == 0)
+      assert(datalog.lengthCompare(24) == 0)
     }
 
     it("should create additional rules"){
       val rules = ReWriter.createAdditionalRules(ontTGDsAll)
+
       println(rules.mkString("\n"))
-      assert(23==rules.length)
+      assert(23 == rules.length)
     }
 
     ignore("should rewrite query q11.cq  using 100 ont of all-tdgs.dlp") {
       val  result: (TreeDecomposition, List[Variable]) = TreeDecomposition.getTreeDecomposition(s"src/main/resources/q11.gml", "src/main/resources/q11.txt")
       val answerVariables = result._2
 
-      val datalog = ReWriter.generateDatalog(
-        new ReWriter(ontBenchmark100All).generateRewriting(Type.getInstance(answerVariables), Splitter(result._1)))
+      val datalog =
+        new ReWriter(ontBenchmark100All).
+          generateRewriting(Type.getInstance(answerVariables), Splitter(result._1))
 
       assert(datalog.lengthCompare(22) == 0)
     }

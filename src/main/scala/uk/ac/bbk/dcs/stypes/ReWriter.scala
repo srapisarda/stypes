@@ -84,22 +84,13 @@ object ReWriter {
     * @param ontology which contains a [[List]] of [[Rule]]
     * @return a [[List]] of [[Rule]]
     */
-  def createAdditionalRules(ontology: List[Rule]): List[Rule] ={
+  def createAdditionalRules(ontology: List[Rule]): List[Clause] ={
     val generatingAtoms = makeGeneratingAtoms(ontology, includeAllAtoms = true)
 
-    def collectRules( generatingAtom : Atom ): List[Rule] = {
+    def collectRules( generatingAtom : Atom ): List[Clause] = {
       val canonicalModel: AtomSet = canonicalModelList(ontology, List(generatingAtom)).head
       for (atom <- canonicalModel.asScala.toList; if atom!=generatingAtom && !atom.getTerms.asScala.exists(isAnonymous))
-        yield {
-          val rule = new DefaultRule
-          val body = new DefaultInMemoryGraphAtomSet()
-          body.add(generatingAtom)
-          rule.setBody(body)
-          val head = new DefaultInMemoryGraphAtomSet()
-          head.add(atom)
-          rule.setHead(head)
-          rule
-        }
+        yield Clause(atom, List(generatingAtom)  )
     }
     generatingAtoms.flatMap(collectRules)
   }
@@ -139,7 +130,7 @@ object ReWriter {
 
   case class TermsTupleList(value: List[(Term, Term)])
 
-  def generateDatalog(rewriting: Seq[RuleTemplate]): List[Clause] = {
+  def generateDatalog(rewriting: Seq[RuleTemplate], additionalRules:List[Clause] = List()): List[Clause] = {
 
     def getAtomsFromRewrite(ruleTemplate: RuleTemplate, map: Map[Int, Int], currentIndex: Int): (List[Clause], Map[Int, Int], Int) = {
 
@@ -396,7 +387,7 @@ object ReWriter {
     else {
       val removalResult: List[Clause] = removeEmptyClauses(removeDuplicate(datalog))
       val predicateSubstitutionRes: List[Clause] = predicateSubstitution(removalResult)
-      equalitySubstitution(predicateSubstitutionRes)
+      equalitySubstitution(predicateSubstitutionRes) ::: additionalRules
     }
   }
 
@@ -694,7 +685,7 @@ class ReWriter(ontology: List[Rule]) {
   }
 
   def generateRewriting(borderType: Type, splitter: Splitter): List[RuleTemplate] = {
-    val typeExtender =  new TypeExtender(splitter.getSplittingVertex, borderType.homomorphism, canonicalModels.toVector)
+    val typeExtender = new TypeExtender(splitter.getSplittingVertex, borderType.homomorphism, canonicalModels.toVector)
     val types = typeExtender.collectTypes
     //val body = new LinkedListAtomSet
     //val rule :Rule = new DefaultRule()
@@ -702,4 +693,19 @@ class ReWriter(ontology: List[Rule]) {
       .flatMap(ruleTemplate => ruleTemplate :: ruleTemplate.GetAllSubordinateRules)
   }
 
+  def generateDatalog(rewriting: Seq[RuleTemplate], addAdditionalRules: Boolean = false): List[Clause] =
+    if (addAdditionalRules)
+      ReWriter.generateDatalog(rewriting, ReWriter.createAdditionalRules(ontology))
+    else
+      ReWriter.generateDatalog(rewriting)
+
+
+  def rewrite(decomposedQuery: (TreeDecomposition, List[Variable]), addAdditionalRules: Boolean = false): List[Clause] = {
+    val treeDecomposition = decomposedQuery._1
+    val answerVariables = decomposedQuery._2
+    val rewriter = new ReWriter(ontology)
+    val rewriting = rewriter.generateRewriting(Type.getInstance(answerVariables), Splitter(treeDecomposition))
+    val datalog = rewriter.generateDatalog(rewriting, addAdditionalRules)
+    datalog
+  }
 }
