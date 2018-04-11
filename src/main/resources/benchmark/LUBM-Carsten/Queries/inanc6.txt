@@ -1,0 +1,1 @@
+Q(?0,?1) <- University(?0), memberOf(?2,?0), Student(?2), University(?1), memberOf(?3,?1), Professor(?3), advisor(?2,?3)

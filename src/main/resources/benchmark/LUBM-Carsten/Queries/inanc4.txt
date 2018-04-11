@@ -1,0 +1,1 @@
+Q(?1,?4) <- Professor(?0), memberOf(?0,?1), Subj3Department(?1), publicationAuthor(?2,?0), Professor(?3), memberOf(?3,?4), Subj4Department(?4), publicationAuthor(?2,?3)

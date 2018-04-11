@@ -1,0 +1,1 @@
+Q(?0) <- Faculty(?0), degreeFrom(?0,?1), University(?1), subOrganizationOf(?2,?1), Department(?2), memberOf(?0,?2)

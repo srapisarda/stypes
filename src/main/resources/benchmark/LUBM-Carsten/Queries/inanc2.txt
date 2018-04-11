@@ -1,0 +1,1 @@
+Q(?0,?1) <- Subj3Student(?0), Subj4Student(?1), takesCourse(?0,?2), takesCourse(?1,?2)

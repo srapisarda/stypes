@@ -1,0 +1,1 @@
+Q(?0) <- Publication(?0), publicationAuthor(?0,?1), Professor(?1), publicationAuthor(?0,?2), Student(?2)
