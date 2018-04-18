@@ -98,28 +98,28 @@ object FlinkRewriterTest extends App {
   }
 
   //DATA
-  private lazy val v760  = env.readTextFile("/Users/rapissal/development/uni/stypes/src/main/resources/benchmark/100/data/v760.csv").map(stringMapper4)
-  private lazy val v515  = env.readTextFile("/Users/rapissal/development/uni/stypes/src/main/resources/benchmark/100/data/v515.csv").map(stringMapper4)
-  private lazy val v905  = env.readTextFile("/Users/rapissal/development/uni/stypes/src/main/resources/benchmark/100/data/v905.csv").map(stringMapper4)
-  private lazy val v14  = env.readTextFile("/Users/rapissal/development/uni/stypes/src/main/resources/benchmark/100/data/v14.csv").map(stringMapper4)
-  private lazy val v781  = env.readTextFile("/Users/rapissal/development/uni/stypes/src/main/resources/benchmark/100/data/v781.csv").map(stringMapper4)
-  private lazy val v763  = env.readTextFile("/Users/rapissal/development/uni/stypes/src/main/resources/benchmark/100/data/v763.csv").map(stringMapper4)
+  private lazy val v760  = env.readTextFile("hdfs:///user/hduser/stype/resources/benchmark/100/data/v760.csv").map(stringMapper4)
+  private lazy val v515  = env.readTextFile("hdfs:///user/hduser/stype/resources/benchmark/100/data/v515.csv").map(stringMapper4)
+  private lazy val v905  = env.readTextFile("hdfs:///user/hduser/stype/resources/benchmark/100/data/v905.csv").map(stringMapper4)
+  private lazy val v14  = env.readTextFile("hdfs:///user/hduser/stype/resources/benchmark/100/data/v14.csv").map(stringMapper4)
+  private lazy val v781  = env.readTextFile("hdfs:///user/hduser/stype/resources/benchmark/100/data/v781.csv").map(stringMapper4)
+  private lazy val v763  = env.readTextFile("hdfs:///user/hduser/stype/resources/benchmark/100/data/v763.csv").map(stringMapper4)
   private lazy val m139004  = unknownData4
-  private lazy val v466  = env.readTextFile("/Users/rapissal/development/uni/stypes/src/main/resources/benchmark/100/data/v466.csv").map(stringMapper4)
-  private lazy val v199  = env.readTextFile("/Users/rapissal/development/uni/stypes/src/main/resources/benchmark/100/data/v199.csv").map(stringMapper4)
-  private lazy val v308  = env.readTextFile("/Users/rapissal/development/uni/stypes/src/main/resources/benchmark/100/data/v308.csv").map(stringMapper4)
-  private lazy val v708  = env.readTextFile("/Users/rapissal/development/uni/stypes/src/main/resources/benchmark/100/data/v708.csv").map(stringMapper4)
-  private lazy val v762  = env.readTextFile("/Users/rapissal/development/uni/stypes/src/main/resources/benchmark/100/data/v762.csv").map(stringMapper4)
-  private lazy val v174  = env.readTextFile("/Users/rapissal/development/uni/stypes/src/main/resources/benchmark/100/data/v174.csv").map(stringMapper4)
-  private lazy val v748  = env.readTextFile("/Users/rapissal/development/uni/stypes/src/main/resources/benchmark/100/data/v748.csv").map(stringMapper4)
+  private lazy val v466  = env.readTextFile("hdfs:///user/hduser/stype/resources/benchmark/100/data/v466.csv").map(stringMapper4)
+  private lazy val v199  = env.readTextFile("hdfs:///user/hduser/stype/resources/benchmark/100/data/v199.csv").map(stringMapper4)
+  private lazy val v308  = env.readTextFile("hdfs:///user/hduser/stype/resources/benchmark/100/data/v308.csv").map(stringMapper4)
+  private lazy val v708  = env.readTextFile("hdfs:///user/hduser/stype/resources/benchmark/100/data/v708.csv").map(stringMapper4)
+  private lazy val v762  = env.readTextFile("hdfs:///user/hduser/stype/resources/benchmark/100/data/v762.csv").map(stringMapper4)
+  private lazy val v174  = env.readTextFile("hdfs:///user/hduser/stype/resources/benchmark/100/data/v174.csv").map(stringMapper4)
+  private lazy val v748  = env.readTextFile("hdfs:///user/hduser/stype/resources/benchmark/100/data/v748.csv").map(stringMapper4)
   private lazy val m249004  = unknownData4
   private lazy val m56004  = unknownData4
-  private lazy val v653  = env.readTextFile("/Users/rapissal/development/uni/stypes/src/main/resources/benchmark/100/data/v653.csv").map(stringMapper4)
-  private lazy val v929  = env.readTextFile("/Users/rapissal/development/uni/stypes/src/main/resources/benchmark/100/data/v929.csv").map(stringMapper4)
-  private lazy val v635  = env.readTextFile("/Users/rapissal/development/uni/stypes/src/main/resources/benchmark/100/data/v635.csv").map(stringMapper4)
-  private lazy val v51  = env.readTextFile("/Users/rapissal/development/uni/stypes/src/main/resources/benchmark/100/data/v51.csv").map(stringMapper4)
-  private lazy val v197  = env.readTextFile("/Users/rapissal/development/uni/stypes/src/main/resources/benchmark/100/data/v197.csv").map(stringMapper4)
-  private lazy val v22  = env.readTextFile("/Users/rapissal/development/uni/stypes/src/main/resources/benchmark/100/data/v22.csv").map(stringMapper4)
+  private lazy val v653  = env.readTextFile("hdfs:///user/hduser/stype/resources/benchmark/100/data/v653.csv").map(stringMapper4)
+  private lazy val v929  = env.readTextFile("hdfs:///user/hduser/stype/resources/benchmark/100/data/v929.csv").map(stringMapper4)
+  private lazy val v635  = env.readTextFile("hdfs:///user/hduser/stype/resources/benchmark/100/data/v635.csv").map(stringMapper4)
+  private lazy val v51  = env.readTextFile("hdfs:///user/hduser/stype/resources/benchmark/100/data/v51.csv").map(stringMapper4)
+  private lazy val v197  = env.readTextFile("hdfs:///user/hduser/stype/resources/benchmark/100/data/v197.csv").map(stringMapper4)
+  private lazy val v22  = env.readTextFile("hdfs:///user/hduser/stype/resources/benchmark/100/data/v22.csv").map(stringMapper4)
 
   //Rewriting
   private lazy val p6= (((((((((((v905.map(t=> (t._2,t._2)) union v22.map(t=> (t._1,t._1)))
