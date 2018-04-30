@@ -20,7 +20,7 @@ package uk.ac.bbk.dcs.stypes
  * #L%
  */
 
-import java.io.{BufferedWriter, File, FileWriter}
+import java.io.{BufferedWriter, File, FileWriter, PrintWriter}
 
 import fr.lirmm.graphik.graal.api.core.{Predicate, Rule, Term, Variable}
 import fr.lirmm.graphik.graal.core.term.DefaultTermFactory
@@ -46,6 +46,7 @@ class ReWriterTest extends FunSpec {
   private val pathToBenchmark100 = "src/main/resources/benchmark/100"
   private val pathToBenchmark300 = "src/main/resources/benchmark/300"
   private val pathToBenchmarkNDL_SQL = "src/main/resources/benchmark/NDL-SQL"
+  private val pathToLine = "src/main/resources/benchmark/Lines"
   private val ontology1 = ReWriter.getOntology("src/main/resources/ont-1.dlp")
   private val ontology2 = ReWriter.getOntology("src/main/resources/ont-2.dlp")
   private val ontology3 = ReWriter.getOntology("src/main/resources/ont-3.dlp")
@@ -60,7 +61,6 @@ class ReWriterTest extends FunSpec {
   private val ontBenchmark100sDep = ReWriter.getOntology(s"$pathToBenchmark100/dependencies/deep.st-tgds.dlp")
   private val ontBenchmark300Dep = ReWriter.getOntology(s"$pathToBenchmark300/dependencies/deep.t-tgds.dlp")
   private val ontBenchmarkNDL_SQL = ReWriter.getOntology(s"$pathToBenchmarkNDL_SQL/dependencies/15-tw.dlp")
-
 
 
   def getMockTypeEpsilon: Type = {
@@ -181,7 +181,7 @@ class ReWriterTest extends FunSpec {
 
     it("should rewrite the query for q-3 with ont-3") {
       val t: TreeDecomposition = TreeDecomposition.getHyperTreeDecomposition("src/main/resources/Q3.gml", "src/main/resources/Q3.cq")
-      val result: Seq[RuleTemplate] = new ReWriter(ontology3).generateRewriting(Type(new TreeMapSubstitution()), Splitter(t) )
+      val result: Seq[RuleTemplate] = new ReWriter(ontology3).generateRewriting(Type(new TreeMapSubstitution()), Splitter(t))
       println(result)
       assert(result.lengthCompare(5) == 0) // verify this result
       val datalog = ReWriter.generateDatalog(result)
@@ -191,7 +191,7 @@ class ReWriterTest extends FunSpec {
     }
 
     it("should rewrite the query for q-3 with ont-4") {
-      val t: TreeDecomposition =TreeDecomposition.getHyperTreeDecomposition("src/main/resources/Q3.gml", "src/main/resources/Q3.cq")
+      val t: TreeDecomposition = TreeDecomposition.getHyperTreeDecomposition("src/main/resources/Q3.gml", "src/main/resources/Q3.cq")
       val result: Seq[RuleTemplate] = new ReWriter(ontology4).generateRewriting(Type(new TreeMapSubstitution()), Splitter(t))
       println(result)
       assert(result.lengthCompare(5) == 0) // verify this result
@@ -208,16 +208,16 @@ class ReWriterTest extends FunSpec {
 
       val result: Seq[RuleTemplate] = new ReWriter(ontology4).generateRewriting(Type(new TreeMapSubstitution()), Splitter(t))
       println(result)
-      assert( result.lengthCompare(6 )== 0 ) // verify this result
+      assert(result.lengthCompare(6) == 0) // verify this result
 
       val datalog = ReWriter.generateDatalog(result)
       printDatalog(datalog)
-       assert(datalog.lengthCompare(9 ) == 0)
+      assert(datalog.lengthCompare(9) == 0)
 
     }
 
     it("should rewrite the query for q-7-p with ont-q7p") {
-      val t: TreeDecomposition =TreeDecomposition.getHyperTreeDecomposition("src/main/resources/Q7p.gml", "src/main/resources/Q7p.cq")
+      val t: TreeDecomposition = TreeDecomposition.getHyperTreeDecomposition("src/main/resources/Q7p.gml", "src/main/resources/Q7p.cq")
 
       val result: Seq[RuleTemplate] = new ReWriter(ontology5).generateRewriting(Type(new TreeMapSubstitution()), Splitter(t))
       println(result)
@@ -328,7 +328,7 @@ class ReWriterTest extends FunSpec {
 
 
     it("should rewrite the query for q01 with ont of deep.t-tdgs.dlp") {
-       val t: TreeDecomposition = TreeDecomposition.getHyperTreeDecomposition(s"$pathToBenchmark100/queries/q01.gml",
+      val t: TreeDecomposition = TreeDecomposition.getHyperTreeDecomposition(s"$pathToBenchmark100/queries/q01.gml",
         s"$pathToBenchmark100/queries/q01.cq")
 
       val result: Seq[RuleTemplate] = new ReWriter(ontBenchmark100Dep).generateRewriting(Type(new TreeMapSubstitution()), Splitter(t))
@@ -382,9 +382,8 @@ class ReWriterTest extends FunSpec {
     }
 
 
-
     it("should rewrite query q11.cq  using 100 ont of tdgs.dlp") {
-      val  result: (TreeDecomposition, List[Variable]) =
+      val result: (TreeDecomposition, List[Variable]) =
         TreeDecomposition.getTreeDecomposition(s"src/main/resources/q11.gml", "src/main/resources/q11.txt")
 
       val answerVariables = result._2
@@ -396,7 +395,7 @@ class ReWriterTest extends FunSpec {
 
 
     it("should rewrite query q09.cq  using  lines.dlp") {
-      val  result: (TreeDecomposition, List[Variable]) =
+      val result: (TreeDecomposition, List[Variable]) =
         TreeDecomposition.getTreeDecomposition(s"src/main/resources/q09.gml", "src/main/resources/q09.cq")
 
       val answerVariables = result._2
@@ -408,16 +407,16 @@ class ReWriterTest extends FunSpec {
     }
 
     it("should rewrite query q1.cq  using  tgds-all.dlp") {
-      val  decomposedQuery: (TreeDecomposition, List[Variable]) =
+      val decomposedQuery: (TreeDecomposition, List[Variable]) =
         TreeDecomposition.getTreeDecomposition(s"src/main/resources/Q1.gml", "src/main/resources/Q1.cq")
 
-      val datalog = new  ReWriter(ontTGDsAll).rewrite(decomposedQuery, true)
+      val datalog = new ReWriter(ontTGDsAll).rewrite(decomposedQuery, true)
 
       printDatalog(datalog)
       assert(datalog.lengthCompare(24) == 0)
     }
 
-    it("should create additional rules"){
+    it("should create additional rules") {
       val rules = ReWriter.createAdditionalRules(ontTGDsAll)
 
       println(rules.mkString("\n"))
@@ -425,7 +424,7 @@ class ReWriterTest extends FunSpec {
     }
 
     ignore("should rewrite query q11.cq  using 100 ont of all-tdgs.dlp") {
-      val  result: (TreeDecomposition, List[Variable]) = TreeDecomposition.getTreeDecomposition(s"src/main/resources/q11.gml", "src/main/resources/q11.txt")
+      val result: (TreeDecomposition, List[Variable]) = TreeDecomposition.getTreeDecomposition(s"src/main/resources/q11.gml", "src/main/resources/q11.txt")
       val answerVariables = result._2
 
       val datalog =
@@ -455,16 +454,16 @@ class ReWriterTest extends FunSpec {
 
 
       assert(ontBenchmarkNDL_SQL.nonEmpty)
-//      val t:TreeDecomposition = test.buildTestTreeDecomposition(s"$pathToBenchmarkNDL_SQL/queries/queries.gml",
-// s"$pathToBenchmarkNDL_SQL/queries/queries.cq")
-//
-//      val result: Seq[RuleTemplate] = new ReWriter(ontBenchmark300Dep).generateRewriting(Type(new TreeMapSubstitution()) , Splitter(t))
-//      println(result)
-//      assert( result.size == 80 ) // verify this result
-//
-//      val datalog=  ReWriter.generateDatalog(result )
-//     printDatalog(datalog)
-//      assert(datalog.size== 11)
+      //      val t:TreeDecomposition = test.buildTestTreeDecomposition(s"$pathToBenchmarkNDL_SQL/queries/queries.gml",
+      // s"$pathToBenchmarkNDL_SQL/queries/queries.cq")
+      //
+      //      val result: Seq[RuleTemplate] = new ReWriter(ontBenchmark300Dep).generateRewriting(Type(new TreeMapSubstitution()) , Splitter(t))
+      //      println(result)
+      //      assert( result.size == 80 ) // verify this result
+      //
+      //      val datalog=  ReWriter.generateDatalog(result )
+      //     printDatalog(datalog)
+      //      assert(datalog.size== 11)
 
     }
 
@@ -499,7 +498,27 @@ class ReWriterTest extends FunSpec {
       print(edges.map(h => s"edge$h").mkString(".\n"))
     }
 
+    it("has to read a lines data ttl and transform to CSV file ") {
+      val ttlFiles = getListOfFiles(s"$pathToLine/data")
+      ttlFiles.foreach(f => {
+        val file = new File(s"$pathToLine/data/${f.getName}.csv")
+        val bw = new BufferedWriter(new FileWriter(file))
+        bw.write(
+          "X,Y\n" +
+            Source
+              .fromFile(f).getLines()
+              .map(q => {
+                val args = q replace("<", "") replace(">", "") replace(".", "") split " "
+                s"${args(0)},${args(2)}"
+              })
+              .mkString("\n")
+        )
+        bw.close()
+      })
+    }
+
   }
+
 
   private def printDatalog(datalog: List[Clause]): Unit =
     println(s"${datalog.mkString(".\n")}.".replaceAll("""\[\d+\]""", ""))
