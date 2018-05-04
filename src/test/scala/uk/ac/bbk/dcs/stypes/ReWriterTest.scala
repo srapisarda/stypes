@@ -499,24 +499,39 @@ class ReWriterTest extends FunSpec {
     }
 
     it("has to read a lines data ttl and transform to CSV file ") {
-      val ttlFiles = getListOfFiles(s"$pathToLine/data")
+      val ttlFiles = getListOfFiles(s"$pathToLine/data").filter( p=> p.getName.contains(".ttl"))
+      val fileTypes = List("R", "A", "B")
       ttlFiles.foreach(f => {
-        val file = new File(s"$pathToLine/data/${f.getName}.csv")
-        val bw = new BufferedWriter(new FileWriter(file))
-        bw.write(
-          "X,Y\n" +
-            Source
-              .fromFile(f).getLines()
+        fileTypes.foreach(ft => {
+          val file = new File(s"$pathToLine/data/csv/${f.getName}-$ft-test.csv")
+          val bw = new BufferedWriter(new FileWriter(file))
+          bw.write(
+            Source.fromFile(f).getLines()
+              .filter(q => ffilter(ft, q))
               .map(q => {
-                val args = q replace("<", "") replace(">", "") replace(".", "") split " "
-                s"${args(0)},${args(2)}"
+                val args = repalcing(q)
+                fmap(ft, args)
               })
               .mkString("\n")
-        )
-        bw.close()
+          )
+          bw.close()
+        })
       })
-    }
 
+      def ffilter(ft: String, line: String): Boolean = line.contains(s"<$ft>")
+
+      def repalcing(line: String): Array[String] =
+        line replace("<", "") replace(">", "") replace(".", "") split " "
+
+      def fmap(ft: String, args: Array[String]): String = ft match {
+        case "R" =>
+          s"${args(0)},${args(2)}"
+        case "A" =>
+          args(0)
+        case "B" =>
+          args(0)
+      }
+    }
   }
 
 
