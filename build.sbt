@@ -12,6 +12,7 @@ val flinkVersion = "1.4.0"
 
 val playVersion = "2.6.8"
 
+
 libraryDependencies ++= Seq( "fr.lirmm.graphik" % "graal-core" % graalVersion
                 ,"fr.lirmm.graphik" % "graal-forward-chaining" % graalVersion
                 ,"fr.lirmm.graphik" % "graal-backward-chaining" % graalVersion
@@ -26,3 +27,9 @@ libraryDependencies ++= Seq( "fr.lirmm.graphik" % "graal-core" % graalVersion
                 ,"org.apache.spark" %% "spark-sql" % sparkVersion
                 ,"org.apache.flink" %% "flink-streaming-scala" % flinkVersion
             )
+
+
+assemblyMergeStrategy in assembly := {
+  case PathList("META-INF", xs @ _*) => MergeStrategy.discard
+  case x => MergeStrategy.first
+}
