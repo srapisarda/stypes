@@ -190,11 +190,8 @@ class FlinkTest04 extends FunSpec {
 
       // p14(x11,x15) :- r(x11,x12), s(x12,x13), p7(x13,x15).
       // p14(x11,x15) :- b(x11), p7(x11,x15).
-      // p14(x11,x15) :- b(x11), p7(x11,x15).
       lazy val p14 = myJoin( r, myJoin( s, p7 ) )
                       .union( myJoin(b, p7 ))
-                      .union( myJoin(b, p7))
-
 
 
       // p2(x8,x15) :- p5(x10,x8), r(x10,x11), p14(x11,x15).
