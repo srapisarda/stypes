@@ -123,7 +123,7 @@ class FlinkTest04 extends FunSpec {
     ds
   }
 
-  describe("Flink TEST3") {
+  describe("Flink TEST4") {
 
 
     it("should read and execute the 'q15.cq' query rewrote for 1.ffl file set {A, B, R, S}") {
