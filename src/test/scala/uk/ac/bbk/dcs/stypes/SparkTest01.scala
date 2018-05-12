@@ -30,7 +30,7 @@ import org.scalatest.FunSpec
   * Created by Salvatore Rapisarda on 24/12/2017.
   */
 class SparkTest01 extends FunSpec {
-  private val pathToBenchmarkNDL_SQL = "src/main/resources/benchmark/NDL-SQL"
+  private val pathToBenchmarkNDL_SQL = "src/test/resources/benchmark/NDL-SQL"
   private val config = new SparkConf().setAppName("SparkTest03").setMaster("local[4]")//.set("spark.executor.memory", "1g")
   private val sc = SparkContext.getOrCreate(config)
 

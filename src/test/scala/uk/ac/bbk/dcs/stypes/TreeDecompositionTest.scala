@@ -31,7 +31,7 @@ class TreeDecompositionTest extends FunSpec {
   describe("Tree decomposition commons ") {
 
     it("should a common operation correctly 2 ") {
-      val t = buildTestTreeDecomposition("src/main/resources/q11.gml", "src/main/resources/q11.txt")
+      val t = buildTestTreeDecomposition("src/test/resources/q11.gml", "src/test/resources/q11.txt")
       assert(t.getRoot.atoms.size==1)
 
 
@@ -39,7 +39,7 @@ class TreeDecompositionTest extends FunSpec {
 
     it("should make common operation correctly") {
 
-      val t = buildTestHyperTreeDecomposition("src/main/resources/Q7.gml", "src/main/resources/Q7.cq")
+      val t = buildTestHyperTreeDecomposition("src/test/resources/Q7.gml", "src/test/resources/Q7.cq")
 
       Assert.assertNotNull(t)
       assert(Set("X2", "X3") == t.getRoot.variables.map(_.getIdentifier))

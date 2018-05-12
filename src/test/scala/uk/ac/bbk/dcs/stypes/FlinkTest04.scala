@@ -62,7 +62,7 @@ import org.scalatest.FunSpec
   */
 class FlinkTest04 extends FunSpec {
 
-  private val pathToBenchmarkNDL_SQL = "src/main/resources/benchmark/Lines"
+  private val pathToBenchmarkNDL_SQL = "src/test/resources/benchmark/Lines"
 
   val conf = new Configuration()
   //conf.setInteger("taskmanager.network.numberOfBuffers", 16000)

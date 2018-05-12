@@ -43,18 +43,18 @@ import scala.io.Source
 class ReWriterTest extends FunSpec {
 
   // 0 - Create a Dlgp writer and a structure to store rules.
-  private val pathToBenchmark100 = "src/main/resources/benchmark/100"
-  private val pathToBenchmark300 = "src/main/resources/benchmark/300"
-  private val pathToBenchmarkNDL_SQL = "src/main/resources/benchmark/NDL-SQL"
-  private val pathToLine = "src/main/resources/benchmark/Lines"
-  private val ontology1 = ReWriter.getOntology("src/main/resources/ont-1.dlp")
-  private val ontology2 = ReWriter.getOntology("src/main/resources/ont-2.dlp")
-  private val ontology3 = ReWriter.getOntology("src/main/resources/ont-3.dlp")
-  private val ontology4 = ReWriter.getOntology("src/main/resources/ont-4.dlp")
-  private val ontology5 = ReWriter.getOntology("src/main/resources/ont-5.dlp")
-  private val ontCar = ReWriter.getOntology("src/main/resources/ont-car.dlp")
-  private val ontLines = ReWriter.getOntology("src/main/resources/lines.dlp")
-  private val ontTGDsAll = ReWriter.getOntology("src/main/resources/tgds-all.dlp")
+  private val pathToBenchmark100 = "src/test/resources/benchmark/100"
+  private val pathToBenchmark300 = "src/test/resources/benchmark/300"
+  private val pathToBenchmarkNDL_SQL = "src/test/resources/benchmark/NDL-SQL"
+  private val pathToLine = "src/test/resources/benchmark/Lines"
+  private val ontology1 = ReWriter.getOntology("src/test/resources/ont-1.dlp")
+  private val ontology2 = ReWriter.getOntology("src/test/resources/ont-2.dlp")
+  private val ontology3 = ReWriter.getOntology("src/test/resources/ont-3.dlp")
+  private val ontology4 = ReWriter.getOntology("src/test/resources/ont-4.dlp")
+  private val ontology5 = ReWriter.getOntology("src/test/resources/ont-5.dlp")
+  private val ontCar = ReWriter.getOntology("src/test/resources/ont-car.dlp")
+  private val ontLines = ReWriter.getOntology("src/test/resources/lines.dlp")
+  private val ontTGDsAll = ReWriter.getOntology("src/test/resources/tgds-all.dlp")
 
   private val ontBenchmark100Dep = ReWriter.getOntology(s"$pathToBenchmark100/dependencies/deep.t-tgds.dlp")
   private val ontBenchmark100All = ReWriter.getOntology(s"$pathToBenchmark100/dependencies/all-tgds.dlp")
@@ -123,7 +123,7 @@ class ReWriterTest extends FunSpec {
 
 
     it("should get the epsilon ") {
-      val t: TreeDecomposition = TreeDecomposition.getHyperTreeDecomposition("src/main/resources/Q7.gml", "src/main/resources/Q7.cq")
+      val t: TreeDecomposition = TreeDecomposition.getHyperTreeDecomposition("src/test/resources/Q7.gml", "src/test/resources/Q7.cq")
       val s = getMockTypeEpsilon
       val atoms = new ReWriter(ontology1).makeAtoms(t.getRoot, s)
       println(atoms)
@@ -131,7 +131,7 @@ class ReWriterTest extends FunSpec {
     }
 
     it("should get the anonymous ") {
-      val t: TreeDecomposition = TreeDecomposition.getHyperTreeDecomposition("src/main/resources/Q7.gml", "src/main/resources/Q7.cq")
+      val t: TreeDecomposition = TreeDecomposition.getHyperTreeDecomposition("src/test/resources/Q7.gml", "src/test/resources/Q7.cq")
       val s = getMockTypeAnonymous
       val atoms = new ReWriter(ontology1).makeAtoms(t.getRoot, s)
       println(atoms)
@@ -140,7 +140,7 @@ class ReWriterTest extends FunSpec {
     }
 
     it("should get the empty set for mixed type   ") {
-      val t: TreeDecomposition = TreeDecomposition.getHyperTreeDecomposition("src/main/resources/Q7.gml", "src/main/resources/Q7.cq")
+      val t: TreeDecomposition = TreeDecomposition.getHyperTreeDecomposition("src/test/resources/Q7.gml", "src/test/resources/Q7.cq")
       val s = getMockTypeMixed
       val atoms = new ReWriter(ontology1).makeAtoms(t.getRoot, s)
       println(atoms)
@@ -148,7 +148,7 @@ class ReWriterTest extends FunSpec {
     }
 
     it("should rewrite the query for ont-1") {
-      val t: TreeDecomposition = TreeDecomposition.getHyperTreeDecomposition("src/main/resources/Q7.gml", "src/main/resources/Q7.cq")
+      val t: TreeDecomposition = TreeDecomposition.getHyperTreeDecomposition("src/test/resources/Q7.gml", "src/test/resources/Q7.cq")
       val result = new ReWriter(ontology1).generateRewriting(Type(new TreeMapSubstitution()), Splitter(t))
       println(result)
       assert(result.lengthCompare(7) == 0)
@@ -156,7 +156,7 @@ class ReWriterTest extends FunSpec {
 
 
     it("should rewrite the query for ont-2") {
-      val t: TreeDecomposition = TreeDecomposition.getHyperTreeDecomposition("src/main/resources/Q7.gml", "src/main/resources/Q7.cq")
+      val t: TreeDecomposition = TreeDecomposition.getHyperTreeDecomposition("src/test/resources/Q7.gml", "src/test/resources/Q7.cq")
       val result: Seq[RuleTemplate] = new ReWriter(ontology2).generateRewriting(Type(new TreeMapSubstitution()), Splitter(t))
       println(result)
       assert(result.lengthCompare(20) == 0) // verify this result
@@ -168,7 +168,7 @@ class ReWriterTest extends FunSpec {
 
 
     it("should rewrite the query for q-3") {
-      val t: TreeDecomposition = TreeDecomposition.getHyperTreeDecomposition("src/main/resources/Q3.gml", "src/main/resources/Q3.cq")
+      val t: TreeDecomposition = TreeDecomposition.getHyperTreeDecomposition("src/test/resources/Q3.gml", "src/test/resources/Q3.cq")
       val result: Seq[RuleTemplate] = new ReWriter(ontology2).generateRewriting(Type(new TreeMapSubstitution()), Splitter(t))
       println(result)
       assert(result.lengthCompare(4) == 0) // verify this result
@@ -180,7 +180,7 @@ class ReWriterTest extends FunSpec {
 
 
     it("should rewrite the query for q-3 with ont-3") {
-      val t: TreeDecomposition = TreeDecomposition.getHyperTreeDecomposition("src/main/resources/Q3.gml", "src/main/resources/Q3.cq")
+      val t: TreeDecomposition = TreeDecomposition.getHyperTreeDecomposition("src/test/resources/Q3.gml", "src/test/resources/Q3.cq")
       val result: Seq[RuleTemplate] = new ReWriter(ontology3).generateRewriting(Type(new TreeMapSubstitution()), Splitter(t))
       println(result)
       assert(result.lengthCompare(5) == 0) // verify this result
@@ -191,7 +191,7 @@ class ReWriterTest extends FunSpec {
     }
 
     it("should rewrite the query for q-3 with ont-4") {
-      val t: TreeDecomposition = TreeDecomposition.getHyperTreeDecomposition("src/main/resources/Q3.gml", "src/main/resources/Q3.cq")
+      val t: TreeDecomposition = TreeDecomposition.getHyperTreeDecomposition("src/test/resources/Q3.gml", "src/test/resources/Q3.cq")
       val result: Seq[RuleTemplate] = new ReWriter(ontology4).generateRewriting(Type(new TreeMapSubstitution()), Splitter(t))
       println(result)
       assert(result.lengthCompare(5) == 0) // verify this result
@@ -204,7 +204,7 @@ class ReWriterTest extends FunSpec {
 
 
     it("should rewrite the query for q-3-1 with ont-4") {
-      val t: TreeDecomposition = TreeDecomposition.getHyperTreeDecomposition("src/main/resources/Q3-1.gml", "src/main/resources/Q3-1.cq")
+      val t: TreeDecomposition = TreeDecomposition.getHyperTreeDecomposition("src/test/resources/Q3-1.gml", "src/test/resources/Q3-1.cq")
 
       val result: Seq[RuleTemplate] = new ReWriter(ontology4).generateRewriting(Type(new TreeMapSubstitution()), Splitter(t))
       println(result)
@@ -217,7 +217,7 @@ class ReWriterTest extends FunSpec {
     }
 
     it("should rewrite the query for q-7-p with ont-q7p") {
-      val t: TreeDecomposition = TreeDecomposition.getHyperTreeDecomposition("src/main/resources/Q7p.gml", "src/main/resources/Q7p.cq")
+      val t: TreeDecomposition = TreeDecomposition.getHyperTreeDecomposition("src/test/resources/Q7p.gml", "src/test/resources/Q7p.cq")
 
       val result: Seq[RuleTemplate] = new ReWriter(ontology5).generateRewriting(Type(new TreeMapSubstitution()), Splitter(t))
       println(result)
@@ -231,7 +231,7 @@ class ReWriterTest extends FunSpec {
 
 
     it("should rewrite the query for Q-car with ont-car") {
-      val t: TreeDecomposition = TreeDecomposition.getHyperTreeDecomposition("src/main/resources/Q-car.gml", "src/main/resources/Q-car.cq")
+      val t: TreeDecomposition = TreeDecomposition.getHyperTreeDecomposition("src/test/resources/Q-car.gml", "src/test/resources/Q-car.cq")
 
       val result: Seq[RuleTemplate] = new ReWriter(ontCar).generateRewriting(Type(new TreeMapSubstitution()), Splitter(t))
       println(result)
@@ -384,7 +384,7 @@ class ReWriterTest extends FunSpec {
 
     it("should rewrite query q11.cq  using 100 ont of tdgs.dlp") {
       val result: (TreeDecomposition, List[Variable]) =
-        TreeDecomposition.getTreeDecomposition(s"src/main/resources/q11.gml", "src/main/resources/q11.txt")
+        TreeDecomposition.getTreeDecomposition(s"src/test/resources/q11.gml", "src/test/resources/q11.txt")
 
       val answerVariables = result._2
       val datalog = ReWriter.generateDatalog(
@@ -396,7 +396,7 @@ class ReWriterTest extends FunSpec {
 
     it("should rewrite query q15.cq  using  lines.dlp") {
       val result: (TreeDecomposition, List[Variable]) =
-        TreeDecomposition.getTreeDecomposition(s"src/main/resources/q15.gml", "src/main/resources/q15.cq")
+        TreeDecomposition.getTreeDecomposition(s"src/test/resources/q15.gml", "src/test/resources/q15.cq")
 
       val answerVariables = result._2
       val datalog = ReWriter.generateDatalog(
@@ -413,7 +413,7 @@ class ReWriterTest extends FunSpec {
 
     it("should rewrite query q09.cq  using  lines.dlp") {
       val result: (TreeDecomposition, List[Variable]) =
-        TreeDecomposition.getTreeDecomposition(s"src/main/resources/q09.gml", "src/main/resources/q09.cq")
+        TreeDecomposition.getTreeDecomposition(s"src/test/resources/q09.gml", "src/test/resources/q09.cq")
 
       val answerVariables = result._2
       val datalog = ReWriter.generateDatalog(
@@ -425,7 +425,7 @@ class ReWriterTest extends FunSpec {
 
     it("should rewrite query q1.cq  using  tgds-all.dlp") {
       val decomposedQuery: (TreeDecomposition, List[Variable]) =
-        TreeDecomposition.getTreeDecomposition(s"src/main/resources/Q1.gml", "src/main/resources/Q1.cq")
+        TreeDecomposition.getTreeDecomposition(s"src/test/resources/Q1.gml", "src/test/resources/Q1.cq")
 
       val datalog = new ReWriter(ontTGDsAll).rewrite(decomposedQuery, true)
 
@@ -441,7 +441,7 @@ class ReWriterTest extends FunSpec {
     }
 
     ignore("should rewrite query q11.cq  using 100 ont of all-tdgs.dlp") {
-      val result: (TreeDecomposition, List[Variable]) = TreeDecomposition.getTreeDecomposition(s"src/main/resources/q11.gml", "src/main/resources/q11.txt")
+      val result: (TreeDecomposition, List[Variable]) = TreeDecomposition.getTreeDecomposition(s"src/test/resources/q11.gml", "src/test/resources/q11.txt")
       val answerVariables = result._2
 
       val datalog =

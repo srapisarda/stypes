@@ -74,7 +74,7 @@ class TypeExtenderTest extends FunSpec {
 
   // 0 - Create a Dlgp writer and a structure to store rules.
   private val writer = new DlgpWriter
-  private val ontology = ReWriter.getOntology("src/main/resources/ont-1.dlp")
+  private val ontology = ReWriter.getOntology("src/test/resources/ont-1.dlp")
 
   def getMockEpsilonType: Type = {
     val s1 = new TreeMapSubstitution
@@ -122,7 +122,7 @@ class TypeExtenderTest extends FunSpec {
   }
 
   def testExtension( s: Type, opBag: Option[Bag] ): TypeExtender ={
-    val t:TreeDecomposition= TreeDecomposition.getHyperTreeDecomposition("src/main/resources/Q7.gml", "src/main/resources/Q7.cq")
+    val t:TreeDecomposition= TreeDecomposition.getHyperTreeDecomposition("src/test/resources/Q7.gml", "src/test/resources/Q7.cq")
     val reWriter  = new ReWriter(ontology)
     val canonicalModels =  reWriter.canonicalModels
 
