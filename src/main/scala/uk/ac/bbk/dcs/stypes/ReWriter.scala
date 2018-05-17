@@ -704,7 +704,7 @@ class ReWriter(ontology: List[Rule]) {
     val treeDecomposition = decomposedQuery._1
     val answerVariables = decomposedQuery._2
     val rewriter = new ReWriter(ontology)
-    val rewriting = rewriter.generateRewriting(Type.getInstance(answerVariables), Splitter(treeDecomposition))
+    val rewriting: Seq[RuleTemplate] = rewriter.generateRewriting(Type.getInstance(answerVariables), Splitter(treeDecomposition))
     val datalog = rewriter.generateDatalog(rewriting, addAdditionalRules)
     datalog
   }

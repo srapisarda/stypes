@@ -99,22 +99,22 @@ class FlinkTest03 extends FunSpec {
 
 
     it("should read and execute the 'Bolzano' query rewrote for 1.ffl file set {A, B, R, S}") {
-      execute(1, 2000) // todo check that the result ask to Stas
+      execute(1, 2000)
     }
 
-    it("should read and execute the 'Bolzano' query rewrote for 2.ffl file set {A, B, R, S}") {
-      execute(2, 0) // todo check that the result ask to Stas
+    ignore("should read and execute the 'Bolzano' query rewrote for 2.ffl file set {A, B, R, S}") {
+      execute(2, 0)
     }
 
-    it("should read and execute the 'Bolzano' query rewrote for 3.ffl file set {A, B, R, S}") {
+    ignore("should read and execute the 'Bolzano' query rewrote for 3.ffl file set {A, B, R, S}") {
       execute(3, 0)
     }
 
-    it("should read and execute the 'Bolzano' query rewrote for 4.ffl file set {A, B, R, S}") {
+    ignore("should read and execute the 'Bolzano' query rewrote for 4.ffl file set {A, B, R, S}") {
       execute(4, 12165)
     }
 
-    it("should read and execute the 'Bolzano' query rewrote for 5.ffl file set {A, B, R, S}") {
+    ignore("should read and execute the 'Bolzano' query rewrote for 5.ffl file set {A, B, R, S}") {
       execute(5, 46636)
     }
 

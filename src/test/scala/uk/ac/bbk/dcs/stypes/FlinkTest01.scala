@@ -96,7 +96,7 @@ class FlinkTest01 extends FunSpec {
 
   describe("Flink TESTS") {
 
-    it("should read execute the rewriting 01 selected") {
+    ignore("should read execute the rewriting 01 selected") {
 
       //<P-0-1> (?X,?Y) :- <R> (?X, ?Y) .
       lazy val p0_1 = r

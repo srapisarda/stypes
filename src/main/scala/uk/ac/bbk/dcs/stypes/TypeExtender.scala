@@ -29,37 +29,6 @@ import fr.lirmm.graphik.graal.homomorphism.StaticHomomorphism
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 
-//object TypeExtender {
-//
-//  def  transformAnswerVariablesToBorderType(answerVariables: List[Term]  ) : Substitution= {
-//    val hom: Substitution =  new TreeMapSubstitution()
-//    addAnswerVariableToHomomorphism(answerVariables, hom )
-//    hom
-//  }
-//
-//  private def addAnswerVariableToHomomorphism( answerVariables: List[Term], hom: Substitution ) : Substitution = answerVariables match {
-//    case List() =>  hom
-//    case x::xs =>
-//      hom.put(x, ConstantType.EPSILON)
-//      addAnswerVariableToHomomorphism(xs, hom)
-//  }
-//
-//
-//  def buildTypeExtender(bag: Bag, hom: Substitution, canonicalModels: Vector[AtomSet], answerVariables: List[Term] = List())
-//  : TypeExtender = {
-//
-//    val variableToBeMapped = bag.variables.filter(p => !hom.getTerms.contains(p)).toList
-//    val answerVariablesIdentifiers = answerVariables.map(_.getIdentifier.toString)
-//    answerVariables.filter(p => answerVariablesIdentifiers.contains(p.getIdentifier.toString))
-//
-//    new TypeExtender(bag,
-//      addAnswerVariableToHomomorphism(answerVariables.filter(p => answerVariablesIdentifiers.contains(p.getIdentifier.toString)), hom),
-//      canonicalModels, bag.atoms.toList, variableToBeMapped.filter(p => !hom.getTerms.contains(p)), answerVariables)
-//
-//  }
-//}
-
-
 /**
   * Created by
   *   Salvatore Rapisarda
@@ -68,10 +37,6 @@ import scala.collection.JavaConverters._
   * on 24/06/2017.
   *
   */
-
-
-
-
 case class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Vector[AtomSet],
                    atomsToBeMapped: List[Atom], variableToBeMapped:List[Term] ) {
 
@@ -81,7 +46,7 @@ case class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Vector[Ato
 
 
 
-  private val typesExtended =  getTypesExtension
+  private val typesExtended =  buidTypesExtension
   val children: List[TypeExtender] = typesExtended._2
   val isValid:Boolean = typesExtended._1 && (children.nonEmpty || variableToBeMapped.isEmpty)
   val types: List[Type] = collectTypes
@@ -89,6 +54,16 @@ case class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Vector[Ato
 
   type AtomSetWithCanonicalModelIndex = (AtomSet, Int)
 
+  /**
+    * This function checks where the atom can be used for connected extensions. It checks whether
+    * the atom has a term on which hom is defined and which is mapped by hom to an anonymous
+    * constant type. If such a term exists, the function returns
+    * the atoms set of the canonical model where this constant type is from together with
+    * the index of the canonical model. Otherwise it returns "Undefined".
+    *
+    * @param atom to check
+    * @return
+    */
   private def getAtomSetWithCanonicalModelIndex(atom: Atom): Option[AtomSetWithCanonicalModelIndex] = {
     val intersection: Set[Term] = getKnownVariables(atom)
     if (intersection.nonEmpty) {
@@ -127,6 +102,12 @@ case class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Vector[Ato
     case _ => children.flatMap( c => c.collectTypes)
   }
 
+  /**
+    * it checks whenever the answer to the query agree with the 'hom'
+     * @param substitution is  the partial type 'hom'
+    * @param atom to check
+    * @return true or false
+    */
   private def isGoodWithRespectToSubstitution(substitution: Substitution, atom: Atom): Boolean = {
     def isBadTerm(term: Term) = {
       val homTerm: Term = hom.createImageOf(term)
@@ -177,7 +158,7 @@ case class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Vector[Ato
 
   }
 
-  private def getTypesExtension: (Boolean, List[TypeExtender]) =   {
+  private def buidTypesExtension: (Boolean, List[TypeExtender]) =   {
 
     @tailrec
     def getPossibleConnectedTypesExtensions(atoms: List[Atom], acc: (Boolean,  List[TypeExtender] ) = (false, List()) ) :
@@ -238,6 +219,11 @@ case class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Vector[Ato
           false
     }
 
+    /**
+      * It checks whenever an Atom is 'Good' respect to the collection of canonical models
+      * @param atom to check
+      * @return true or false
+      */
     def isGoodRespectToCanonicalModel(atom: Atom): Boolean = {
       @tailrec
       def areAllEqualCanonicalModelIndex(canonicalModelIndex:Int, terms:Seq[Term], ret:Boolean = true): Boolean = terms.toList match {

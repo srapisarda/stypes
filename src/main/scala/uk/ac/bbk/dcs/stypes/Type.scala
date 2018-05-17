@@ -81,7 +81,7 @@ case class Type(homomorphism: Substitution) {
   }
 
   /**
-    * This method  returns the projection of a give type on to a set of variables
+    * This method  returns the projection of a give type into a set of variables
     *
     * @param dest is a set of variables
     * @return a new { @link Type}

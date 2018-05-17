@@ -61,7 +61,7 @@ class SparkTest01 extends FunSpec {
 
   describe("Executing SPARK NDL rewriting") {
 
-    it("should make a self join SPARK RDD Test ") {
+    ignore("should make a self join SPARK RDD Test ") {
       //P_7_9(X,Y) :- R(X,Z), R(Z,Y).
       r50.foreach(println)
 
@@ -88,7 +88,7 @@ class SparkTest01 extends FunSpec {
     lazy val bMapped = b.map(x => (x, x)).persist(StorageLevel.MEMORY_AND_DISK)
 
 
-    it("should run the following SPARK SQL Test") {
+    ignore("should run the following SPARK SQL Test") {
 
       val sparkSession = SparkSession.builder.appName("Vlad-Query-20mb-4core")
         .master("local[4]")

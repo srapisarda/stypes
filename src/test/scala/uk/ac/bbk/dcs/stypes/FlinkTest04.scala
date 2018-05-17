@@ -70,7 +70,7 @@ class FlinkTest04 extends FunSpec {
 
   private val env = ExecutionEnvironment.createLocalEnvironment(conf)
 
-  env.setParallelism(4)
+  env.setParallelism(1)
 
 
   //private val env = ExecutionEnvironment.§getExecutionEnvironment
@@ -126,23 +126,23 @@ class FlinkTest04 extends FunSpec {
   describe("Flink TEST4") {
 
 
-    it("should read and execute the 'q15.cq' query rewrote for 1.ffl file set {A, B, R, S}") {
+    ignore("should read and execute the 'q15.cq' query rewrote for 1.ffl file set {A, B, R, S}") {
       execute(1, 2000)
     }
 
-    it("should read and execute the 'q15.cq' query rewrote for 2.ffl file set {A, B, R, S}") {
+    ignore("should read and execute the 'q15.cq' query rewrote for 2.ffl file set {A, B, R, S}") {
       execute(2, 0)
     }
 
-    it("should read and execute the 'q15.cq' query rewrote for 3.ffl file set {A, B, R, S}") {
+    ignore("should read and execute the 'q15.cq' query rewrote for 3.ffl file set {A, B, R, S}") {
       execute(3, 0)
     }
 
-    it("should read and execute the 'q15.cq' query rewrote for 4.ffl file set {A, B, R, S}") {
+    ignore("should read and execute the 'q15.cq' query rewrote for 4.ffl file set {A, B, R, S}") {
       execute(4, 12165)
     }
 
-    it("should read and execute the 'q15.cq' query rewrote for 5.ffl file set {A, B, R, S}") {
+    ignore("should read and execute the 'q15.cq' query rewrote for 5.ffl file set {A, B, R, S}") {
       execute(5, 46636)
     }
 
