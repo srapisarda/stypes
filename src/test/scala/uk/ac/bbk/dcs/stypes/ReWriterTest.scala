@@ -55,6 +55,7 @@ class ReWriterTest extends FunSpec {
   private val ontCar = ReWriter.getOntology("src/test/resources/ont-car.dlp")
   private val ontLines = ReWriter.getOntology("src/test/resources/lines.dlp")
   private val ontTGDsAll = ReWriter.getOntology("src/test/resources/tgds-all.dlp")
+  private val ontReport = ReWriter.getOntology("src/test/resources/report.dlp")
 
   private val ontBenchmark100Dep = ReWriter.getOntology(s"$pathToBenchmark100/dependencies/deep.t-tgds.dlp")
   private val ontBenchmark100All = ReWriter.getOntology(s"$pathToBenchmark100/dependencies/all-tgds.dlp")
@@ -431,6 +432,27 @@ class ReWriterTest extends FunSpec {
 
       printDatalog(datalog)
       assert(datalog.lengthCompare(24) == 0)
+    }
+
+    it("should rewrite query q-report.cq  using  report.dlp") {
+      val decomposedQuery: (TreeDecomposition, List[Variable]) =
+        TreeDecomposition.getTreeDecomposition(s"src/test/resources/q-report.gml", "src/test/resources/q-report.cq")
+
+      val rev = new ReWriter(ontReport)
+
+      println(s"canonical models: ${rev.canonicalModels}")
+
+      val datalog = rev.rewrite(decomposedQuery, true)
+
+
+      printDatalog(datalog)
+      assert(datalog.lengthCompare(4) == 0)
+
+      val res = ReWriter.generateFlinkScript(datalog, Map())
+
+      assert(res != null)
+      print(s"\nFlink Class:\n\n$res")
+
     }
 
     it("should create additional rules") {
