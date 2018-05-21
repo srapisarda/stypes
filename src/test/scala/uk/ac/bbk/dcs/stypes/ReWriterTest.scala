@@ -446,7 +446,7 @@ class ReWriterTest extends FunSpec {
 
 
       printDatalog(datalog)
-      assert(datalog.lengthCompare(4) == 0)
+      assert(datalog.lengthCompare(2) == 0)
 
       val res = ReWriter.generateFlinkScript(datalog, Map())
 

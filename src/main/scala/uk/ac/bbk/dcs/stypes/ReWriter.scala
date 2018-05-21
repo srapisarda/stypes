@@ -385,8 +385,15 @@ object ReWriter {
       datalog
     }
     else {
+      println( s"datalog 1 : ${datalog} " )
+
       val removalResult: List[Clause] = removeEmptyClauses(removeDuplicate(datalog))
+
+      println( s"datalog removal result : ${removalResult} " )
       val predicateSubstitutionRes: List[Clause] = predicateSubstitution(removalResult)
+
+      println( s"datalog predicateSubstitutionRes : ${predicateSubstitutionRes} " )
+
       equalitySubstitution(predicateSubstitutionRes) ::: additionalRules
     }
   }
@@ -433,8 +440,9 @@ object ReWriter {
                 .map(term => lhsTermsPosMap(term).head)
                 .map(p => s"t._1._${p + 1}")
 
-              val rhsTermsProjection = termsToProject.get
-                .filter(term => rhsTermsPosMap.contains(term))
+              val rhsTermsProjection =
+                termsToProject.get
+                .filter(term => rhsTermsPosMap.contains(term) && rhsTermsNotInLhl.contains(term) )
                 .map(term => rhsTermsNotInLhl(term).head)
                 .map(p => s"t._2._${p + 1}")
 
@@ -686,7 +694,7 @@ class ReWriter(ontology: List[Rule]) {
 
   def generateRewriting(borderType: Type, splitter: Splitter): List[RuleTemplate] = {
     val typeExtender = new TypeExtender(splitter.getSplittingVertex, borderType.homomorphism, canonicalModels.toVector)
-    val types = typeExtender.collectTypes
+    val types= typeExtender.collectTypes
     //val body = new LinkedListAtomSet
     //val rule :Rule = new DefaultRule()
     types.map(s => new RuleTemplate(splitter, borderType, s, generatingAtoms, this))

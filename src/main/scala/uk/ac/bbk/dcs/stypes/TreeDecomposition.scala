@@ -128,12 +128,13 @@ class TreeDecomposition {
     val label: String = vertex.getProperty("label")
     val predicateAndVariables: Array[String] = label.split(" {4}")
     if (predicateAndVariables.length != 2) throw new RuntimeException("Incorrect vertex label.")
-    val variables: List[String] = getSpittedItems(predicateAndVariables(1)).map(_.replace("?", ""))
+    val variables: Set[String] = getSpittedItems(predicateAndVariables(1)).map(_.replace("?", "")).toSet
     val atoms: Set[Atom] =
-      cqAtoms.filter(atom =>
-        variables.distinct.sorted.containsSlice(
-          atom.getTerms.asScala.toList.distinct.sorted.map(_.getIdentifier.toString)))
-    val terms: Set[Term] = variables.map(v=> DefaultTermFactory.instance().createVariable(v)).toSet
+      cqAtoms.filter(atom =>{
+        val atomVariables =  atom.getTerms.asScala.toList.distinct.sorted.map(_.getIdentifier.toString).toSet
+        variables.intersect(atomVariables) == atomVariables  })
+
+    val terms: Set[Term] = variables.map(v=> DefaultTermFactory.instance().createVariable(v))
     Bag(atoms,terms)
 
   }
