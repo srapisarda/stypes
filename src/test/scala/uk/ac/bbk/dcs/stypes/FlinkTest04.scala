@@ -146,6 +146,10 @@ class FlinkTest04 extends FunSpec {
       execute(5, 46636)
     }
 
+    ignore("should read and execute the 'q15.cq' query rewrote for 6.ffl file set {A, B, R, S}") {
+      execute(6, 105467)
+    }
+
     def execute( fileNumber:Int,  expected:Int):Unit = {
 
       val a: DataSet[(String, String)] = env.readTextFile(s"$pathToBenchmarkNDL_SQL/data/csv/${fileNumber}.ttl-A.csv").map(stringMapper)
