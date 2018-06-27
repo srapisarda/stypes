@@ -20,7 +20,7 @@ package uk.ac.bbk.dcs.stypes.flink
  * #L%
  */
 
-import java.util.Date
+import java.util.{Date, UUID}
 
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.scala._
@@ -85,11 +85,15 @@ object FlinkRewriting4q15 {
 
 
   def main(args: Array[String]): Unit = {
-    FlinkRewriting4q15.execute(args(0).toInt)
+      if ( args.length > 1 )
+        FlinkRewriting4q15.execute(args(0).toInt, serial = args(1))
+      else
+        FlinkRewriting4q15.execute(args(0).toInt)
   }
 
-  def execute(fileNumber:Int):Unit = {
+  def execute(fileNumber:Int, serial:String=UUID.randomUUID().toString):Unit = {
 
+    val startTime = System.nanoTime()
 
     val pathToBenchmarkNDL_SQL = "hdfs:///user/hduser/stype/resources/benchmark/Lines"
 
@@ -167,13 +171,23 @@ object FlinkRewriting4q15 {
 
     val p1_distinct = p1.distinct()
 
-    p1_distinct.writeAsCsv(s"$pathToBenchmarkNDL_SQL/data/rewriting-results-01-${new Date().getTime}")
+    val elapsed = (System.nanoTime() - startTime)  / 1000000
 
-    val count = p1_distinct.count
+    val resultPath =s"$pathToBenchmarkNDL_SQL/data/results/q15/${serial}/rewriting-results-q15-${new Date().getTime}"
+    p1_distinct.writeAsCsv(resultPath)
+
+    val count: Long = p1_distinct.count
+    val qe =QueryEvaluation( fileNumber, env.getParallelism, elapsed, count, resultPath )
+    env.fromElements( qe )
+      .writeAsCsv(s"$pathToBenchmarkNDL_SQL/data/results/q15/${serial}/csv/" +
+        s"ttl-${qe.ttl}_par-${qe.parallelism}-$serial.csv")
+
     log.info(s"p1_distinct count: $count")
 
 
   }
 
+
+  case class QueryEvaluation( ttl: Int, parallelism: Int, milliseconds:Long, count:Long, resultPath:String    )
 
 }
