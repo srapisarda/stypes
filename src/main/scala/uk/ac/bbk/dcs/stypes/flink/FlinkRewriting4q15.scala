@@ -173,14 +173,14 @@ object FlinkRewriting4q15 {
 
     val elapsed = (System.nanoTime() - startTime)  / 1000000
 
-    val resultPath =s"$pathToBenchmarkNDL_SQL/data/results/q15/${serial}/rewriting-results-q15-${new Date().getTime}"
+    val count: Long = p1_distinct.count
+
+    val postfix= s"ttl_$fileNumber-par_${env.getParallelism}"
+    val resultPath =s"$pathToBenchmarkNDL_SQL/data/results/q15/$serial/rewriting-results-q15-$postfix-${new Date().getTime}"
+    val qe =QueryEvaluation( fileNumber, env.getParallelism, elapsed, count, resultPath )
     p1_distinct.writeAsCsv(resultPath)
 
-    val count: Long = p1_distinct.count
-    val qe =QueryEvaluation( fileNumber, env.getParallelism, elapsed, count, resultPath )
-    env.fromElements( qe )
-      .writeAsCsv(s"$pathToBenchmarkNDL_SQL/data/results/q15/${serial}/csv/" +
-        s"ttl-${qe.ttl}_par-${qe.parallelism}-$serial.csv")
+    env.fromElements( qe ).writeAsCsv(s"$pathToBenchmarkNDL_SQL/data/results/q15/$serial/ttl-$postfix.csv")
 
     log.info(s"p1_distinct count: $count")
 
