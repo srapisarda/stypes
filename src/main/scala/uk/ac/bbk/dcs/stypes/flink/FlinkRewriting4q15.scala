@@ -172,15 +172,18 @@ object FlinkRewriting4q15 {
     val p1_distinct = p1.distinct()
 
     val elapsed = (System.nanoTime() - startTime)  / 1000000
+    val postfix= s"ttl_${fileNumber.toString}-par_${env.getParallelism.toString}-${new Date().getTime}"
+
+    log.info(s"elapsed time for $postfix is: $elapsed")
+
 
     val count: Long = p1_distinct.count
-
-    val postfix= s"ttl_$fileNumber-par_${env.getParallelism}-${new Date().getTime}"
-    val resultPath =s"$pathToBenchmarkNDL_SQL/data/results/q15/$serial/rewriting-results-q15-$postfix"
-    val qe =QueryEvaluation( fileNumber, env.getParallelism, elapsed, count, resultPath )
+    val resultPath =s"$pathToBenchmarkNDL_SQL/data/results/q15/$serial-rewriting-results-$postfix"
     p1_distinct.writeAsCsv(resultPath)
 
-    env.fromElements( qe ).writeAsCsv(s"$pathToBenchmarkNDL_SQL/data/results/q15/$serial/$postfix")
+    val qe =QueryEvaluation( fileNumber, env.getParallelism, elapsed, count, resultPath )
+
+    env.fromElements( qe ).writeAsCsv(s"$pathToBenchmarkNDL_SQL/data/results/q15/$serial-$postfix")
 
     log.info(s"p1_distinct count: $count")
 
