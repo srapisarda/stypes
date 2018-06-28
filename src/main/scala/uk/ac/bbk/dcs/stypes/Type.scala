@@ -46,8 +46,10 @@ case class Type(homomorphism: Substitution) {
       .filter((t: Term) =>
         !homomorphism.createImageOf(t).equals(ConstantType.EPSILON)).toList
 
-    anonymousVariables.flatMap(t => atoms(homomorphism.createImageOf(t).asInstanceOf[ConstantType].getIdentifier._1).getTerms.asScala.toSet)
-
+    anonymousVariables
+      .flatMap(term => atoms(homomorphism.createImageOf(term).asInstanceOf[ConstantType].getIdentifier._1)
+      .getTerms.asScala
+      .map( ontologyTerm => ReWriter.termConcat(ontologyTerm, term) ).toSet )
   }
 
   def getVar(atoms: List[Atom]): List[Term] = getVar1 ::: getVar2(atoms.toVector)

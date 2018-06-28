@@ -28,6 +28,7 @@ import fr.lirmm.graphik.graal.core.{DefaultAtom, DefaultRule}
 import fr.lirmm.graphik.graal.core.atomset.graph.DefaultInMemoryGraphAtomSet
 import fr.lirmm.graphik.graal.forward_chaining.DefaultChase
 import fr.lirmm.graphik.graal.io.dlp.DlgpParser
+import uk.ac.bbk.dcs.stypes.ConstantType.EPSILON
 
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
@@ -585,6 +586,10 @@ object ReWriter {
     }
   }
 
+  def termConcat(ontologyTerm: Term, queryTerm: Term) : Term = {
+    TypeTermFactory.createOntologyVariable(s"${ontologyTerm.getIdentifier}@${queryTerm.getIdentifier}")
+  }
+
 }
 
 class ReWriter(ontology: List[Rule]) {
@@ -605,14 +610,24 @@ class ReWriter(ontology: List[Rule]) {
     */
   def makeAtoms(bag: Bag, theType: Type): List[Any] = {
 
-    @tailrec
-    def getEqualities(variables: List[Term], constants: List[Term], acc: List[(Term, Term)]): List[(Term, Term)] = constants match {
-      case List() => acc
-      case x :: xs =>
-        if (ReWriter.isAnonymous(x)) getEqualities(variables.tail, xs, acc)
-        else getEqualities(variables.tail, xs, (QueryTerm(variables.head), OntologyTerm(x)) :: acc)
+    def getEqualities(variables: List[Term], constants: List[Term], acc: List[(Term, Term)]): List[(Term, Term)] = {
+      val anonymousTerm = getFirstAnonymousTerm( variables )
+
+      @tailrec
+      def getEqualitiesH(variables: List[Term], constants: List[Term], acc: List[(Term, Term)]): List[(Term, Term)] = constants match {
+        case List() => acc
+        case x :: xs =>
+          if (ReWriter.isAnonymous(x)) getEqualitiesH(variables.tail, xs, acc)
+          else getEqualitiesH(variables.tail, xs, (QueryTerm(variables.head), ReWriter.termConcat(OntologyTerm(x), anonymousTerm)) :: acc)
+
+      }
+
+      getEqualitiesH(variables, constants, acc)
 
     }
+
+
+
 
     def isMixed(terms: List[Term]): Boolean =
       atLeastOneTerm(terms, x => ReWriter.isAnonymous(x)) && atLeastOneTerm(terms, x => !ReWriter.isAnonymous(x))
@@ -621,6 +636,27 @@ class ReWriter(ontology: List[Rule]) {
       case List() => false
       case x :: xs => if (f(x)) true else atLeastOneTerm(xs, f)
     }
+
+    @tailrec
+    def getFirstAnonymousTerm(terms: List[Term]): Term = terms match {
+      case List() =>
+        throw new RuntimeException("No anonymous terms")
+      case x :: xs =>
+        if (EPSILON.equals(theType.homomorphism.createImageOf(x).asInstanceOf[Any]))
+          getFirstAnonymousTerm(xs)
+        else theType.homomorphism.createImageOf(x) match {
+          case _: ConstantType => x
+        }
+    }
+
+    def markAtom(atom: Atom, queryTerm: Term):Atom =
+      new DefaultAtom(atom.getPredicate, markTerms(atom.getTerms.asScala.toList, queryTerm).asJava )
+
+    def markTerms(terms: List[Term], queryTerm: Term):List[Term] =
+      terms.map(ReWriter.termConcat( _ , queryTerm))
+
+
+
 
     def getTypedAtom(atom: Atom, f: Term => Term): Atom = {
       val terms: List[Term] = atom.getTerms.asScala.map(f).toList
@@ -640,7 +676,9 @@ class ReWriter(ontology: List[Rule]) {
               val index = constantType.identifier._1
               if (index < arrayGeneratingAtoms.length) {
                 val atom = arrayGeneratingAtoms(index)
-                visitBagAtoms(xs, getTypedAtom(atom, OntologyTerm) :: acc)
+                visitBagAtoms(xs,
+                              markAtom ( getTypedAtom(atom, OntologyTerm),
+                                        getFirstAnonymousTerm(currentAtom.getTerms.asScala.toList )):: acc)
               } else {
                 visitBagAtoms(xs, acc)
               }
@@ -670,7 +708,9 @@ class ReWriter(ontology: List[Rule]) {
               && currentAtomCompatible(currentAtom, atom))
             .map(atom => getEqualities(currentAtom.getTerms.asScala.toList, atom.getTerms.asScala.toList, List()))
 
-          visitBagAtoms(xs, arrayGeneratingAtoms(index) :: expression :: acc)
+          visitBagAtoms(xs,
+            markAtom ( arrayGeneratingAtoms(index),
+              getFirstAnonymousTerm(currentAtom.getTerms.asScala.toList))  :: expression :: acc)
 
         }
     }

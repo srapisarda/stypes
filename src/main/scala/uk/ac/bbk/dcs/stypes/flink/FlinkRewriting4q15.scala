@@ -180,7 +180,6 @@ object FlinkRewriting4q15 {
     val count: Long = p1_distinct.count
     val elapsed = (System.nanoTime() - startTime)  / 1000000
     log.info(s"elapsed time for $postfix is: $elapsed")
-
     val qe: DataSet[String] = env.fromElements( fileNumber.toString, env.getParallelism.toString, elapsed.toString , count.toString, resultPath )
     qe.writeAsText(s"$pathToBenchmarkNDL_SQL/data/results/q15/$serial/result-$postfix-txt")
 
