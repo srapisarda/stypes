@@ -408,7 +408,7 @@ class ReWriterTest extends FunSpec {
     }
 
 
-    it("should rewrite query q45.cq  using  lines.dlp") {
+    it("should rewrite query q45.cq  giusing  lines.dlp") {
       val result: (TreeDecomposition, List[Variable]) =
         TreeDecomposition.getTreeDecomposition(s"$pathToLine/gml/q45.gml", s"$pathToLine/queries/q45.cq")
 
@@ -416,7 +416,7 @@ class ReWriterTest extends FunSpec {
       val datalog = ReWriter.generateDatalog(
         new ReWriter(ontLines)
           .generateRewriting(Type.getInstance(answerVariables), Splitter(result._1)))
-      printDatalog(datalog)
+      printDatalog(datalog.sortBy(p => p.head.getPredicate.toString))
       assert(datalog.lengthCompare(30) == 0)
     }
 
@@ -428,7 +428,7 @@ class ReWriterTest extends FunSpec {
       val datalog = ReWriter.generateDatalog(
         new ReWriter(ontLines)
           .generateRewriting(Type.getInstance(answerVariables), Splitter(result._1)))
-      printDatalog(datalog)
+      printDatalog(datalog.sortBy(p => p.head.getPredicate.toString))
       assert(datalog.lengthCompare(9) == 0)
     }
 
