@@ -102,12 +102,12 @@ class TypeTest extends FunSpec with BeforeAndAfter {
 
     it("should get var2"){
       val res = type1.getVar2(Vector(atom1, atom2))
-      assert(res.head.getLabel.equals("U"))
+      assert(res.head.getLabel.equals("U@X"))
 
       val res2 = type2.getVar2(Vector(atom1, atom2))
       assert(res2.size==2)
-      assert(res2.head.getLabel.equals("U"))
-      assert(res2.tail.head.getLabel.equals("V"))
+      assert(res2.head.getLabel.equals("U@Z"))
+      assert(res2.tail.head.getLabel.equals("V@Z"))
     }
 
 
