@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory
 /**
   * Created by salvo on 10/05/2018.
   *
-  * uk.ac.bbk.dcs.stypes.flink.FlinkRewriting4q45
+  * uk.ac.bbk.dcs.stypes.flink.FlinkRewriting4q30
   */
 object FlinkRewriting4q30 {
   private val log = LoggerFactory.getLogger("FlinkRewriting4q45")
