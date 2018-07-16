@@ -1,4 +1,4 @@
-package uk.ac.bbk.dcs.stypes
+package uk.ac.bbk.dcs.stypes.flink
 
 /*
  * #%L
@@ -20,7 +20,7 @@ package uk.ac.bbk.dcs.stypes
  * #L%
  */
 
-import java.util.Date
+import java.util.UUID
 
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.scala._
@@ -30,9 +30,9 @@ import org.scalatest.FunSpec
 /**
   * Created by salvo on 01/01/2018.
   */
-class FlinkTest03 extends FunSpec {
+class Flink01Test extends FunSpec {
 
-  private val pathToBenchmarkNDL_SQL = "src/test/resources/benchmark/Lines"
+  private val pathToBenchmarkNDL_SQL = "src/test/resources/benchmark/NDL-SQL"
 
   val conf = new Configuration()
   //conf.setInteger("taskmanager.network.numberOfBuffers", 16000)
@@ -44,6 +44,8 @@ class FlinkTest03 extends FunSpec {
 
 
   //private val env = ExecutionEnvironment.§getExecutionEnvironment
+
+
 
   private implicit val typeLongInfo: TypeInformation[(Long, Long)] = TypeInformation.of(classOf[(Long, Long)])
 
@@ -81,13 +83,10 @@ class FlinkTest03 extends FunSpec {
     val line = p.split(',')
     Relation2(line.head.toLong, line.last.toLong)
   }
-
-  val num = 5
-
-//  private val a = env.readTextFile(s"$pathToBenchmarkNDL_SQL/data/csv/5.ttl-A.csv").map(stringMapper)
-//  private val b: DataSet[(String, String)] = env.readTextFile(s"$pathToBenchmarkNDL_SQL/data/csv/${num}.ttl-B.csv").map(stringMapper)
-//  private val r: DataSet[(String, String)] = env.readTextFile(s"$pathToBenchmarkNDL_SQL/data/csv/${num}.ttl-R.csv").map(stringMapper)
-//  private val s: DataSet[(String, String)] = env.readTextFile(s"$pathToBenchmarkNDL_SQL/data/csv/${num}.ttl-S.csv").map(stringMapper)
+  private val a = env.readTextFile(s"$pathToBenchmarkNDL_SQL/data/20mb-a.txt").map(stringMapper)
+  private val b: DataSet[(String, String)] = env.readTextFile(s"$pathToBenchmarkNDL_SQL/data/20mb-b.txt").map(stringMapper)
+  private val r: DataSet[(String, String)] = env.readTextFile(s"$pathToBenchmarkNDL_SQL/data/20mb-r.txt").map(stringMapper)
+  private val s: DataSet[(String, String)] = env.readTextFile(s"$pathToBenchmarkNDL_SQL/data/20mb-s.txt").map(stringMapper)
 
 
   private def myJoin( firstRelation: DataSet[(String, String)], secondRelation: DataSet[(String, String)] ) ={
@@ -95,36 +94,9 @@ class FlinkTest03 extends FunSpec {
   }
 
 
-  describe("Flink TEST3") {
+  describe("Flink TESTS") {
 
-
-    it("should read and execute the 'Bolzano' query rewrote for 1.ffl file set {A, B, R, S}") {
-      execute(1, 2000)
-    }
-
-    ignore("should read and execute the 'Bolzano' query rewrote for 2.ffl file set {A, B, R, S}") {
-      execute(2, 0)
-    }
-
-    ignore("should read and execute the 'Bolzano' query rewrote for 3.ffl file set {A, B, R, S}") {
-      execute(3, 0)
-    }
-
-    ignore("should read and execute the 'Bolzano' query rewrote for 4.ffl file set {A, B, R, S}") {
-      execute(4, 12165)
-    }
-
-    ignore("should read and execute the 'Bolzano' query rewrote for 5.ffl file set {A, B, R, S}") {
-      execute(5, 46636)
-    }
-
-    def execute( fileNumber:Int,  expected:Int):Unit = {
-
-      val a: DataSet[(String, String)] = env.readTextFile(s"$pathToBenchmarkNDL_SQL/data/csv/${fileNumber}.ttl-A.csv").map(stringMapper)
-      val b: DataSet[(String, String)] = env.readTextFile(s"$pathToBenchmarkNDL_SQL/data/csv/${fileNumber}.ttl-B.csv").map(stringMapper)
-      val r: DataSet[(String, String)] = env.readTextFile(s"$pathToBenchmarkNDL_SQL/data/csv/${fileNumber}.ttl-R.csv").map(stringMapper)
-      val s: DataSet[(String, String)] = env.readTextFile(s"$pathToBenchmarkNDL_SQL/data/csv/${fileNumber}.ttl-S.csv").map(stringMapper)
-
+    ignore("should read execute the rewriting 01 selected") {
 
       //<P-0-1> (?X,?Y) :- <R> (?X, ?Y) .
       lazy val p0_1 = r
@@ -232,12 +204,14 @@ class FlinkTest03 extends FunSpec {
 
       val p0_15_distinct = p0_15.distinct()
 
-      p0_15_distinct.writeAsCsv(s"$pathToBenchmarkNDL_SQL/data/rewriting-results-01-${new Date().getTime}")
+      p0_15_distinct.writeAsCsv(s"$pathToBenchmarkNDL_SQL/data/rewriting-results-01-${UUID.randomUUID()}")
 
       val count = p0_15_distinct.count
       println(s"p0_15.distinct.count: $count")
 
-      assert( count == expected)
+      assert( 12165 == count)
+
+
     }
 
   }

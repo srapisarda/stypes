@@ -1,4 +1,4 @@
-package uk.ac.bbk.dcs.stypes
+package uk.ac.bbk.dcs.stypes.flink
 
 /*
  * #%L
@@ -22,9 +22,7 @@ package uk.ac.bbk.dcs.stypes
 
 import java.util.Date
 
-import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.scala._
-import org.apache.flink.configuration.Configuration
 import org.scalatest.FunSpec
 
 /**
@@ -60,73 +58,12 @@ import org.scalatest.FunSpec
   * p19(x0,x3) :- r(x1,x2), s(x2,x3), r(x0,x1).
   *
   */
-class FlinkTest04 extends FunSpec {
-
-  private val pathToBenchmarkNDL_SQL = "src/test/resources/benchmark/Lines"
-
-  val conf = new Configuration()
-  //conf.setInteger("taskmanager.network.numberOfBuffers", 16000)
-  conf.setInteger("taskmanager.numberOfTaskSlots",4)
-
-  private val env = ExecutionEnvironment.createLocalEnvironment(conf)
-
-  env.setParallelism(1)
-
-
-  //private val env = ExecutionEnvironment.§getExecutionEnvironment
-
-  private implicit val typeLongInfo: TypeInformation[(Long, Long)] = TypeInformation.of(classOf[(Long, Long)])
-
-  private implicit val typeRelation2Info: TypeInformation[Relation2] = TypeInformation.of(classOf[Relation2])
-
-  case class Relation2( x:Long, y:Long )
-
-  private  def  longMapper: (String) => (Long, Long) = (p: String) => {
-    val line = p.split(',')
-    (line.head.toLong, line.last.toLong)
-  }
-
-  private  def  stringMapper1: (String) => (String) = (p: String) => {
-    val line = p.split(',')
-    line.head
-  }
-
-   private  def  stringMapper: (String) => (String, String) = (p: String) => {
-    val line = p.split(',')
-    (line.head, line.last)
-  }
-
-  private  def  stringMapper3: (String) => (String, String, String) = (p: String) => {
-    val line = p.split(',')
-    (line(0), line(1), line(2))
-  }
-
-  private  def  stringMapper4: (String) => (String, String, String, String) = (p: String) => {
-    val line = p.split(',')
-    (line(0), line(1), line(2), line(3))
-  }
-
-
-  private  def  rel2Mapper: (String) => Relation2 = (p: String) => {
-    val line = p.split(',')
-    Relation2(line.head.toLong, line.last.toLong)
-  }
-
-  private def myJoin( firstRelation: DataSet[(String, String)], secondRelation: DataSet[(String, String)] ) ={
-    firstRelation.join(secondRelation).where(1).equalTo(0).map(p=> (p._1._1, p._2._2 ))
-  }
-
-  private def switchTerms( relation: DataSet[(String, String)] ) = relation.map(p=> (p._2, p._1))
-
-  private  def  unknownData2 ={
-    val ds: DataSet[(String, String)] =  env.fromElements()
-    ds
-  }
+class FlinkQ15Test extends FunSpec with BaseFlinkTest {
 
   describe("Flink TEST4") {
 
 
-    ignore("should read and execute the 'q15.cq' query rewrote for 1.ffl file set {A, B, R, S}") {
+    it("should read and execute the 'q15.cq' query rewrote for 1.ffl file set {A, B, R, S}") {
       execute(1, 2000)
     }
 
@@ -151,13 +88,10 @@ class FlinkTest04 extends FunSpec {
     }
 
     def execute( fileNumber:Int,  expected:Int):Unit = {
-
-      val a: DataSet[(String, String)] = env.readTextFile(s"$pathToBenchmarkNDL_SQL/data/csv/${fileNumber}.ttl-A.csv").map(stringMapper)
-      val b: DataSet[(String, String)] = env.readTextFile(s"$pathToBenchmarkNDL_SQL/data/csv/${fileNumber}.ttl-B.csv").map(stringMapper)
-      val r: DataSet[(String, String)] = env.readTextFile(s"$pathToBenchmarkNDL_SQL/data/csv/${fileNumber}.ttl-R.csv").map(stringMapper)
-      val s: DataSet[(String, String)] = env.readTextFile(s"$pathToBenchmarkNDL_SQL/data/csv/${fileNumber}.ttl-S.csv").map(stringMapper)
-
-
+      val a = getA(fileNumber)
+      val b = getB(fileNumber)
+      val r = getR(fileNumber)
+      val s = getS(fileNumber)
 
       // p40(x7,x5) :- b(x5), r(x5,x6), s(x6,x7).
       // p40(x5,x5) :- b(x5).

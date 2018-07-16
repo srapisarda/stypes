@@ -1,4 +1,4 @@
-package uk.ac.bbk.dcs.stypes
+package uk.ac.bbk.dcs.stypes.flink
 
 /*
  * #%L
