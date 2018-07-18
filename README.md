@@ -6,7 +6,7 @@ Conjunctive Queries
 STYPES rewrites ontology-mediated (OMQ) queries to equivalent
 nonrecursive datalog queries (NDL) by getting as input:
  
-- a ontology in the form of linear tuple-generating dependencies (TGD)s   
+- an ontology in the form of linear tuple-generating dependencies (TGD)s   
 - a conjunctive queries (CQ)
  
 
