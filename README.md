@@ -4,11 +4,7 @@ Nonrecursive Datalog Rewriter for Linear TGDs and
 Conjunctive Queries
 
 STYPES rewrites ontology-mediated (OMQ) queries to equivalent
-nonrecursive datalog queries (NDL) by getting as input:
- 
-- an ontology in the form of linear tuple-generating dependencies (TGD)s   
-- a conjunctive queries (CQ)
- 
+nonrecursive datalog queries (NDL) 
 
 STYPES produces a polynomial-size rewritings whenever
 the treewidth of the input CQs and the size of the chase
@@ -28,7 +24,7 @@ sbt 'set test in assembly := {}' clean assembly
 The command  above  will create a jar file in "./target/scala-2.11/stypes_2.11-1.0.jar"
 
 STypeS takes three inputs:
-* an n ontology O, which is a set of linear tgds
+* an ontology O, which is a set of linear tgds
 * a conjunctive query CQ 
 * the CQ's tree decomposition (T, λ) in a standard GML form.
 
