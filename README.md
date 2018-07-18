@@ -10,19 +10,22 @@ nonrecursive datalog queries (NDL) by getting as input:
 - a conjunctive queries (CQ)
  
 
-STYPES produces a polynomial-size rewritinig whenever
+STYPES produces a polynomial-size rewritings whenever
 the treewidth of the input CQs and the size of the chase
 for the ontology atoms are bounded; moreover, the rewriting can be
 constructed and executed in LogCFL, which is optimal in order 
-sto be evaluated in high parallelisability environments as Apache Flink.
+to be evaluated in an high parallelizable environments as Apache Flink.
 
-#####In order to compile and use from console STypeS  
-it is necessary to build the application. Therefore, 
-form terminal command line execute the following:
+In order to compile and use from console STypeS  
+it is necessary to build the application. 
 
-$: sbt 'set test in assembly := {}' clean assembly 
+From terminal command line execute the following:
 
-the command  above  will create a jar file in "./target/scala-2.11/stypes_2.11-1.0.jar"
+```
+sbt 'set test in assembly := {}' clean assembly 
+```
+
+The command  above  will create a jar file in "./target/scala-2.11/stypes_2.11-1.0.jar"
 
 STypeS takes three inputs:
 * an n ontology O, which is a set of linear tgds
@@ -33,7 +36,10 @@ In order to execute the NDL-rewriting algorithm we need to use and execute
 the jar created above:  java -cp stypes-assembly-1.0.jar <CQ> <GML> <O>
 
 example:
-$: cd ./target/scala-2.11/
-$: java -cp stypes-assembly-1.0.jar uk.ac.bbk.dcs.stypes.App ../../src/test/resources/q09.cq ../../src/test/resources/q09.gml ../../src/test/resources/lines.dlp
+```
+cd ./target/scala-2.11/
+java -cp stypes-assembly-1.0.jar uk.ac.bbk.dcs.stypes.App ../../src/test/resources/q09.cq ../../src/test/resources/q09.gml ../../src/test/resources/lines.dlp
+
+```
 
 
