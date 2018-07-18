@@ -2,7 +2,7 @@ package uk.ac.bbk.dcs.stypes
 
 /*
  * #%L
- * stype
+ * stypes
  * %%
  * Copyright (C) 2017 - 2021 Birkbeck University of London
  * %%
@@ -419,6 +419,20 @@ class ReWriterTest extends FunSpec {
       printDatalog(datalog)
       assert(datalog.lengthCompare(5) == 0)
     }
+
+    it("should rewrite query q24.cq  using  lines.dlp") {
+      val result: (TreeDecomposition, List[Variable]) =
+        TreeDecomposition.getTreeDecomposition(s"src/test/resources/q24.gml",
+          "src/test/resources/q24.cq")
+
+      val answerVariables = result._2
+      val datalog = ReWriter.generateDatalog(
+        new ReWriter(ontLines)
+          .generateRewriting(Type.getInstance(answerVariables), Splitter(result._1)))
+      printDatalog(datalog)
+      assert(datalog.lengthCompare(8) == 0)
+    }
+
 
     it("should rewrite query q27.cq  using  lines.dlp") {
       val result: (TreeDecomposition, List[Variable]) =

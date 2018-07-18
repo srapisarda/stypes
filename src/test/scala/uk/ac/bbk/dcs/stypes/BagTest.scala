@@ -2,7 +2,7 @@ package uk.ac.bbk.dcs.stypes
 
 /*
  * #%L
- * stype
+ * stypes
  * %%
  * Copyright (C) 2017 - 2021 Birkbeck University of London
  * %%
