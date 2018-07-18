@@ -18,6 +18,8 @@ dependencies.
 From terminal command line execute the following:
 
 ```
+git clone https://github.com/srapisarda/stypes.git
+cd stypes
 sbt 'set test in assembly := {}' clean assembly 
 ```
 
