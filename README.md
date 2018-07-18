@@ -6,7 +6,7 @@ Conjunctive Queries
 STYPES rewrites ontology-mediated (OMQ) queries to equivalent
 nonrecursive datalog queries (NDL) by getting as input:
  
-- a on ontology in the form of linear tuple-generating dependencies (TGD)s   
+- a ontology in the form of linear tuple-generating dependencies (TGD)s   
 - a conjunctive queries (CQ)
  
 
@@ -16,9 +16,9 @@ for the ontology atoms are bounded; moreover, the rewriting can be
 constructed and executed in LogCFL, which is optimal in order 
 to be evaluated in an high parallelizable environments as Apache Flink.
 
-In order to compile and use from console STypeS  
-it is necessary to build the application. 
-
+In order to execute  STypeS in local environment, 
+it is necessary to build the application by including all the 
+dependencies. 
 From terminal command line execute the following:
 
 ```
