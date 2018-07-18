@@ -1,4 +1,4 @@
-###**STypeS** 
+**STypeS** 
 
 Nonrecursive Datalog Rewriter for Linear TGDs and
 Conjunctive Queries
