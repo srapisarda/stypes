@@ -2,7 +2,7 @@ package uk.ac.bbk.dcs.stypes.flink
 
 /*
  * #%L
- * stypes
+ * STypeS
  * %%
  * Copyright (C) 2017 - 2021 Birkbeck University of London
  * %%
@@ -20,87 +20,34 @@ package uk.ac.bbk.dcs.stypes.flink
  * #L%
  */
 
-import java.util.{Date, UUID}
+import java.util.UUID
 
-import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.scala._
-import org.slf4j.LoggerFactory
 
 /**
   * Created by salvo on 10/05/2018.
   *
   * uk.ac.bbk.dcs.stypes.flink.FlinkRewriting4q22
   */
-object FlinkRewriting4q22 {
-  private val log = LoggerFactory.getLogger("FlinkRewriting4q22")
-  private val env = ExecutionEnvironment.getExecutionEnvironment
-
-  private implicit val typeLongInfo: TypeInformation[(Long, Long)] = TypeInformation.of(classOf[(Long, Long)])
-
-  private implicit val typeRelation2Info: TypeInformation[Relation2] = TypeInformation.of(classOf[Relation2])
-
-  case class Relation2( x:Long, y:Long )
-
-  private  def  longMapper: (String) => (Long, Long) = (p: String) => {
-    val line = p.split(',')
-    (line.head.toLong, line.last.toLong)
-  }
-
-  private  def  stringMapper1: (String) => (String) = (p: String) => {
-    val line = p.split(',')
-    line.head
-  }
-
-  private  def  stringMapper: (String) => (String, String) = (p: String) => {
-    val line = p.split(',')
-    (line.head, line.last)
-  }
-
-  private  def  stringMapper3: (String) => (String, String, String) = (p: String) => {
-    val line = p.split(',')
-    (line(0), line(1), line(2))
-  }
-
-  private  def  stringMapper4: (String) => (String, String, String, String) = (p: String) => {
-    val line = p.split(',')
-    (line(0), line(1), line(2), line(3))
-  }
-
-
-  private  def  rel2Mapper: (String) => Relation2 = (p: String) => {
-    val line = p.split(',')
-    Relation2(line.head.toLong, line.last.toLong)
-  }
-
-  private def myJoin( firstRelation: DataSet[(String, String)], secondRelation: DataSet[(String, String)] ) ={
-    firstRelation.join(secondRelation).where(1).equalTo(0).map(p=> (p._1._1, p._2._2 ))
-  }
-
-  private def switchTerms( relation: DataSet[(String, String)] ) = relation.map(p=> (p._2, p._1))
-
-  private  def  unknownData2 ={
-    val ds: DataSet[(String, String)] =  env.fromElements()
-    ds
-  }
-
+object FlinkRewriting4q22 extends BaseFlinkRewriting {
 
   def main(args: Array[String]): Unit = {
-      if ( args.length > 1 )
-        FlinkRewriting4q22.execute(args(0).toInt, args(1))
-      else
-        FlinkRewriting4q22.execute(args(0).toInt)
+    if (args.length > 1)
+      FlinkRewriting4q22.run(args(0).toInt, args(1))
+    else
+      FlinkRewriting4q22.run(args(0).toInt)
   }
 
-  def execute(fileNumber:Int, serial:String=UUID.randomUUID().toString):Unit = {
+  def run(fileNumber: Int, serial: String = UUID.randomUUID().toString): Unit = {
+    execute(fileNumber, serial, "q22", rewritingEvaluation)
+  }
 
-    val startTime = System.nanoTime()
+  def rewritingEvaluation(fileNumber: Int): DataSet[(String, String)] = {
 
-    val pathToBenchmarkNDL_SQL = "hdfs:///user/hduser/stypes/resources/benchmark/Lines"
-
-    val a: DataSet[(String, String)] = env.readTextFile(s"$pathToBenchmarkNDL_SQL/data/csv/${fileNumber}.ttl-A.csv").map(stringMapper)
-    val b: DataSet[(String, String)] = env.readTextFile(s"$pathToBenchmarkNDL_SQL/data/csv/${fileNumber}.ttl-B.csv").map(stringMapper)
-    val r: DataSet[(String, String)] = env.readTextFile(s"$pathToBenchmarkNDL_SQL/data/csv/${fileNumber}.ttl-R.csv").map(stringMapper)
-    val s: DataSet[(String, String)] = env.readTextFile(s"$pathToBenchmarkNDL_SQL/data/csv/${fileNumber}.ttl-S.csv").map(stringMapper)
+    val a: DataSet[(String, String)] = getA(fileNumber)
+    val b: DataSet[(String, String)] = getB(fileNumber)
+    val r: DataSet[(String, String)] = getR(fileNumber)
+    val s: DataSet[(String, String)] = getS(fileNumber)
 
 
     // p1(x0,x7) :- p3(x0,x3), r(x3,x4), p12(x7,x4).
@@ -117,28 +64,8 @@ object FlinkRewriting4q22 {
       .union(myJoin(r, b)))
 
 
-    val postfix= s"ttl-${fileNumber}-par-${env.getParallelism}-${new Date().getTime}"
-
-    val p1_distinct = p1.distinct()
-
-    val resultPath =s"$pathToBenchmarkNDL_SQL/data/results/q22/$serial/results-$postfix"
-    p1_distinct.writeAsCsv(resultPath)
-
-    val count: Long = p1_distinct.count
-    val elapsed = (System.nanoTime() - startTime)  / 1000000
-    log.info(s"elapsed time for $postfix is: $elapsed")
-
-    val qe: DataSet[String] = env.fromElements( fileNumber.toString, env.getParallelism.toString, elapsed.toString , count.toString, resultPath )
-    qe.writeAsText(s"$pathToBenchmarkNDL_SQL/data/results/q22/$serial/result-$postfix-txt")
-
-    val count2: Long = p1_distinct.count
-
-    log.info(s"p1_distinct count: $count")
-
+    p1
 
   }
-
-
-  case class QueryEvaluation( ttl: Int, parallelism: Int, milliseconds:Long, count:Long, resultPath:String    )
 
 }

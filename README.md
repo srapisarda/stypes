@@ -1,7 +1,39 @@
-**stypes** 
+###**STypeS** 
 
+Nonrecursive Datalog Rewriter for Linear TGDs and
+Conjunctive Queries
 
-$: sbt copile
+STYPES rewrites ontology-mediated (OMQ) queries to equivalent
+nonrecursive datalog queries (NDL) by getting as input:
+ 
+- a on ontology in the form of linear tuple-generating dependencies (TGD)s   
+- a conjunctive queries (CQ)
+ 
 
-$: sbt test
+STYPES produces a polynomial-size rewritinig whenever
+the treewidth of the input CQs and the size of the chase
+for the ontology atoms are bounded; moreover, the rewriting can be
+constructed and executed in LogCFL, which is optimal in order 
+sto be evaluated in high parallelisability environments as Apache Flink.
+
+#####In order to compile and use from console STypeS  
+it is necessary to build the application. Therefore, 
+form terminal command line execute the following:
+
+$: sbt 'set test in assembly := {}' clean assembly 
+
+the command  above  will create a jar file in "./target/scala-2.11/stypes_2.11-1.0.jar"
+
+STypeS takes three inputs:
+* an n ontology O, which is a set of linear tgds
+* a conjunctive query CQ 
+* the CQ's tree decomposition (T, λ) in a standard GML form.
+
+In order to execute the NDL-rewriting algorithm we need to use and execute 
+the jar created above:  java -cp stypes-assembly-1.0.jar <CQ> <GML> <O>
+
+example:
+$: cd ./target/scala-2.11/
+$: java -cp stypes-assembly-1.0.jar uk.ac.bbk.dcs.stypes.App ../../src/test/resources/q09.cq ../../src/test/resources/q09.gml ../../src/test/resources/lines.dlp
+
 
