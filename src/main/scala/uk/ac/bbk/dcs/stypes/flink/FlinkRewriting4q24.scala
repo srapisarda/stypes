@@ -49,14 +49,24 @@ object FlinkRewriting4q24 extends BaseFlinkRewriting {
     val s: DataSet[(String, String)] = getS(fileNumber)
 
     // p17(x9,x5) :- b(x5), p11(x5,x9).
-    // p17(x9,x5) :- r(x5,x8), s(x8,x9), a(x8).
-    // p17(x9,x5) :- s(x6,x7), r(x5,x6), p11(x7,x9).
+    // p17(x9,x5) :- r(x5,x8), a(x8), s(x8,x9).
+    // p17(x9,x5) :-  r(x5,x6), s(x6,x7), p11(x7,x9).
+    lazy val p17_switched =  myJoin(b, p11)
+      .union (  myJoin( myJoin( r, a ), s ))
+        .union(  myJoin(myJoin( r, s ), p11 ) )
+
     // p11(x9,x9) :- b(x9).
     // p11(x7,x9) :- r(x7,x8), s(x8,x9).
-    // p5(x0,x2) :- r(x1,x2), s(x0,x1).
+    lazy val p11 = b.
+      union( myJoin( r, s ) )
+
+    // p5(x0,x2) :- s(x0,x1), r(x1,x2).
     // p5(x0,x0) :- a(x0).
-    // p1(x0,x9) :- r(x4,x5), p5(x0,x2), r(x3,x4), r(x2,x3), p17(x9,x5).
-    val p1 = unknownData2
+    lazy val p5 = myJoin( s, r)
+      .union(a)
+
+    // p1(x0,x9) :-  p5(x0,x2), r(x2,x3), r(x3,x4), r(x4,x5), p17(x9,x5).
+    lazy val p1 = myJoin( myJoin(myJoin( myJoin( p5, r ), r) ,r ), p17_switched)
 
     p1
 
