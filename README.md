@@ -26,11 +26,12 @@ sbt 'set test in assembly := {}' clean assembly
 The command  above  will create a jar file in "./target/scala-2.11/stypes_2.11-1.0.jar"
 
 STypeS takes three inputs:
-* an ontology O, which is a set of linear tgds of the form :
+* an ontology **O**, which is a set of linear tgds of the form :
 **∀X γ(X) → ∃Y γ′(X′, Y)**, where **γ** and **γ′** are conjunction of atoms.  A tgd is linear if **γ(X)** is a single atom.
-* a conjunctive query CQ  of the form **∃y φ(x, y)**, where **φ** is a conjunction of atoms **P(z)** 
+* a conjunctive query (CQ) **q**  of the form **∃y φ(x, y)**, where **φ** is a conjunction of atoms **P(z)** 
 with predicate symbols from **Σ** and **z ⊆ x ∪ y**
-* the CQ's tree decomposition **(T, λ)** in a standard GML form.
+* the CQ's tree decomposition **(T, λ)** in a standard GML form. 
+
 
 In order to execute the NDL-rewriting algorithm we need to use and execute 
 the jar created above:  ***java -cp stypes-assembly-1.0.jar (CQ) (GML) (O)***
