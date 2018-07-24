@@ -55,7 +55,7 @@ q(?x0, ?x9) <-  r(?x0, ?x1), r(?x1, ?x2), s(?x2, ?x3), r(?x3, ?x4),
 
 A possible **q09.cq**'s tree decomposition **(T, λ)**  is described in the file [**q09.gml**](https://github.com/srapisarda/stypes/blob/master/src/test/resources/q09.gml)
 
-The ontology the datalog file [**lines.dlp**](https://github.com/srapisarda/stypes/blob/master/src/test/resources/lines.dlp)  contains is a set of 2 TGD's:
+The ontology  [**lines.dlp**](https://github.com/srapisarda/stypes/blob/master/src/test/resources/lines.dlp)  contains is a set of 2 TGD's:
 ```
 s(X,Y),r(Y,X) :- a(X).
 r(X,Y),s(Y,X) :- b(X).
