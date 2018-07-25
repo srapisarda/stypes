@@ -33,7 +33,7 @@ STypeS takes three inputs:
 * a conjunctive query (CQ) **q**  of the form **∃y φ(x, y)**, where **φ** is a conjunction of atoms **P(z)** 
 with predicate symbols from **Σ** and **z ⊆ x ∪ y**
 * the CQ's tree decomposition **(T, λ)** in a standard GML form. 
-A tree decomposition of a CQ q with variables var(q) is a pair (T,λ) of an (undirected) tree **T = (V,E)** and **λ: V → 2^[var(q)]** such that
+A tree decomposition of a CQ **q** with variables **var(q)** is a pair **(T, λ)** of an (undirected) tree **T = (V, E)** and **λ: V → 2^[var(q)]** such that
   * for any atom **P(z) ∈ q**, there exists **v ∈ V** with **z ⊆ λ(v)**;
   * for any variable **z** in **q**, the set of vertices **{v ∈ V | z ∈ λ(v)}** is connected in **T**.
 
