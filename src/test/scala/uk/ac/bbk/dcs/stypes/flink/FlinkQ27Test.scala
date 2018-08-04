@@ -41,7 +41,7 @@ class FlinkQ27Test extends FunSpec with BaseFlinkTest{
   describe("Flink q27") {
 
 
-    ignore("should read and execute the 'q27.cq' query rewrote for 1.ffl file set {A, B, R, S}") {
+    it("should read and execute the 'q27.cq' query rewrote for 1.ffl file set {A, B, R, S}") {
       execute(1, 2832)
     }
 
@@ -75,7 +75,8 @@ class FlinkQ27Test extends FunSpec with BaseFlinkTest{
 
       val  r_join = myJoin(r,r)
 
-      lazy val r_double_join = myJoin(r_join,r)
+      val r_double_join = myJoin(r_join,r)
+
       // p32(x7,x9) :- r(x7,x8), s(x8,x9).
       // p32(x9,x9) :- b(x9).
       lazy val p32= myJoin(r,s ).union(b)
@@ -84,6 +85,8 @@ class FlinkQ27Test extends FunSpec with BaseFlinkTest{
       // p27(x12,x7) :- p32(x7,x9), r(x9,x10), r(x10,x11), r(x11,x12).
       lazy val p27_switched =  myJoin(myJoin(r, a), r_join)
         .union( myJoin(p32, r_double_join))
+
+      println( s"r_double_join:  ${r_double_join.count()}" )
 
       // p5(x0,x3) :-  a(x0), r(x0,x3).
       // p5(x0,x3) :- s(x0,x1), r(x1,x2), r(x2,x3) .
@@ -102,16 +105,19 @@ class FlinkQ27Test extends FunSpec with BaseFlinkTest{
       //lazy val p27_switched = switchTerms(p27)
       // p1(x0,x12) :- p5(x0,x3), r(x3,x4), r(x4,x5), r(x5,x6),  a(x6), p3(x12,x6).
       lazy val p1_1 = myJoin(myJoin(myJoin(p5, r_double_join), a), switchTerms(p3))
+
       // p1(x0,x12) :- p5(x0,x3), r(x3,x4), r(x4,x5), b(x5), p27(x12,x5).
       lazy val p1_2 = myJoin(myJoin(p5_r_join, b), p27_switched)
       // p1(x0,x12) :- p5(x0,x3), r(x3,x4), r(x4,x5), r(x5,x6), s(x6,x7), p27(x12,x7).
       lazy val p1_3 = myJoin(myJoin(p5_r_join, s), p27_switched)
 
-      lazy val p1 =  p1_1 union p1_2 union p1_3
+//      lazy val p1 =  p1_1 union p1_2 union p1_3
+
+      lazy val p1 =  p1_2 union p1_3
 
       //lazy val p1_distinct =  p1.distinct()
 
-      lazy val p1_distinct =  p1_1.distinct()
+      lazy val p1_distinct =  p1.distinct()
 
 
       p1_distinct.writeAsCsv(s"$pathToBenchmarkNDL_SQL/data/rewriting-results-q27-ttl_${fileNumber}-${new Date().getTime}")

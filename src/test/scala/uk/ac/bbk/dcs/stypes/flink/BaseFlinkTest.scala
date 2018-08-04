@@ -57,12 +57,15 @@ trait BaseFlinkTest {
   }
 
   def myJoin(firstRelation: DataSet[(String, String)], secondRelation: DataSet[(String, String)]) = {
-    firstRelation.join(secondRelation).where(1).equalTo(0).map(p => (p._1._1, p._2._2))
+    if ( firstRelation.first(1).count() <= 0 || secondRelation.first(1).count()<=0 )
+      emptyData2
+    else
+      firstRelation.join(secondRelation).where(1).equalTo(0).map(p => (p._1._1, p._2._2))
   }
 
   def switchTerms(relation: DataSet[(String, String)]) = relation.map(p => (p._2, p._1))
 
-  def unknownData2 = {
+  def emptyData2 = {
     val ds: DataSet[(String, String)] = env.fromElements()
     ds
   }
