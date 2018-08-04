@@ -66,3 +66,56 @@ The ontology  [**lines.dlp**](https://github.com/srapisarda/stypes/blob/master/s
 s(X,Y),r(Y,X) :- a(X).
 r(X,Y),s(Y,X) :- b(X).
 ```
+
+***Use STypeS as dependency in your project*** 
+
+Maven
+```xml
+<dependency>
+  <groupId>com.github.srapisarda</groupId>
+  <artifactId>stypes_2.11</artifactId>
+  <version>1.0</version>
+</dependency>
+```
+
+Gradle Groovy DSL
+
+```
+compile 'com.github.srapisarda:stypes_2.11:1.0'
+```
+
+
+Gradle Kotlin DSL
+
+```
+compile(group = "com.github.srapisarda", name = "stypes_2.11", version = "1.0")
+
+```
+
+Scala SBT
+```
+libraryDependencies += "com.github.srapisarda" % "stypes_2.11" % "1.0"
+```
+
+Apache Ivy
+```
+<dependency org="com.github.srapisarda" name="stypes_2.11" rev="1.0" />
+```
+
+Groovy Grape
+```
+@Grapes(
+  @Grab(group='com.github.srapisarda', module='stypes_2.11', version='1.0')
+)
+```
+
+Leiningen
+```
+[com.github.srapisarda}/stypes_2.11 "1.0"]
+```
+
+Apache Buildr
+
+```
+'com.github.srapisarda:stypes_2.11:jar:1.0'
+```
