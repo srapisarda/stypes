@@ -69,7 +69,7 @@ r(X,Y),s(Y,X) :- b(X).
 
 ***Use STypeS as dependency in your project*** 
 
-It is possible to include STypeS in your project  as dependency.
+It is possible to include STypeS in your project as dependency.
 Below are listed the most common software project management tools.   
 
 Maven
