@@ -2,7 +2,9 @@ name := "stypes"
 
 version := "1.1.0"
 
-scalaVersion := "2.11.8"
+scalaVersion := "2.12.6"
+
+crossScalaVersions := Seq("2.11.8", "2.12.6")
 
 val graalVersion = "1.2.0"
 
