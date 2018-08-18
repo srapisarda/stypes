@@ -1,14 +1,12 @@
 name := "stypes"
 
-version := "1.0"
+version := "1.1.0"
 
 scalaVersion := "2.11.8"
 
 val graalVersion = "1.2.0"
 
 val sparkVersion = "2.2.0"
-
-val flinkVersion = "1.4.0"
 
 val playVersion = "2.6.8"
 
@@ -32,7 +30,6 @@ libraryDependencies ++= Seq( "fr.lirmm.graphik" % "graal-core" % graalVersion
                 ,"com.tinkerpop.blueprints" % "blueprints-core" % "2.6.0"
                 ,"org.apache.spark" %% "spark-core" % sparkVersion
                 ,"org.apache.spark" %% "spark-sql" % sparkVersion
-                ,"org.apache.flink" %% "flink-streaming-scala" % flinkVersion
             )
 
 
