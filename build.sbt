@@ -6,10 +6,6 @@ scalaVersion := "2.11.8"
 
 val graalVersion = "1.2.0"
 
-val sparkVersion = "2.2.0"
-
-val playVersion = "2.6.8"
-
 useGpg := false
 
 publishArtifact in Test := false
@@ -28,8 +24,6 @@ libraryDependencies ++= Seq( "fr.lirmm.graphik" % "graal-core" % graalVersion
                 ,"org.scalatest" %% "scalatest" % "3.0.4"
                 ,"ch.qos.logback" % "logback-classic" % "1.2.3"
                 ,"com.tinkerpop.blueprints" % "blueprints-core" % "2.6.0"
-                ,"org.apache.spark" %% "spark-core" % sparkVersion
-                ,"org.apache.spark" %% "spark-sql" % sparkVersion
             )
 
 
