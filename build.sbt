@@ -16,17 +16,20 @@ pomIncludeRepository := { x => false }
 
 resolvers += Resolver.sonatypeRepo("public")
 
+
 libraryDependencies ++= Seq( "fr.lirmm.graphik" % "graal-core" % graalVersion
                 ,"fr.lirmm.graphik" % "graal-forward-chaining" % graalVersion
                 ,"fr.lirmm.graphik" % "graal-backward-chaining" % graalVersion
                 ,"fr.lirmm.graphik" % "graal-io-dlgp" % graalVersion
                 ,"fr.lirmm.graphik" % "graal-store-rdbms" % graalVersion
                 ,"fr.lirmm.graphik" % "graal-homomorphism" % graalVersion
-                ,"junit" % "junit" % "4.10" % "test"
-                ,"org.scalatest" %% "scalatest" % "3.0.4"
-                ,"ch.qos.logback" % "logback-classic" % "1.2.3"
+                ,"com.typesafe.scala-logging" %% "scala-logging" % "3.9.0"
                 ,"com.tinkerpop.blueprints" % "blueprints-core" % "2.6.0"
-            )
+                // test
+                ,"org.scalatest" %% "scalatest" % "3.0.4" % "test"
+                ,"ch.qos.logback" % "logback-classic" % "1.2.3" % "test"
+                ,"junit" % "junit" % "4.10" % "test"
+)
 
 
 assemblyMergeStrategy in assembly := {

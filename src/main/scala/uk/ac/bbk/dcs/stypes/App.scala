@@ -16,7 +16,7 @@ object App {
     val ontology = ReWriter.getOntology(ontologyPath)
     val decomposedQuery: (TreeDecomposition, List[Variable]) =
       TreeDecomposition.getTreeDecomposition( gmlPath, cqPath)
-    val datalog = new ReWriter(ontology).rewrite(decomposedQuery, true)
+    val datalog = new ReWriter(ontology).rewrite(decomposedQuery, addAdditionalRules = true)
     printDatalog(datalog)
   }
 

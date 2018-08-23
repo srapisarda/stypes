@@ -23,16 +23,20 @@ package uk.ac.bbk.dcs.stypes
 import java.io.File
 import java.util.UUID
 
+import com.typesafe.scalalogging.Logger
 import fr.lirmm.graphik.graal.api.core._
-import fr.lirmm.graphik.graal.core.{DefaultAtom, DefaultRule}
+import fr.lirmm.graphik.graal.core.DefaultAtom
 import fr.lirmm.graphik.graal.core.atomset.graph.DefaultInMemoryGraphAtomSet
 import fr.lirmm.graphik.graal.forward_chaining.DefaultChase
 import fr.lirmm.graphik.graal.io.dlp.DlgpParser
+import org.slf4j.LoggerFactory
 import uk.ac.bbk.dcs.stypes.ConstantType.EPSILON
 
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 import scala.io.Source
+
+
 
 /**
   * Created by
@@ -42,7 +46,7 @@ import scala.io.Source
   * on 02/05/2017.
   */
 object ReWriter {
-
+  val logger = Logger(this.getClass)
   /**
     * Generates a set of generating atoms
     *
@@ -386,14 +390,14 @@ object ReWriter {
       datalog
     }
     else {
-      println( s"datalog 1 : ${datalog} " )
+      ReWriter.logger.debug( s"datalog 1 : $datalog" )
 
       val removalResult: List[Clause] = removeEmptyClauses(removeDuplicate(datalog))
 
-      println( s"datalog removal result : ${removalResult} " )
+      ReWriter.logger.debug( s"datalog removal result : $removalResult" )
       val predicateSubstitutionRes: List[Clause] = predicateSubstitution(removalResult)
 
-      println( s"datalog predicateSubstitutionRes : ${predicateSubstitutionRes} " )
+      ReWriter.logger.debug( s"datalog predicateSubstitutionRes : $predicateSubstitutionRes" )
 
       equalitySubstitution(predicateSubstitutionRes) ::: additionalRules
     }
@@ -595,10 +599,10 @@ object ReWriter {
 class ReWriter(ontology: List[Rule]) {
 
   val generatingAtoms: List[Atom] = ReWriter.makeGeneratingAtoms(ontology)
-  println(s"generating  canonical models")
+  ReWriter.logger.debug(s"generating  canonical models")
   val t1: Long = System.nanoTime()
   val canonicalModels: List[AtomSet] = ReWriter.canonicalModelList(ontology, generatingAtoms)
-  println(s"elapsed time for generating the canonical models: ${(System.nanoTime() - t1) / 1000000}ms")
+  ReWriter.logger.debug(s"elapsed time for generating the canonical models: ${(System.nanoTime() - t1) / 1000000}ms")
   private val arrayGeneratingAtoms = generatingAtoms.toVector
 
   /**
