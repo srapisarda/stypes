@@ -100,14 +100,10 @@ object FlinkRewriting4q15 extends BaseFlinkRewriting {
       .union(myJoin(r, myJoin(r, myJoin(a, p28))))
       .union(myJoin(p19, myJoin(b, myJoin(a, r))))
 
-    lazy val p34 = unknownData2
-
     // p1(x0,x15) :- p35(x0,x7), r(x7,x8), p2(x8,x15) .
     // p1(x0,x15) :- p3(x0,x8), a(x8), p2(x8,x15).
-    // p1(x0,x15) :- p35(x0,x7),  b(x7), p34(x15,x7),.
     lazy val p1 = myJoin(p35, myJoin(r, p2))
       .union(myJoin(p3, myJoin(a, p2)))
-      .union(myJoin(switchTerms(p34), b))
 
     p1
 
