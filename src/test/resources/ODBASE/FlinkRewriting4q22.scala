@@ -24,11 +24,6 @@ import java.util.UUID
 
 import org.apache.flink.api.scala._
 
-/**
-  * Created by salvo on 10/05/2018.
-  *
-  * uk.ac.bbk.dcs.stypes.flink.FlinkRewriting4q22
-  */
 object FlinkRewriting4q22 extends BaseFlinkRewriting {
 
   def main(args: Array[String]): Unit = {

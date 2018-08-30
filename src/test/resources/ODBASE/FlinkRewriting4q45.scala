@@ -24,11 +24,6 @@ import java.util.UUID
 
 import org.apache.flink.api.scala._
 
-/**
-  * Created by salvo on 10/05/2018.
-  *
-  * uk.ac.bbk.dcs.stypes.flink.FlinkRewriting4q45
-  */
 object FlinkRewriting4q45 extends BaseFlinkRewriting{
 
   def main(args: Array[String]): Unit = {
@@ -48,7 +43,6 @@ object FlinkRewriting4q45 extends BaseFlinkRewriting{
     val b: DataSet[(String, String)] = getB(fileNumber)
     val r: DataSet[(String, String)] = getR(fileNumber)
     val s: DataSet[(String, String)] = getS(fileNumber)
-
 
     // p14(x7,x4) :- a(x4), s(x4,x7).
     // p14(x7,x4) :- s(x4,x5), r(x5,x6), s(x6,x7).
