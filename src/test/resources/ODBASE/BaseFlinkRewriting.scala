@@ -36,7 +36,8 @@ trait BaseFlinkRewriting {
 
   val log: Logger = LoggerFactory.getLogger(this.getClass)
   val env: ExecutionEnvironment = ExecutionEnvironment.getExecutionEnvironment
-  val pathToBenchmarkNDL_SQL = "hdfs:///user/hduser/stypes/resources/benchmark/Lines"
+  // change pathToHadoopFolder variable in order to point to the correct folder in hadoop
+  val pathToHadoopFolder = "hdfs:///user/hduser/stypes/resources/benchmark/Lines"
   implicit val typeLongInfo: TypeInformation[(Long, Long)] = TypeInformation.of(classOf[(Long, Long)])
   implicit val typeRelation2Info: TypeInformation[Relation2] = TypeInformation.of(classOf[Relation2])
 
@@ -86,16 +87,16 @@ trait BaseFlinkRewriting {
 
 
   def getA(fileNumber: Int): DataSet[(String, String)] =
-    env.readTextFile(s"$pathToBenchmarkNDL_SQL/data/csv/$fileNumber.ttl-A.csv").map(stringMapper)
+    env.readTextFile(s"$pathToHadoopFolder/data/csv/$fileNumber.ttl-A.csv").map(stringMapper)
 
   def getB(fileNumber: Int): DataSet[(String, String)] =
-    env.readTextFile(s"$pathToBenchmarkNDL_SQL/data/csv/$fileNumber.ttl-B.csv").map(stringMapper)
+    env.readTextFile(s"$pathToHadoopFolder/data/csv/$fileNumber.ttl-B.csv").map(stringMapper)
 
   def getR(fileNumber: Int): DataSet[(String, String)] =
-    env.readTextFile(s"$pathToBenchmarkNDL_SQL/data/csv/$fileNumber.ttl-R.csv").map(stringMapper)
+    env.readTextFile(s"$pathToHadoopFolder/data/csv/$fileNumber.ttl-R.csv").map(stringMapper)
 
   def getS(fileNumber: Int): DataSet[(String, String)] =
-    env.readTextFile(s"$pathToBenchmarkNDL_SQL/data/csv/$fileNumber.ttl-S.csv").map(stringMapper)
+    env.readTextFile(s"$pathToHadoopFolder/data/csv/$fileNumber.ttl-S.csv").map(stringMapper)
 
 
   def execute(fileNumber: Int, serial: String, qName: String, f: (Int) => DataSet[(String, String)]): Unit = {
@@ -108,7 +109,7 @@ trait BaseFlinkRewriting {
     val p1_distinct = p1.distinct()
 
     val postfix = s"ttl-$fileNumber-par-${env.getParallelism}-${new Date().getTime}"
-    val resultPath = s"$pathToBenchmarkNDL_SQL/data/results/$qName/$serial/results-$postfix"
+    val resultPath = s"$pathToHadoopFolder/data/results/$qName/$serial/results-$postfix"
     p1_distinct.writeAsCsv(resultPath)
 
     val count: Long = p1_distinct.count
@@ -116,10 +117,7 @@ trait BaseFlinkRewriting {
     log.info(s"elapsed time for $postfix is: $elapsed")
 
     val qe: DataSet[String] = env.fromElements(fileNumber.toString, env.getParallelism.toString, elapsed.toString, count.toString, resultPath)
-    qe.writeAsText(s"$pathToBenchmarkNDL_SQL/data/results/$qName/$serial/result-$postfix-txt")
+    qe.writeAsText(s"$pathToHadoopFolder/data/results/$qName/$serial/result-$postfix-txt")
 
-    val count2: Long = p1_distinct.count
-
-    log.info(s"p1_distinct count: $count, $count2")
   }
 }
