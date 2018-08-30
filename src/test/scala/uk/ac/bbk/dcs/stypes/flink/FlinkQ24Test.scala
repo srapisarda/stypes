@@ -33,15 +33,15 @@ class FlinkQ24Test extends FunSpec with BaseFlinkTest{
 
   describe("Flink q24") {
 
-    it("should read and execute the 'q24.cq' query rewrote for 1.ffl file set {A, B, R, S}") {
+    ignore("should read and execute the 'q24.cq' query rewrote for 1.ffl file set {A, B, R, S}") {
       execute(1, 2832 )
     }
 
-    it("should read and execute the 'q24.cq' query rewrote for 2.ffl file set {A, B, R, S}") {
+    ignore("should read and execute the 'q24.cq' query rewrote for 2.ffl file set {A, B, R, S}") {
       execute(2, 248)
     }
 
-    it("should read and execute the 'q24.cq' query rewrote for 3.ffl file set {A, B, R, S}") {
+    ignore("should read and execute the 'q24.cq' query rewrote for 3.ffl file set {A, B, R, S}") {
       execute(3, 2125)
     }
 
