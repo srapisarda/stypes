@@ -25,7 +25,7 @@ cd stypes
 sbt 'set test in assembly := {}' clean assembly 
 ```
 
-The command  above  will create a jar file in "./target/scala-2.11/stypes_2.11-1.0.jar"
+The command  above  will create a jar file in "./target/scala-2.12/stypes-assembly-1.1.0.jar"
 
 STypeS takes three inputs:
 * an ontology **O**, which is a set of linear tgds of the form :
@@ -40,12 +40,12 @@ A tree decomposition of a CQ **q** with variables **var(q)** is a pair **(T, λ)
 
 
 In order to execute the NDL-rewriting algorithm we need to use and execute 
-the jar created above:  ***java -cp stypes-assembly-1.0.jar (CQ) (GML) (O)***
+the jar created above:  ***java -cp stypes-assembly-1.1.0.jar (CQ) (GML) (O)***
 
 example:
 ```
-cd ./target/scala-2.11/
-java -cp stypes-assembly-1.0.jar uk.ac.bbk.dcs.stypes.App \
+cd ./target/scala-2.12/
+java -cp stypes-assembly-1.1.0.jar uk.ac.bbk.dcs.stypes.App \
          ../../src/test/resources/q09.cq \
          ../../src/test/resources/q09.gml \
          ../../src/test/resources/lines.dlp
@@ -72,55 +72,60 @@ r(X,Y),s(Y,X) :- b(X).
 It is possible to include STypeS in your project as dependency.
 Below are listed the most common software project management tools.   
 
+
+Scala SBT 
+for scala ver. 2.12.x
+```
+libraryDependencies += "com.github.srapisarda" % "stypes_2.12" % "1.1.0"
+```
+for scala ver. 2.11.x
+```sbtshell
+libraryDependencies += "com.github.srapisarda" % "stypes_2.11" % "1.1.0"
+```
+
 Maven
 ```xml
 <dependency>
   <groupId>com.github.srapisarda</groupId>
-  <artifactId>stypes_2.11</artifactId>
-  <version>1.0</version>
+  <artifactId>stypes_2.12</artifactId>
+  <version>1.1.0</version>
 </dependency>
 ```
 
 Gradle Groovy DSL
 
 ```
-compile 'com.github.srapisarda:stypes_2.11:1.0'
+compile 'com.github.srapisarda:stypes_2.12:1.1.0'
 ```
 
 
 Gradle Kotlin DSL
 
 ```
-compile(group = "com.github.srapisarda", name = "stypes_2.11", version = "1.0")
-
-```
-
-Scala SBT
-```
-libraryDependencies += "com.github.srapisarda" % "stypes_2.11" % "1.0"
+compile(group = "com.github.srapisarda", name = "stypes_2.12", version = "1.1.0")
 ```
 
 Apache Ivy
 ```
-<dependency org="com.github.srapisarda" name="stypes_2.11" rev="1.0" />
+<dependency org="com.github.srapisarda" name="stypes_2.12" rev="1.1.0" />
 ```
 
 Groovy Grape
 ```
 @Grapes(
-  @Grab(group='com.github.srapisarda', module='stypes_2.11', version='1.0')
+  @Grab(group='com.github.srapisarda', module='stypes_2.12', version='1.1.0')
 )
 ```
 
 Leiningen
 ```
-[com.github.srapisarda}/stypes_2.11 "1.0"]
+[com.github.srapisarda/stypes_2.12 "1.1.0"]
 ```
 
 Apache Buildr
 
 ```
-'com.github.srapisarda:stypes_2.11:jar:1.0'
+'com.github.srapisarda:stypes_2.12:jar:1.1.0'
 ```
 
 
