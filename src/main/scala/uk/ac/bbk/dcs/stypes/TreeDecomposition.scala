@@ -47,7 +47,7 @@ class TreeDecomposition {
 
   private var mapCqAtoms: Map[Predicate, Atom] = _
   private var root: Bag = _
-  private var childes: List[TreeDecomposition] = _
+  private var children: List[TreeDecomposition] = _
   private var cqAtoms: Set[Atom] = _
 
   def this(cqAtoms: Set[Atom], graph: Graph, v: Vertex, mode: Boolean = false) {
@@ -68,7 +68,7 @@ class TreeDecomposition {
 
 
     // TODO:  review this
-    this.childes = vertex.getEdges(OUT)
+    this.children = vertex.getEdges(OUT)
       .asScala.map(edge =>
           new TreeDecomposition(cqAtoms,
                 getSubGraph(graph, vertex, edge),
@@ -77,11 +77,11 @@ class TreeDecomposition {
 
   }
 
-  private[TreeDecomposition] def this(cqAtoms: Map[Predicate, Atom], root: Bag, childes: List[TreeDecomposition]) {
+  private[TreeDecomposition] def this(cqAtoms: Map[Predicate, Atom], root: Bag, children: List[TreeDecomposition]) {
     this()
     this.mapCqAtoms = cqAtoms
     this.root = root
-    this.childes = childes
+    this.children = children
   }
 
 
@@ -154,8 +154,8 @@ class TreeDecomposition {
   def getSize: Int = {
 
     def getSizeH(t: TreeDecomposition): Int = {
-      if (t.childes == null || t.childes.isEmpty) 1
-      else t.childes.map(getSizeH).sum + 1
+      if (t.children == null || t.children.isEmpty) 1
+      else t.children.map(getSizeH).sum + 1
     }
 
     getSizeH(this)
@@ -163,7 +163,7 @@ class TreeDecomposition {
 
   def getRoot: Bag = root
 
-  def getChildes: List[TreeDecomposition] = childes
+  def getChildes: List[TreeDecomposition] = children
 
   def  getSeparator : TreeDecomposition = getSplitter(this, this.getSize)
 
@@ -181,25 +181,25 @@ class TreeDecomposition {
 
     if (t.getSize <= (rootSize / 2) + 1) t
     else {
-      val child: TreeDecomposition = visitChildes(-1, t.childes, null)
+      val child: TreeDecomposition = visitChildes(-1, t.children, null)
       getSplitter(child, rootSize)
     }
 
   }
 
   def remove(s: TreeDecomposition): TreeDecomposition = {
-    val childes = this.childes.filter( c => c != s ).map( c => c.remove(s)  )
+    val childes = this.children.filter(c => c != s ).map(c => c.remove(s)  )
     new TreeDecomposition(mapCqAtoms, root, childes )
   }
 
-  def getAllTerms: Set[Term] =  getAllTerms(this.childes) ++ this.root.variables
+  def getAllTerms: Set[Term] =  getAllTerms(this.children) ++ this.root.variables
 
   private def getAllTerms(list: List[TreeDecomposition]) : Set[Term] =  {
 
     @tailrec
     def doUnion(  list: List[TreeDecomposition], acc: Set[Term]  ): Set[Term] = list match {
       case List() => acc
-      case x::xs =>  doUnion( xs, x.root.variables ++ acc ++ getAllTerms( x.childes ) )
+      case x::xs =>  doUnion( xs, x.root.variables ++ acc ++ getAllTerms( x.children ) )
 
     }
 
@@ -210,7 +210,7 @@ class TreeDecomposition {
   }
 
   override def toString : String = {
-    s"(root: $root, childes: $childes, mapCqAtoms: $mapCqAtoms, )"
+    s"(root: $root, childes: $children, mapCqAtoms: $mapCqAtoms, )"
   }
 
 
