@@ -8,7 +8,7 @@ crossScalaVersions := Seq("2.11.8", "2.12.6")
 
 val graalVersion = "1.2.0"
 
-useGpg := false
+//useGpg := false
 
 publishArtifact in Test := false
 
