@@ -61,7 +61,7 @@ class TreeDecomposition {
     val vertex: Vertex = if (v != null) {
       v
     } else {
-      graph.getVertices.asScala.toList.sortBy(v => Integer.parseInt(v.getId.toString) ).head
+      graph.getVertices.asScala.toList.minBy(v => Integer.parseInt(v.getId.toString))
     }
 
     root =  if (mode) getBagFromVertexTD(vertex) else getBagFromVertexHTD(vertex)
