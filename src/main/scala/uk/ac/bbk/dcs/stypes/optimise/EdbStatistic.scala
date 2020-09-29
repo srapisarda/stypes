@@ -1,3 +1,3 @@
 package uk.ac.bbk.dcs.stypes.optimise
 
-case class EdbStatistic()
+case class EdbStatistic(rowCount: Int)
