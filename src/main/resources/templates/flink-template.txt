@@ -1,0 +1,23 @@
+package uk.ac.bbk.dcs.stypes.flink
+
+import org.apache.flink.api.scala.{DataSet, _}
+// Scala object that defines the program in the main() method.
+// Class Entry point
+object FlinkRewriting**NAME** {
+  // the main() execute the program
+  def main(args: Array[String]): Unit = {
+    // Set up the data execution environment
+    val env = ExecutionEnvironment.getExecutionEnvironment
+
+    //**EDB-MAP**
+
+    //**MAIN**
+
+    //**SINK**
+
+    // execute job
+    env.execute("**JOB-TITLE**")
+  }
+
+  //**MAPPER-FUNC
+}
