@@ -8,26 +8,42 @@ object TransformUtilService {
   val jobTitlePattern: String = "**JOB-TITLE**"
   val namePattern: String = "**NAME**"
   val mapperFunctions: String = "//**MAPPER-FUNC"
+  val edbMapPattern: String = "//**EDB-MAP**"
 
 
-  def generateFlinkProgram(flinkProgramRequest: FlinkProgramRequest): String = {
-
+  def generateFlinkProgramAsString(request: FlinkProgramRequest): String = {
     // get template
-    val fileTemplate = Source.fromFile(flinkProgramRequest.properties.templatePath)
+    val fileTemplate = Source.fromFile(request.properties.templatePath)
     if (fileTemplate == null)
-      throw new FileNotFoundException(s"template file ${flinkProgramRequest.properties.templatePath} not found!")
+      throw new FileNotFoundException(s"template file ${request.properties.templatePath} not found!")
 
     // apply properties
-    var program = fileTemplate
-      .mkString
-      .replace(jobTitlePattern, flinkProgramRequest.properties.jobTitle)
-      .replace(namePattern, flinkProgramRequest.properties.name)
-    // EDBs mapping
-
+    var program = applyProperties(fileTemplate.mkString, request.properties)
+    // map EDBs
+    program = mapEdb(program, request)
 
     program
   }
 
-  def getFlinkTemplate = ???
+  private def applyProperties(program: String, properties: FlinkProgramProperties): String = {
+    program
+      .replace(jobTitlePattern, properties.jobTitle)
+      .replace(namePattern, properties.name)
+  }
+
+  private def mapEdb(program: String, request: FlinkProgramRequest) = {
+    // EDBs mapping
+    val edbMap = request.edbMap.map {
+      case (atom, property) =>
+        s"\tval ${atom.getPredicate.getIdentifier.toString} = " +
+          s"${mapEdbResource(property)}"
+    }
+    program.replace(edbMapPattern, (edbMapPattern :: edbMap.toList).mkString("\n"))
+  }
+
+  private def mapEdbResource(property: EdbProperty): String = property.fileType match {
+    case _ => "env.readTextFile(\"" + property.path + "\").map(stringMapper)"
+  }
+
 
 }
