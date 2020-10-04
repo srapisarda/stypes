@@ -10,7 +10,9 @@ class TransformUtilServiceTest extends FunSuite {
   val request: FlinkProgramRequest = FlinkProgramRequest(
     List(),
     getEdbMap(List("s", "r", "a")),
-    FlinkProgramProperties("test", "job test", "src/main/resources/templates/flink-template.txt"))
+    FlinkProgramProperties("test", "job test",
+      "src/main/resources/templates/flink-template.txt",
+      "src/main/resources/templates"))
 
   private def getEdbMap(identifiers: List[String]) = {
     identifiers.map(identifier => {
@@ -26,9 +28,9 @@ class TransformUtilServiceTest extends FunSuite {
     def programAsString =  TransformUtilService.generateFlinkProgramAsString(request)
     println(programAsString)
 
-    def expectedMap=List("val s = env.readTextFile(\"hdfs:////user/hduser/data/report2020/r.csv\").map(stringMapper)",
-    "val r = env.readTextFile(\"hdfs:////user/hduser/data/report2020/r.csv\").map(stringMapper)",
-    "val a = env.readTextFile(\"hdfs:////user/hduser/data/report2020/r.csv\").map(stringMapper)")
+    def expectedMap=List("val s = env.readTextFile(\"hdfs:////user/hduser/data/report2020/r.csv\").map(stringMapper2)",
+    "val r = env.readTextFile(\"hdfs:////user/hduser/data/report2020/r.csv\").map(stringMapper2)",
+    "val a = env.readTextFile(\"hdfs:////user/hduser/data/report2020/r.csv\").map(stringMapper2)")
     expectedMap.foreach(a => assert(programAsString.contains(a)))
   }
 

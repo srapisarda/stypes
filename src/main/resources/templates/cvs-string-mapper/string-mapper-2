@@ -1,6 +1,0 @@
-// String mapper function used to parse the CSV.
-// It gets in input a string return as output a tuple contains two elements
-def stringMapper: String => (String, String) = (p: String) => {
-    val line = p.split(',')
-    (line.head, line.last)
-}
