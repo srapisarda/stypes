@@ -2,7 +2,7 @@ package uk.ac.bbk.dcs.stypes.evaluate
 
 import java.io.FileNotFoundException
 
-import fr.lirmm.graphik.graal.api.core.Atom
+import fr.lirmm.graphik.graal.api.core.{Atom, Predicate}
 import uk.ac.bbk.dcs.stypes.Clause
 
 import scala.collection.mutable
@@ -30,7 +30,17 @@ object TransformUtilService {
     program
   }
 
+
+  def ucqAsFlinkScript(head: Predicate, clauses: List[Clause]): String =
+    ""
+
   def ndlToFlink(program: String, datalog: List[Clause]): String = {
+    // create group by head predicate
+    val groupByHeadPredicates: Map[Predicate, List[Clause]] = datalog.groupBy(_.head.getPredicate)
+    // for each group create a UCQ as Flink script
+    groupByHeadPredicates.map {
+      case (head, clauses) => ucqAsFlinkScript(head, clauses)
+    }
     // TODO
     program
   }

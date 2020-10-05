@@ -4,11 +4,14 @@ import fr.lirmm.graphik.graal.api.core.{Atom, Predicate}
 import fr.lirmm.graphik.graal.core.DefaultAtom
 import fr.lirmm.graphik.graal.core.term.DefaultTermFactory
 import org.scalatest.FunSuite
+import uk.ac.bbk.dcs.stypes.{Clause, ReWriter}
 
 class TransformUtilServiceTest extends FunSuite {
+  val datalog = ReWriter.getDatalogRewriting(s"src/test/resources/rewriting/q15-rew.dlp")
+  printDatalog(datalog)
 
   val request: FlinkProgramRequest = FlinkProgramRequest(
-    List(),
+    datalog,
     getEdbMap(List("s", "r", "a")),
     FlinkProgramProperties("test", "job test",
       "src/main/resources/templates/flink-template.txt",
@@ -25,14 +28,16 @@ class TransformUtilServiceTest extends FunSuite {
   }
 
   test("testGenerateFlinkProgramAsString") {
-    def programAsString =  TransformUtilService.generateFlinkProgramAsString(request)
+
+    val programAsString =  TransformUtilService.generateFlinkProgramAsString(request)
     println(programAsString)
 
-    def expectedMap=List("val s = env.readTextFile(\"hdfs:////user/hduser/data/report2020/r.csv\").map(stringMapper2)",
+    val expectedMap=List("val s = env.readTextFile(\"hdfs:////user/hduser/data/report2020/r.csv\").map(stringMapper2)",
     "val r = env.readTextFile(\"hdfs:////user/hduser/data/report2020/r.csv\").map(stringMapper2)",
     "val a = env.readTextFile(\"hdfs:////user/hduser/data/report2020/r.csv\").map(stringMapper2)")
     expectedMap.foreach(a => assert(programAsString.contains(a)))
   }
 
-
+  private def printDatalog(datalog: List[Clause]): Unit =
+    println(s"${datalog.mkString(".\n")}.".replaceAll("""\[\d+\]""", ""))
 }

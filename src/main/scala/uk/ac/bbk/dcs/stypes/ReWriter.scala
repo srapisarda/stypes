@@ -467,7 +467,7 @@ object ReWriter {
           val ds =
             if (!matchedDataSources.contains(rhs.getPredicate)) {
               if (dataSources.contains(rhs.getPredicate.getIdentifier.toString))
-                matchedDataSources + (rhs.getPredicate -> dataSources(rhs.getPredicate.getIdentifier.toString))
+                  matchedDataSources + (rhs.getPredicate -> dataSources(rhs.getPredicate.getIdentifier.toString))
               else matchedDataSources + (rhs.getPredicate -> unknownData)
             } else matchedDataSources
 
