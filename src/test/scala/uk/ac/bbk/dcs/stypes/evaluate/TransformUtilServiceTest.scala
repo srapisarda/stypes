@@ -7,7 +7,7 @@ import org.scalatest.FunSuite
 import uk.ac.bbk.dcs.stypes.{Clause, ReWriter}
 
 class TransformUtilServiceTest extends FunSuite {
-  val datalog = ReWriter.getDatalogRewriting(s"src/test/resources/rewriting/q15-rew.dlp")
+  val datalog = ReWriter.getDatalogRewriting(s"src/test/resources/rewriting/q30-rew.dlp")
   printDatalog(datalog)
 
   val request: FlinkProgramRequest = FlinkProgramRequest(
