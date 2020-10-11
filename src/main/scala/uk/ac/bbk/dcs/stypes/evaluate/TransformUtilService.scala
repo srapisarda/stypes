@@ -7,6 +7,7 @@ import uk.ac.bbk.dcs.stypes.Clause
 
 import scala.io.Source
 import scala.collection.JavaConverters._
+import scala.collection.immutable.Map
 import scala.collection.mutable
 
 object TransformUtilService {
@@ -31,16 +32,15 @@ object TransformUtilService {
     program
   }
 
-  def mapTermToAtoms(clause: Clause) = {
-    var map: mutable.Map[Term, List[(Int, Atom, Int)]] = mutable.Map()
-    val atomsWithIndex = clause.body.zipWithIndex
+  def mapTermToAtoms(atomsWithIndex: Seq[(Atom, Int)]) = {
+    var map: mutable.Map[Term, List[(Int, (Atom, Int))]] = mutable.Map()
     atomsWithIndex.foreach {
       case (atom, idx) => {
         atom.getTerms.asScala.toList.foreach(t => {
           if (map.contains(t)) {
-            map += t -> ((atom.indexOf(t), atom, idx) :: map(t))
+            map += t -> ((atom.indexOf(t), (atom, idx)) :: map(t))
           } else {
-            map += t -> ((atom.indexOf(t), atom, idx) :: Nil)
+            map += t -> ((atom.indexOf(t), (atom, idx)) :: Nil)
           }
         })
       }
@@ -48,12 +48,38 @@ object TransformUtilService {
     map.toMap
   }
 
+  def joinClauseAtom(head: Atom, bodyMapped: Map[Atom, Int],
+                     termsMapToAtom: List[(Int, (Atom, Int))],
+                     current: SelectJoinAtoms): SelectJoinAtoms = {
+    if (bodyMapped.isEmpty) current
+    else if (current.lhs.isEmpty) {
+      val bodyHead = bodyMapped.head
+      val first = SingleSelectJoinAtoms(Some(bodyHead), None, Nil, Nil)
+      joinClauseAtom(head, bodyMapped - bodyHead._1, termsMapToAtom, first)
+    } else {
+      // todo
+//      current match  {
+//        case curr : SingleSelectJoinAtoms =>
+//          termsMapToAtom.find( term =>
+//            curr.lhs.get._2 != term._2._2
+//              &&  bodyMapped.contains(term._2._1).
+//
+//
+//
+//
+//        case curr : MultiSelectJoinAtoms =>
+//      }
+      joinClauseAtom(head, bodyMapped, termsMapToAtom, current)
+    }
+  }
+
   val clauseAsFlinkScript: Clause => String = (clause) => {
-    // map variable to a atom, atom-index and its position in the atom
+    // termsMapToAtom variable to a atom, atom-index and its position in the atom
+    val atomsWithIndex = clause.body.zipWithIndex
+    val termsMapToAtom = mapTermToAtoms(atomsWithIndex)
+    println((clause, termsMapToAtom))
 
-    val map = mapTermToAtoms(clause)
 
-    println((clause, map))
     ""
   }
 
