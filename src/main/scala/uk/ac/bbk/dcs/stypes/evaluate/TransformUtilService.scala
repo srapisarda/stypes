@@ -8,7 +8,7 @@ import uk.ac.bbk.dcs.stypes.Clause
 import scala.io.Source
 import scala.collection.JavaConverters._
 import scala.collection.immutable.Map
-import scala.collection.mutable
+import scala.collection.{immutable, mutable}
 
 object TransformUtilService {
   val jobTitlePattern: String = "**JOB-TITLE**"
@@ -32,7 +32,7 @@ object TransformUtilService {
     program
   }
 
-  def mapTermToAtoms(atomsWithIndex: Seq[(Atom, Int)]) = {
+  def mapTermToAtoms(atomsWithIndex: Seq[(Atom, Int)]): Map[Term, List[(Int, (Atom, Int))]] = {
     var map: mutable.Map[Term, List[(Int, (Atom, Int))]] = mutable.Map()
     atomsWithIndex.foreach {
       case (atom, idx) => {
@@ -48,8 +48,10 @@ object TransformUtilService {
     map.toMap
   }
 
+
+  @scala.annotation.tailrec
   def joinClauseAtom(head: Atom, bodyMapped: Map[Atom, Int],
-                     termsMapToAtom: List[(Int, (Atom, Int))],
+                     termsMapToAtom: Map[Term, List[(Int, (Atom, Int))]],
                      current: SelectJoinAtoms): SelectJoinAtoms = {
     if (bodyMapped.isEmpty) current
     else if (current.lhs.isEmpty) {
@@ -57,19 +59,47 @@ object TransformUtilService {
       val first = SingleSelectJoinAtoms(Some(bodyHead), None, Nil, Nil)
       joinClauseAtom(head, bodyMapped - bodyHead._1, termsMapToAtom, first)
     } else {
-      // todo
-//      current match  {
-//        case curr : SingleSelectJoinAtoms =>
-//          termsMapToAtom.find( term =>
-//            curr.lhs.get._2 != term._2._2
-//              &&  bodyMapped.contains(term._2._1).
-//
-//
-//
-//
-//        case curr : MultiSelectJoinAtoms =>
-//      }
-      joinClauseAtom(head, bodyMapped, termsMapToAtom, current)
+      current match {
+        case curr: SingleSelectJoinAtoms =>
+          if ( curr.rhs.isEmpty ) {
+            // it gets all terms of the current SelectJoinAtoms
+            val lhsTerms = curr.lhs.get._1.getTerms.asScala.toList
+            // it gets all possible atoms that have common terms and are not
+            // element of the current left-hand-side (lhs)
+            val associatedToTerms =
+            lhsTerms
+              .filter(termsMapToAtom.contains)
+              .map(term => (term, termsMapToAtom(term)
+                .filter(value => value._2 != curr.lhs.get)
+              ))
+            // now it select as right-hand-side (rhs) that atom with
+            // the minimum index in the list
+            val rhs: (Atom, Int) = associatedToTerms
+              .flatMap(p => p._2)
+              .map(p => p._2)
+              .minBy(p => p._2)
+
+            val bodyHead = bodyMapped.head
+            val nextBody = bodyMapped - bodyHead._1 - rhs._1
+            val nextBodyTerms: List[Term] = nextBody.keys.toList.flatMap(_.getTerms.asScala.toList)
+            val rhsTerms = rhs._1.getTerms.asScala
+            val joined: List[Term] = lhsTerms.filter(rhsTerms.contains)
+            val projected: List[Term] =
+              rhsTerms.union(lhsTerms)
+                .filter(term => head.getTerms.asScala.contains(term)
+                  || nextBodyTerms.contains(term)).toList
+
+            joinClauseAtom(head, nextBody, termsMapToAtom,
+              SingleSelectJoinAtoms(curr.lhs, Some(rhs), joined, projected))
+          } else {
+            MultiSelectJoinAtoms(Some(curr), None, Nil, Nil);
+          }
+        // set the  to
+        case curr: MultiSelectJoinAtoms =>
+          // TODO
+          val bodyHead = bodyMapped.head
+          joinClauseAtom(head, bodyMapped - bodyHead._1, termsMapToAtom, current)
+      }
     }
   }
 
@@ -77,8 +107,9 @@ object TransformUtilService {
     // termsMapToAtom variable to a atom, atom-index and its position in the atom
     val atomsWithIndex = clause.body.zipWithIndex
     val termsMapToAtom = mapTermToAtoms(atomsWithIndex)
-    println((clause, termsMapToAtom))
-
+    //    println((clause, termsMapToAtom))
+    val joinAtoms = joinClauseAtom(clause.head, atomsWithIndex.toMap, termsMapToAtom, SelectJoinAtoms.empty)
+    println(joinAtoms)
 
     ""
   }

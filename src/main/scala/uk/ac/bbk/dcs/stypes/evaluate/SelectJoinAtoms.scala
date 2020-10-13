@@ -9,6 +9,14 @@ trait SelectJoinAtoms {
   val projected: List[Term]
 }
 
+object SelectJoinAtoms {
+  def empty: SelectJoinAtoms = new SelectJoinAtoms {
+    override val lhs: Option[AnyRef] = None
+    override val rhs: Option[AnyRef] = None
+    override val joined: List[Term] = Nil
+    override val projected: List[Term] = Nil
+  }
+}
 case class SingleSelectJoinAtoms(lhs: Option[(Atom, Int)], rhs: Option[(Atom, Int)], joined: List[Term], projected: List[Term])
   extends SelectJoinAtoms
 
