@@ -48,57 +48,73 @@ object TransformUtilService {
     map.toMap
   }
 
+  def getRhs(lhsTerms: List[Term],
+             termsMapToAtom: Map[Term, List[(Int, (Atom, Int))]],
+             evaluated: List[(Atom, Int)]): (Atom, Int) = {
+    // it gets all possible atoms that have common terms and are not
+    // element of the current left-hand-side (lhs)
+    val associatedToTerms =
+    lhsTerms
+      .filter(termsMapToAtom.contains)
+      .map(term => (term, termsMapToAtom(term)
+        .filter(value => !evaluated.contains(value._2))
+      ))
+    // now it select as right-hand-side (rhs) that atom with
+    // the minimum index in the list
+    val rhs: (Atom, Int) = associatedToTerms
+      .flatMap(p => p._2)
+      .map(p => p._2)
+      .minBy(p => p._2)
+    rhs
+  }
 
   @scala.annotation.tailrec
   def joinClauseAtom(head: Atom, bodyMapped: Map[Atom, Int],
                      termsMapToAtom: Map[Term, List[(Int, (Atom, Int))]],
-                     current: SelectJoinAtoms): SelectJoinAtoms = {
+                     current: SelectJoinAtoms, evaluated: List[(Atom, Int)] = Nil): SelectJoinAtoms = {
+
+    def getTermToProject(lhsTerms: List[Term], rhsTerms: List[Term], nextBody: Map[Atom, Int]) = {
+      val nextBodyTerms: List[Term] = nextBody.keys.toList.flatMap(_.getTerms.asScala.toList)
+      rhsTerms.union(lhsTerms)
+        .filter(term => head.getTerms.asScala.contains(term)
+          || nextBodyTerms.contains(term))
+    }
+
     if (bodyMapped.isEmpty) current
     else if (current.lhs.isEmpty) {
       val bodyHead = bodyMapped.head
       val first = SingleSelectJoinAtoms(Some(bodyHead), None, Nil, Nil)
-      joinClauseAtom(head, bodyMapped - bodyHead._1, termsMapToAtom, first)
+      joinClauseAtom(head, bodyMapped - bodyHead._1, termsMapToAtom, first, bodyHead :: evaluated)
     } else {
       current match {
         case curr: SingleSelectJoinAtoms =>
-          if ( curr.rhs.isEmpty ) {
+          if (curr.rhs.isEmpty) {
             // it gets all terms of the current SelectJoinAtoms
-            val lhsTerms = curr.lhs.get._1.getTerms.asScala.toList
-            // it gets all possible atoms that have common terms and are not
-            // element of the current left-hand-side (lhs)
-            val associatedToTerms =
-            lhsTerms
-              .filter(termsMapToAtom.contains)
-              .map(term => (term, termsMapToAtom(term)
-                .filter(value => value._2 != curr.lhs.get)
-              ))
-            // now it select as right-hand-side (rhs) that atom with
-            // the minimum index in the list
-            val rhs: (Atom, Int) = associatedToTerms
-              .flatMap(p => p._2)
-              .map(p => p._2)
-              .minBy(p => p._2)
-
-            val bodyHead = bodyMapped.head
-            val nextBody = bodyMapped - bodyHead._1 - rhs._1
-            val nextBodyTerms: List[Term] = nextBody.keys.toList.flatMap(_.getTerms.asScala.toList)
-            val rhsTerms = rhs._1.getTerms.asScala
-            val joined: List[Term] = lhsTerms.filter(rhsTerms.contains)
-            val projected: List[Term] =
-              rhsTerms.union(lhsTerms)
-                .filter(term => head.getTerms.asScala.contains(term)
-                  || nextBodyTerms.contains(term)).toList
-
-            joinClauseAtom(head, nextBody, termsMapToAtom,
-              SingleSelectJoinAtoms(curr.lhs, Some(rhs), joined, projected))
+            val lhsTerms: List[Term] = curr.lhs.get._1.getTerms.asScala.toList
+            // select rhs
+            val rhs = getRhs(lhsTerms, termsMapToAtom, evaluated)
+            val nextBody = bodyMapped - rhs._1
+            val rhsTerms = rhs._1.getTerms.asScala.toList
+            val projected: List[Term] = getTermToProject(rhsTerms, lhsTerms, nextBody)
+            val next = SingleSelectJoinAtoms(curr.lhs, Some(rhs), lhsTerms.filter(rhsTerms.contains), projected)
+            joinClauseAtom(head, nextBody, termsMapToAtom, next, rhs :: evaluated)
           } else {
-            MultiSelectJoinAtoms(Some(curr), None, Nil, Nil);
+            val rhs = getRhs(curr.projected, termsMapToAtom, evaluated)
+            val nextBody = bodyMapped - rhs._1
+            val rhsTerms = rhs._1.getTerms.asScala.toList
+            val projected: List[Term] = getTermToProject(rhsTerms, curr.projected, nextBody)
+            val next = MultiSelectJoinAtoms(Some(curr), Some(rhs), projected.filter(rhsTerms.contains), projected)
+            joinClauseAtom(head, nextBody, termsMapToAtom, next, rhs :: evaluated)
           }
         // set the  to
         case curr: MultiSelectJoinAtoms =>
-          // TODO
-          val bodyHead = bodyMapped.head
-          joinClauseAtom(head, bodyMapped - bodyHead._1, termsMapToAtom, current)
+          // select rhs
+          val rhs = getRhs(curr.projected, termsMapToAtom, evaluated)
+          val nextBody = bodyMapped - rhs._1
+          val rhsTerms = rhs._1.getTerms.asScala.toList
+          val projected: List[Term] = getTermToProject(rhsTerms, curr.projected, nextBody)
+          val next = MultiSelectJoinAtoms(Some(curr), Some(rhs), projected.filter(rhsTerms.contains), projected)
+          joinClauseAtom(head, nextBody, termsMapToAtom, next, rhs :: evaluated)
       }
     }
   }
