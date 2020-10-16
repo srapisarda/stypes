@@ -50,7 +50,7 @@ object TransformUtilService {
 
   def getRhs(lhsTerms: List[Term],
              termsMapToAtom: Map[Term, List[(Int, (Atom, Int))]],
-             evaluated: List[(Atom, Int)]): (Atom, Int) = {
+             evaluated: List[(Atom, Int)]): Option[(Atom, Int)] = {
     // it gets all possible atoms that have common terms and are not
     // element of the current left-hand-side (lhs)
     val associatedToTerms =
@@ -59,13 +59,19 @@ object TransformUtilService {
       .map(term => (term, termsMapToAtom(term)
         .filter(value => !evaluated.contains(value._2))
       ))
-    // now it select as right-hand-side (rhs) that atom with
-    // the minimum index in the list
-    val rhs: (Atom, Int) = associatedToTerms
-      .flatMap(p => p._2)
-      .map(p => p._2)
-      .minBy(p => p._2)
-    rhs
+
+    //if any terms are present return
+    if (associatedToTerms.isEmpty) None
+    else {
+      // now it select as right-hand-side (rhs) that atom with
+      // the minimum index in the list
+      val rhs: (Atom, Int) = associatedToTerms
+        .flatMap(p => p._2)
+        .map(p => p._2)
+        .minBy(p => p._2)
+
+      Some(rhs)
+    }
   }
 
   @scala.annotation.tailrec
@@ -73,6 +79,7 @@ object TransformUtilService {
                      termsMapToAtom: Map[Term, List[(Int, (Atom, Int))]],
                      current: SelectJoinAtoms, evaluated: List[(Atom, Int)] = Nil): SelectJoinAtoms = {
 
+    //<editor-fold desc="internal help function">
     def getTermToProject(lhsTerms: List[Term], rhsTerms: List[Term], nextBody: Map[Atom, Int]) = {
       val nextBodyTerms: List[Term] = nextBody.keys.toList.flatMap(_.getTerms.asScala.toList)
       rhsTerms.union(lhsTerms)
@@ -80,42 +87,42 @@ object TransformUtilService {
           || nextBodyTerms.contains(term))
     }
 
+    def getNext(lhsTerms: List[Term], rhs: (Atom, Int), curr: SelectJoinAtoms, isSingleReturned: Boolean): SelectJoinAtoms = {
+      val nextBody = bodyMapped - rhs._1
+      val rhsTerms = rhs._1.getTerms.asScala.toList
+      val projected: List[Term] = getTermToProject(lhsTerms, rhsTerms, nextBody)
+
+      if (isSingleReturned)
+        SingleSelectJoinAtoms(curr.asInstanceOf[SingleSelectJoinAtoms].lhs, Some(rhs),
+          lhsTerms.filter(rhsTerms.contains),
+          projected)
+      else
+        MultiSelectJoinAtoms(Some(curr),
+          Some(rhs),
+          projected.filter(rhsTerms.contains), projected)
+    }
+    //</editor-fold>
+
     if (bodyMapped.isEmpty) current
     else if (current.lhs.isEmpty) {
       val bodyHead = bodyMapped.head
-      val first = SingleSelectJoinAtoms(Some(bodyHead), None, Nil, Nil)
-      joinClauseAtom(head, bodyMapped - bodyHead._1, termsMapToAtom, first, bodyHead :: evaluated)
+      val nextBody = bodyMapped - bodyHead._1
+      val first = SingleSelectJoinAtoms(Some(bodyHead), None, Nil,
+        getTermToProject(bodyHead._1.getTerms.asScala.toList, Nil, nextBody))
+      joinClauseAtom(head, nextBody, termsMapToAtom, first, bodyHead :: evaluated)
+    } else if (current.rhs.isEmpty) {
+      val lhsTerms = current.lhs.asInstanceOf[Option[(Atom, Int)]].get._1.getTerms.asScala.toList
+      val rhs = getRhs(lhsTerms, termsMapToAtom, evaluated)
+      if (rhs.isEmpty) current
+      else joinClauseAtom(head, bodyMapped - rhs.get._1, termsMapToAtom,
+        getNext(lhsTerms, rhs.get, current, isSingleReturned = true),
+        rhs.get :: evaluated)
     } else {
-      current match {
-        case curr: SingleSelectJoinAtoms =>
-          if (curr.rhs.isEmpty) {
-            // it gets all terms of the current SelectJoinAtoms
-            val lhsTerms: List[Term] = curr.lhs.get._1.getTerms.asScala.toList
-            // select rhs
-            val rhs = getRhs(lhsTerms, termsMapToAtom, evaluated)
-            val nextBody = bodyMapped - rhs._1
-            val rhsTerms = rhs._1.getTerms.asScala.toList
-            val projected: List[Term] = getTermToProject(rhsTerms, lhsTerms, nextBody)
-            val next = SingleSelectJoinAtoms(curr.lhs, Some(rhs), lhsTerms.filter(rhsTerms.contains), projected)
-            joinClauseAtom(head, nextBody, termsMapToAtom, next, rhs :: evaluated)
-          } else {
-            val rhs = getRhs(curr.projected, termsMapToAtom, evaluated)
-            val nextBody = bodyMapped - rhs._1
-            val rhsTerms = rhs._1.getTerms.asScala.toList
-            val projected: List[Term] = getTermToProject(rhsTerms, curr.projected, nextBody)
-            val next = MultiSelectJoinAtoms(Some(curr), Some(rhs), projected.filter(rhsTerms.contains), projected)
-            joinClauseAtom(head, nextBody, termsMapToAtom, next, rhs :: evaluated)
-          }
-        // set the  to
-        case curr: MultiSelectJoinAtoms =>
-          // select rhs
-          val rhs = getRhs(curr.projected, termsMapToAtom, evaluated)
-          val nextBody = bodyMapped - rhs._1
-          val rhsTerms = rhs._1.getTerms.asScala.toList
-          val projected: List[Term] = getTermToProject(rhsTerms, curr.projected, nextBody)
-          val next = MultiSelectJoinAtoms(Some(curr), Some(rhs), projected.filter(rhsTerms.contains), projected)
-          joinClauseAtom(head, nextBody, termsMapToAtom, next, rhs :: evaluated)
-      }
+      val rhs = getRhs(current.projected, termsMapToAtom, evaluated)
+      if (rhs.isEmpty) current
+      else joinClauseAtom(head, bodyMapped - rhs.get._1, termsMapToAtom,
+        getNext(current.projected, rhs.get, current, isSingleReturned = false),
+        rhs.get :: evaluated)
     }
   }
 
@@ -125,7 +132,7 @@ object TransformUtilService {
     val termsMapToAtom = mapTermToAtoms(atomsWithIndex)
     //    println((clause, termsMapToAtom))
     val joinAtoms = joinClauseAtom(clause.head, atomsWithIndex.toMap, termsMapToAtom, SelectJoinAtoms.empty)
-    println(joinAtoms)
+    println(s"${clause}  ----->   ${joinAtoms}")
 
     ""
   }
@@ -153,7 +160,9 @@ object TransformUtilService {
       .replace(namePattern, properties.name)
   }
 
-  private def mapEdb(program: String, request: FlinkProgramRequest) = {
+  private def mapEdb(program: String, request: FlinkProgramRequest)
+
+  = {
     // EDBs mapping
     val edbMap: Map[String, (String, String)] = request.edbMap.map {
       case (atom, property) =>
@@ -176,7 +185,9 @@ object TransformUtilService {
       .replace(mapperFunctionsPattern, (mapperFunctionsPattern :: mapperFunctions).mkString("\n"))
   }
 
-  private def mapEdbResource(property: EdbProperty, mapperName: String): String = property.fileType match {
+  private def mapEdbResource(property: EdbProperty, mapperName: String): String
+
+  = property.fileType match {
     case _ => "env.readTextFile(\"" + property.path + "\")" + s".map($mapperName)"
   }
 }
