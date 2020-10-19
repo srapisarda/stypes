@@ -8,7 +8,7 @@ import uk.ac.bbk.dcs.stypes.Clause
 import scala.io.Source
 import scala.collection.JavaConverters._
 import scala.collection.immutable.Map
-import scala.collection.{immutable, mutable}
+import scala.collection.mutable
 
 object TransformUtilService {
   val jobTitlePattern: String = "**JOB-TITLE**"
@@ -35,7 +35,7 @@ object TransformUtilService {
   def mapTermToAtoms(atomsWithIndex: Seq[(Atom, Int)]): Map[Term, List[(Int, (Atom, Int))]] = {
     var map: mutable.Map[Term, List[(Int, (Atom, Int))]] = mutable.Map()
     atomsWithIndex.foreach {
-      case (atom, idx) => {
+      case (atom, idx) =>
         atom.getTerms.asScala.toList.foreach(t => {
           if (map.contains(t)) {
             map += t -> ((atom.indexOf(t), (atom, idx)) :: map(t))
@@ -43,7 +43,6 @@ object TransformUtilService {
             map += t -> ((atom.indexOf(t), (atom, idx)) :: Nil)
           }
         })
-      }
     }
     map.toMap
   }
@@ -87,19 +86,40 @@ object TransformUtilService {
           || nextBodyTerms.contains(term))
     }
 
-    def getNext(lhsTerms: List[Term], rhs: (Atom, Int), curr: SelectJoinAtoms, isSingleReturned: Boolean): SelectJoinAtoms = {
+    def getNext(curr: SelectJoinAtoms, rhs: (Atom, Int), isSingleReturned: Boolean): SelectJoinAtoms = {
       val nextBody = bodyMapped - rhs._1
       val rhsTerms = rhs._1.getTerms.asScala.toList
-      val projected: List[Term] = getTermToProject(lhsTerms, rhsTerms, nextBody)
 
-      if (isSingleReturned)
-        SingleSelectJoinAtoms(curr.asInstanceOf[SingleSelectJoinAtoms].lhs, Some(rhs),
-          lhsTerms.filter(rhsTerms.contains),
-          projected)
-      else
-        MultiSelectJoinAtoms(Some(curr),
-          Some(rhs),
-          projected.filter(rhsTerms.contains), projected)
+      def getSingleTermWithIndex(terms: List[Term], lhs: Atom, rhs: Atom) = {
+        (terms.map(t => (t, rhs.indexOf(t))) :::
+          terms.map(t => (t, lhs.indexOf(t))))
+          .filter(t => t._2 > -1).distinct
+      }
+
+      def getMultiTermWithIndex(terms: List[Term]) = {
+        curr.projected.filter(t => terms.contains(t._1)) :::
+          terms.map(t => (t, rhs._1.indexOf(t)))
+            .filter(t => t._2 > -1).distinct
+      }
+
+      if (isSingleReturned) {
+        val lhs = curr.asInstanceOf[SingleSelectJoinAtoms].lhs
+        val lhsTerms = lhs.get._1.getTerms.asScala.toList
+        val projected: List[Term] = getTermToProject(lhsTerms, rhsTerms, nextBody)
+        val projectedWithIndex = getSingleTermWithIndex(projected, lhs.get._1, rhs._1)
+        val joined = lhsTerms.filter(rhsTerms.contains)
+        val joinWithIndex = getSingleTermWithIndex(joined, lhs.get._1, rhs._1)
+
+        SingleSelectJoinAtoms(lhs, Some(rhs), joinWithIndex, projectedWithIndex)
+      } else {
+        val lhsTerms = curr.projected.map(_._1)
+        val projected = getTermToProject(lhsTerms, rhsTerms, nextBody)
+        val projectedWithIndex = getMultiTermWithIndex(projected)
+        val joined = lhsTerms.filter(rhsTerms.contains)
+        val joinWithIndex = getMultiTermWithIndex(joined)
+
+        MultiSelectJoinAtoms(Some(curr), Some(rhs), joinWithIndex, projectedWithIndex)
+      }
     }
     //</editor-fold>
 
@@ -107,33 +127,48 @@ object TransformUtilService {
     else if (current.lhs.isEmpty) {
       val bodyHead = bodyMapped.head
       val nextBody = bodyMapped - bodyHead._1
-      val first = SingleSelectJoinAtoms(Some(bodyHead), None, Nil,
-        getTermToProject(bodyHead._1.getTerms.asScala.toList, Nil, nextBody))
+      val termsToProject = getTermToProject(bodyHead._1.getTerms.asScala.toList, Nil, nextBody)
+      val termsToProjectWithPosition: List[(Term, Int)] = termsToProject.map(t => (t, bodyHead._1.indexOf(t)))
+      val first = SingleSelectJoinAtoms(Some(bodyHead), None, Nil, termsToProjectWithPosition)
       joinClauseAtom(head, nextBody, termsMapToAtom, first, bodyHead :: evaluated)
     } else if (current.rhs.isEmpty) {
-      val lhsTerms = current.lhs.asInstanceOf[Option[(Atom, Int)]].get._1.getTerms.asScala.toList
+      val lhs = current.lhs.asInstanceOf[Option[(Atom, Int)]].get
+      val lhsTerms = lhs._1.getTerms.asScala.toList
       val rhs = getRhs(lhsTerms, termsMapToAtom, evaluated)
       if (rhs.isEmpty) current
-      else joinClauseAtom(head, bodyMapped - rhs.get._1, termsMapToAtom,
-        getNext(lhsTerms, rhs.get, current, isSingleReturned = true),
-        rhs.get :: evaluated)
+      else {
+        joinClauseAtom(head, bodyMapped - rhs.get._1, termsMapToAtom,
+          getNext(current, rhs.get, isSingleReturned = true),
+          rhs.get :: evaluated)
+      }
     } else {
-      val rhs = getRhs(current.projected, termsMapToAtom, evaluated)
+      val rhs = getRhs(current.projected.map(_._1), termsMapToAtom, evaluated)
       if (rhs.isEmpty) current
       else joinClauseAtom(head, bodyMapped - rhs.get._1, termsMapToAtom,
-        getNext(current.projected, rhs.get, current, isSingleReturned = false),
+        getNext(current, rhs.get, isSingleReturned = false),
         rhs.get :: evaluated)
     }
   }
 
-  val clauseAsFlinkScript: Clause => String = (clause) => {
+  val clauseAsFlinkScript: Clause => String = clause => {
     // termsMapToAtom variable to a atom, atom-index and its position in the atom
     val atomsWithIndex = clause.body.zipWithIndex
     val termsMapToAtom = mapTermToAtoms(atomsWithIndex)
     //    println((clause, termsMapToAtom))
-    val joinAtoms = joinClauseAtom(clause.head, atomsWithIndex.toMap, termsMapToAtom, SelectJoinAtoms.empty)
-    println(s"${clause}  ----->   ${joinAtoms}")
+    val joinAtoms =
+      joinClauseAtom(clause.head, atomsWithIndex.toMap,
+        termsMapToAtom,
+      SelectJoinAtoms.empty)
 
+    println(s"$clause ----->   $joinAtoms")
+
+    ""
+  }
+
+  def generateClauseFlinkScript(head: Atom, joinAtoms: SelectJoinAtoms, first: Boolean, script: String): String = {
+    if (first) {
+
+    }
     ""
   }
 
