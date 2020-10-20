@@ -5,6 +5,7 @@ import java.io.FileNotFoundException
 import fr.lirmm.graphik.graal.api.core.{Atom, Predicate, Term}
 import uk.ac.bbk.dcs.stypes.Clause
 
+import scala.annotation.tailrec
 import scala.io.Source
 import scala.collection.JavaConverters._
 import scala.collection.immutable.Map
@@ -73,7 +74,7 @@ object TransformUtilService {
     }
   }
 
-  @scala.annotation.tailrec
+  @tailrec
   def joinClauseAtom(head: Atom, bodyMapped: Map[Atom, Int],
                      termsMapToAtom: Map[Term, List[(Int, (Atom, Int))]],
                      current: SelectJoinAtoms, evaluated: List[(Atom, Int)] = Nil): SelectJoinAtoms = {
@@ -155,10 +156,7 @@ object TransformUtilService {
     val atomsWithIndex = clause.body.zipWithIndex
     val termsMapToAtom = mapTermToAtoms(atomsWithIndex)
     //    println((clause, termsMapToAtom))
-    val joinAtoms =
-      joinClauseAtom(clause.head, atomsWithIndex.toMap,
-        termsMapToAtom,
-      SelectJoinAtoms.empty)
+    val joinAtoms = joinClauseAtom(clause.head, atomsWithIndex.toMap, termsMapToAtom, SelectJoinAtoms.empty)
 
     println(s"$clause ----->   $joinAtoms")
 
@@ -166,8 +164,34 @@ object TransformUtilService {
   }
 
   def generateClauseFlinkScript(head: Atom, joinAtoms: SelectJoinAtoms, first: Boolean, script: String): String = {
-    if (first) {
-
+    if (joinAtoms.lhs.isEmpty) {
+      // just return the complete script
+      if (script.isEmpty) script else s"${head.getPredicate.getIdentifier} = $script"
+    } else if (joinAtoms.rhs.isEmpty) {
+      // case when the the body contains just an atom
+      // e.g. R(x,y) = S(y,x)
+      val selection = joinAtoms.projected
+        .map { case (term, _) => (term, head.indexOf(term)) }
+        .filter { case (_, index) => index > -1 }
+        .sortBy { case (_, index) => index }
+        .map { case (_, index) => s"p._$index" }
+        .mkString(",")
+      val lhs: Atom = joinAtoms.asInstanceOf[SingleSelectJoinAtoms].lhs.get._1
+      generateClauseFlinkScript(head, SelectJoinAtoms.empty, first = true,
+        script = s"${lhs.getPredicate.getIdentifier}.map($selection)")
+    } else {
+      // case when the the body contains more than an atom
+      // e.g. R(x,z) = S(x,y), T(y,z)
+      joinAtoms match {
+        case ja: SingleSelectJoinAtoms =>
+          // todo
+          if (first) {
+          }
+          generateClauseFlinkScript(head, SelectJoinAtoms.empty, first = true, script)
+        case ja: MultiSelectJoinAtoms =>
+         //todo
+          generateClauseFlinkScript(head, SelectJoinAtoms.empty, first = true, script)
+      }
     }
     ""
   }
