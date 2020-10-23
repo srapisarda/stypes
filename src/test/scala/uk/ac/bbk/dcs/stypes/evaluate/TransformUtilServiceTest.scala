@@ -15,7 +15,13 @@ class TransformUtilServiceTest extends FunSuite {
     getEdbMap(List("s", "r", "a")),
     FlinkProgramProperties("test", "job test",
       "src/main/resources/templates/flink-template.txt",
-      "src/main/resources/templates"))
+      "src/main/resources/templates", getSinkPath))
+
+
+  private def getSinkPath = {
+    "hdfs:////user/hduser/data/report2020/result/" +
+      s"${java.time.LocalDateTime.now().toString.replace(":", "-")}.csv"
+  }
 
   private def getEdbMap(identifiers: List[String]) = {
     identifiers.map(identifier => {
@@ -29,12 +35,12 @@ class TransformUtilServiceTest extends FunSuite {
 
   test("testGenerateFlinkProgramAsString") {
 
-    val programAsString =  TransformUtilService.generateFlinkProgramAsString(request)
+    val programAsString = TransformUtilService.generateFlinkProgramAsString(request)
     println(programAsString)
 
-    val expectedMap=List("val s = env.readTextFile(\"hdfs:////user/hduser/data/report2020/s.csv\").map(stringMapper2)",
-    "val r = env.readTextFile(\"hdfs:////user/hduser/data/report2020/r.csv\").map(stringMapper2)",
-    "val a = env.readTextFile(\"hdfs:////user/hduser/data/report2020/a.csv\").map(stringMapper2)")
+    val expectedMap = List("val s = env.readTextFile(\"hdfs:////user/hduser/data/report2020/s.csv\").map(stringMapper2)",
+      "val r = env.readTextFile(\"hdfs:////user/hduser/data/report2020/r.csv\").map(stringMapper2)",
+      "val a = env.readTextFile(\"hdfs:////user/hduser/data/report2020/a.csv\").map(stringMapper2)")
     expectedMap.foreach(a => assert(programAsString.contains(a)))
   }
 

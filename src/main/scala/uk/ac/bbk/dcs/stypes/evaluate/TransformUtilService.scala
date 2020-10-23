@@ -17,6 +17,7 @@ object TransformUtilService {
   val mapperFunctionsPattern: String = "//**MAPPER-FUNC"
   val edbMapPattern: String = "//**EDB-MAP**"
   val mainProgramPattern: String = "//**MAIN**"
+  val sinkPattern: String = "//**SINK**"
 
   def generateFlinkProgramAsString(request: FlinkProgramRequest): String = {
     // get template
@@ -30,8 +31,15 @@ object TransformUtilService {
     program = mapEdb(program, request)
     // NDL to flink
     program = ndlToFlink(program, request.datalog)
+    // define output sink
+    program = sink(program, request)
 
     program
+  }
+
+  def sink(program: String, request: FlinkProgramRequest): String = {
+    val script = "\tp1.writeAsCsv(\"" + request.properties.sinkPath + "\")"
+    program.replace(sinkPattern, s"$sinkPattern\n$script")
   }
 
   def mapTermToAtoms(atomsWithIndex: Seq[(Atom, Int)]): Map[Term, List[(Int, (Atom, Int))]] = {
@@ -152,7 +160,7 @@ object TransformUtilService {
     }
   }
 
-  val clauseAsFlinkScript: (Clause, String) => String = (clause, headPredicateIdentifier) => {
+  def clauseAsFlinkScript(clause: Clause, headPredicateIdentifier: String) = {
     // termsMapToAtom variable to a atom, atom-index and its position in the atom
     val atomsWithIndex = clause.body.zipWithIndex
     val termsMapToAtom = mapTermToAtoms(atomsWithIndex)
@@ -175,7 +183,7 @@ object TransformUtilService {
         .map { case (_, index) => s"p._$index" }
         .mkString(",")
 
-      s"map(p => ($termToMap))"
+      s"map(p =>($termToMap))"
     }
 
     def getProjectedAsScript: String = {
@@ -184,10 +192,11 @@ object TransformUtilService {
         .groupBy(_._1) // group by terms
         .map { g => (g._1, g._2.head._2) } // remove terms duplicate
         .map { case (term, idx) => (term, idx, rhs.indexOf(term)) } // mark left terms with -1
-      val leftIndex = termsIdsMarked.filter(t => t._2 != t._3).map(t => s"p._1._${t._2 + 1}").mkString(",") // list of lefts index
-      val rightIndex = termsIdsMarked.filter(t => t._2 == t._3).map(t => s"p._1._${t._2 + 1}").mkString(",") // list of lefts index
-
-      s"map(p => ($leftIndex, $rightIndex))"
+      val leftIndex = termsIdsMarked.filter(t => t._2 != t._3).map(t => s"p._1._${t._2 + 1}") // list of lefts index
+      val rightIndex = termsIdsMarked.filter(t => t._2 == t._3).map(t => s"p._1._${t._2 + 1}") // list of lefts index
+      val leftIndexScript = if (leftIndex.isEmpty) "" else leftIndex.mkString(",")
+      val rightIndexScript = if (rightIndex.isEmpty) "" else rightIndex.mkString(",")
+      s"map(p => ($leftIndexScript , $rightIndexScript))"
     }
 
     def getJoinedAsScript: String = {
@@ -280,7 +289,7 @@ object TransformUtilService {
         clausesAsFlinkScript(head, clauses)
     }.toList
 
-    program.replace(mainProgramPattern, (mainProgramPattern :: mainScript ).mkString("\n") )
+    program.replace(mainProgramPattern, (mainProgramPattern :: mainScript).mkString("\n"))
   }
 
   private def applyProperties(program: String, properties: FlinkProgramProperties): String = {
