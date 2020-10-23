@@ -16,6 +16,7 @@ object TransformUtilService {
   val namePattern: String = "**NAME**"
   val mapperFunctionsPattern: String = "//**MAPPER-FUNC"
   val edbMapPattern: String = "//**EDB-MAP**"
+  val mainProgramPattern: String = "//**MAIN**"
 
   def generateFlinkProgramAsString(request: FlinkProgramRequest): String = {
     // get template
@@ -151,20 +152,21 @@ object TransformUtilService {
     }
   }
 
-  val clauseAsFlinkScript: Clause => String = clause => {
+  val clauseAsFlinkScript: (Clause, String) => String = (clause, headPredicateIdentifier) => {
     // termsMapToAtom variable to a atom, atom-index and its position in the atom
     val atomsWithIndex = clause.body.zipWithIndex
     val termsMapToAtom = mapTermToAtoms(atomsWithIndex)
     //    println((clause, termsMapToAtom))
     val joinAtoms = joinClauseAtom(clause.head, atomsWithIndex.toMap, termsMapToAtom, SelectJoinAtoms.empty)
     println(s"$clause ----->   $joinAtoms")
-    val script = generateClauseFlinkScript(clause.head, joinAtoms, "")
+
+    val script = generateClauseFlinkScript(headPredicateIdentifier, clause.head, joinAtoms, "")
     println(script)
     println()
-    ""
+    s"\t// $clause\n$script"
   }
 
-  def generateClauseFlinkScript(head: Atom, joinAtoms: SelectJoinAtoms, script: String, first: Boolean = true): String = {
+  def generateClauseFlinkScript(headPredicateIdentifier: String, head: Atom, joinAtoms: SelectJoinAtoms, script: String, first: Boolean = true): String = {
     val getProjectedTermsForHeadAsScript: String = {
       val termToMap = joinAtoms.projected
         .map { case (term, _) => (term, head.indexOf(term)) }
@@ -203,7 +205,7 @@ object TransformUtilService {
         .map(g => {
           val rhsIndex = g._2.filter(t => t._2 == t._3).map(_._2)
           val lhsIndex = g._2.filter(t => t._2 != t._3).map(_._2)
-          if (lhsIndex == Nil ) (rhsIndex.head, rhsIndex.head) // it means the term is in the same position in both atoms
+          if (lhsIndex == Nil) (rhsIndex.head, rhsIndex.head) // it means the term is in the same position in both atoms
           else (lhsIndex.head, rhsIndex.head)
         }).toList
 
@@ -215,13 +217,13 @@ object TransformUtilService {
     if (joinAtoms.lhs.isEmpty) {
       // just return the complete script
       if (script.isEmpty) script
-      else s"${head.getPredicate.getIdentifier} = $script"
+      else s"\tlazy val $headPredicateIdentifier = $script"
     } else if (joinAtoms.rhs.isEmpty) {
       // case when the the body contains just an atom
       // e.g. R(x,y) = S(y,x)
       val selection = getProjectedTermsForHeadAsScript
       val lhs: Atom = joinAtoms.asInstanceOf[SingleSelectJoinAtoms].lhs.get._1
-      generateClauseFlinkScript(head, SelectJoinAtoms.empty,
+      generateClauseFlinkScript(headPredicateIdentifier, head, SelectJoinAtoms.empty,
         script = s"${lhs.getPredicate.getIdentifier}.map($selection)", first = false)
     } else {
       val joinScript = getJoinedAsScript
@@ -236,36 +238,49 @@ object TransformUtilService {
           val projectedScript = if (first) getProjectedTermsForHeadAsScript else getProjectedAsScript
           val lhsPredicate = ja.lhs.get._1.getPredicate.getIdentifier
           val rhsPredicate = ja.rhs.get._1.getPredicate.getIdentifier
-          val concatScript = if(script.isEmpty) script else s".$script"
-          generateClauseFlinkScript(head, SelectJoinAtoms.empty,
-            script = s"$lhsPredicate.join($rhsPredicate).$joinScript.$projectedScript\n$concatScript", first = false)
+          val concatScript = if (script.isEmpty) script else s".$script"
+          generateClauseFlinkScript(headPredicateIdentifier, head, SelectJoinAtoms.empty,
+            script = s"$lhsPredicate.join($rhsPredicate).$joinScript.$projectedScript\n\t$concatScript", first = false)
 
         case ja: MultiSelectJoinAtoms =>
           //todo
           val rhsPredicate = ja.rhs.get._1.getPredicate.getIdentifier
           val projectedScript = getProjectedAsScript
-          val concatScript = if(script.isEmpty) script else s".$script"
-          generateClauseFlinkScript(head, ja.lhs.get,
+          val concatScript = if (script.isEmpty) script else s"\t.$script"
+          generateClauseFlinkScript(headPredicateIdentifier, head, ja.lhs.get,
             script = s"join($rhsPredicate).$joinScript.$projectedScript\n$concatScript", first = false)
       }
     }
   }
 
   def clausesAsFlinkScript(head: Predicate, clauses: List[Clause]): String = {
+    val clausesSize = clauses.size
+    val headPredicatesIdentifies =
+      if (clausesSize > 1) (0 until clausesSize).map(idx => s"${head.getIdentifier.toString}_$idx")
+      else List(head.getIdentifier.toString)
 
-    clauses.map(clauseAsFlinkScript)
-    ""
+    val clausesAsFlinkScript = clauses.zip(headPredicatesIdentifies).map {
+      case (clause, headPredicatesIdentify) => clauseAsFlinkScript(clause, headPredicatesIdentify)
+    }
+
+    val script = s"${clausesAsFlinkScript.mkString("\n")}"
+    if (clausesSize > 1) {
+      s"\n$script\n\tlazy val ${head.getIdentifier.toString} = ${headPredicatesIdentifies.mkString(" union ")}"
+    } else {
+      script
+    }
   }
 
   def ndlToFlink(program: String, datalog: List[Clause]): String = {
     // create group by head predicate
     val groupByHeadPredicates: Map[Predicate, List[Clause]] = datalog.groupBy(_.head.getPredicate)
     // for each group create a UCQ as Flink script
-    groupByHeadPredicates.map {
-      case (head, clauses) => clausesAsFlinkScript(head, clauses)
-    }
-    // TODO
-    program
+    val mainScript = groupByHeadPredicates.map {
+      case (head, clauses) =>
+        clausesAsFlinkScript(head, clauses)
+    }.toList
+
+    program.replace(mainProgramPattern, (mainProgramPattern :: mainScript ).mkString("\n") )
   }
 
   private def applyProperties(program: String, properties: FlinkProgramProperties): String = {
@@ -274,9 +289,7 @@ object TransformUtilService {
       .replace(namePattern, properties.name)
   }
 
-  private def mapEdb(program: String, request: FlinkProgramRequest)
-
-  = {
+  private def mapEdb(program: String, request: FlinkProgramRequest): String = {
     // EDBs mapping
     val edbMap: Map[String, (String, String)] = request.edbMap.map {
       case (atom, property) =>

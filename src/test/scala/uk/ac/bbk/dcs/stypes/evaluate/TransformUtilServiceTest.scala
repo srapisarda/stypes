@@ -23,7 +23,7 @@ class TransformUtilServiceTest extends FunSuite {
       val edb: Atom = new DefaultAtom(new Predicate(identifier, 2))
       edb.setTerm(0, DefaultTermFactory.instance.createVariable("X1"))
       edb.setTerm(1, DefaultTermFactory.instance.createVariable("X2"))
-      edb -> EdbProperty(s"$dataPath/r.csv", "csv")
+      edb -> EdbProperty(s"$dataPath/$identifier.csv", "csv")
     }).toMap
   }
 
@@ -32,9 +32,9 @@ class TransformUtilServiceTest extends FunSuite {
     val programAsString =  TransformUtilService.generateFlinkProgramAsString(request)
     println(programAsString)
 
-    val expectedMap=List("val s = env.readTextFile(\"hdfs:////user/hduser/data/report2020/r.csv\").map(stringMapper2)",
+    val expectedMap=List("val s = env.readTextFile(\"hdfs:////user/hduser/data/report2020/s.csv\").map(stringMapper2)",
     "val r = env.readTextFile(\"hdfs:////user/hduser/data/report2020/r.csv\").map(stringMapper2)",
-    "val a = env.readTextFile(\"hdfs:////user/hduser/data/report2020/r.csv\").map(stringMapper2)")
+    "val a = env.readTextFile(\"hdfs:////user/hduser/data/report2020/a.csv\").map(stringMapper2)")
     expectedMap.foreach(a => assert(programAsString.contains(a)))
   }
 
