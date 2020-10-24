@@ -135,7 +135,7 @@ object TransformUtilService {
 
     if (bodyMapped.isEmpty) current
     else if (current.lhs.isEmpty) {
-      val bodyHead = bodyMapped.head
+      val bodyHead = bodyMapped.minBy(_._2)
       val nextBody = bodyMapped - bodyHead._1
       val termsToProject = getTermToProject(bodyHead._1.getTerms.asScala.toList, Nil, nextBody)
       val termsToProjectWithPosition: List[(Term, Int)] = termsToProject.map(t => (t, bodyHead._1.indexOf(t)))
