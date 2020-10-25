@@ -12,7 +12,7 @@ class TransformUtilServiceTest extends FunSuite {
 
   val request: FlinkProgramRequest = FlinkProgramRequest(
     datalog,
-    getEdbMap(List("s", "r", "a")),
+    getEdbMap(List("s", "r", "a", "b")),
     FlinkProgramProperties("test", "job test",
       "src/main/resources/templates/flink-template.txt",
       "src/main/resources/templates", getSinkPath))

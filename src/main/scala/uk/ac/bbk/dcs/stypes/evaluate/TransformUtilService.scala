@@ -9,7 +9,7 @@ import scala.annotation.tailrec
 import scala.io.Source
 import scala.collection.JavaConverters._
 import scala.collection.immutable.Map
-import scala.collection.mutable
+import scala.collection.{immutable, mutable}
 
 object TransformUtilService {
   val jobTitlePattern: String = "**JOB-TITLE**"
@@ -166,37 +166,47 @@ object TransformUtilService {
     val termsMapToAtom = mapTermToAtoms(atomsWithIndex)
     //    println((clause, termsMapToAtom))
     val joinAtoms = joinClauseAtom(clause.head, atomsWithIndex.toMap, termsMapToAtom, SelectJoinAtoms.empty)
-    println(s"$clause ----->   $joinAtoms")
+    //println(s"$clause ----->   $joinAtoms")
 
     val script = generateClauseFlinkScript(headPredicateIdentifier, clause.head, joinAtoms, "")
-    println(script)
-    println()
+//    println(script)
+//    println()
     s"\t// $clause\n$script"
   }
 
-  def generateClauseFlinkScript(headPredicateIdentifier: String, head: Atom, joinAtoms: SelectJoinAtoms, script: String, first: Boolean = true): String = {
-    val getProjectedTermsForHeadAsScript: String = {
+  def generateClauseFlinkScript(headPredicateIdentifier: String, head: Atom, joinAtoms: SelectJoinAtoms,
+                                script: String, first: Boolean = true): String = {
+
+    def getProjectedTermsForHeadAsScript: String = {
       val termToMap = joinAtoms.projected
         .map { case (term, _) => (term, head.indexOf(term)) }
         .filter { case (_, index) => index > -1 }
         .sortBy { case (_, index) => index }
-        .map { case (_, index) => s"p._$index" }
-        .mkString(",")
 
-      s"map(p =>($termToMap))"
+      // case when the clause body has just an atom
+      val termToMapAsString = termToMap.map { case (_, index) => s"p._1_$index" }.mkString(",")
+      s"map(p =>($termToMapAsString))"
     }
+
 
     def getProjectedAsScript: String = {
       val rhs = joinAtoms.rhs.asInstanceOf[Option[(Atom, Int)]].get._1
-      val termsIdsMarked = joinAtoms.projected
+      val termsIdsMarked: List[(Term, Int, Int)] = joinAtoms.projected
         .groupBy(_._1) // group by terms
         .map { g => (g._1, g._2.head._2) } // remove terms duplicate
-        .map { case (term, idx) => (term, idx, rhs.indexOf(term)) } // mark left terms with -1
+        .map { case (term, idx) => (term, idx, rhs.indexOf(term)) }
+        .toList // mark left terms with -1
+      getProjectedMappedTermsAsString(termsIdsMarked)
+    }
+
+    def getProjectedMappedTermsAsString(termsIdsMarked: List[(Term, Int, Int)]): String = {
       val leftIndex = termsIdsMarked.filter(t => t._2 != t._3).map(t => s"p._1._${t._2 + 1}") // list of lefts index
-      val rightIndex = termsIdsMarked.filter(t => t._2 == t._3).map(t => s"p._1._${t._2 + 1}") // list of lefts index
+      val rightIndex = termsIdsMarked.filter(t => t._2 == t._3).map(t => s"p._2._${t._2 + 1}") // list of lefts index
       val leftIndexScript = if (leftIndex.isEmpty) "" else leftIndex.mkString(",")
       val rightIndexScript = if (rightIndex.isEmpty) "" else rightIndex.mkString(",")
-      s"map(p => ($leftIndexScript , $rightIndexScript))"
+      val separator = if (leftIndexScript.isEmpty ||  rightIndexScript.isEmpty ) "" else ","
+      val script = s"$leftIndexScript$separator $rightIndexScript".trim
+      s"map(p => ($script))"
     }
 
     def getJoinedAsScript: String = {
@@ -244,7 +254,7 @@ object TransformUtilService {
           // check if is the first node visited therefore a
           // clause with two atoms on the body.
           // E.g.  R(x,w) = S(x,y), T(y,z)
-          val projectedScript = if (first) getProjectedTermsForHeadAsScript else getProjectedAsScript
+          val projectedScript = getProjectedAsScript
           val lhsPredicate = ja.lhs.get._1.getPredicate.getIdentifier
           val rhsPredicate = ja.rhs.get._1.getPredicate.getIdentifier
           val concatScript = if (script.isEmpty) script else s".$script"
