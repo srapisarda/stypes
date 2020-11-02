@@ -4,16 +4,16 @@ import fr.lirmm.graphik.graal.api.core.{Atom, Predicate}
 import fr.lirmm.graphik.graal.core.DefaultAtom
 import fr.lirmm.graphik.graal.core.term.DefaultTermFactory
 import org.scalatest.FunSuite
-import uk.ac.bbk.dcs.stypes.{Clause, ReWriter}
+import uk.ac.bbk.dcs.stypes.{Clause, ReWriter, TestUtil}
 
 class TransformUtilServiceTest extends FunSuite {
-  val datalog = ReWriter.getDatalogRewriting(s"src/test/resources/rewriting/q30-rew.dlp")
-  printDatalog(datalog)
+  val datalog = ReWriter.getDatalogRewriting(s"src/test/resources/rewriting/q15-rew.dlp")
+  TestUtil.printDatalog(datalog)
 
   val request: FlinkProgramRequest = FlinkProgramRequest(
     datalog,
     getEdbMap(List("s", "r", "a", "b")),
-    FlinkProgramProperties("test", "job test",
+    FlinkProgramProperties("test", "job q15",
       "src/main/resources/templates/flink-template.txt",
       "src/main/resources/templates", getSinkPath))
 
@@ -43,7 +43,4 @@ class TransformUtilServiceTest extends FunSuite {
       "val a = env.readTextFile(\"hdfs:////user/hduser/data/report2020/a.csv\").map(stringMapper2)")
     expectedMap.foreach(a => assert(programAsString.contains(a)))
   }
-
-  private def printDatalog(datalog: List[Clause]): Unit =
-    println(s"${datalog.mkString(".\n")}.".replaceAll("""\[\d+\]""", ""))
 }

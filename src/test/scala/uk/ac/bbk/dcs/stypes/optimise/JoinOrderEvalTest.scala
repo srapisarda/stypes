@@ -4,7 +4,7 @@ import fr.lirmm.graphik.graal.api.core.{Atom, Predicate}
 import fr.lirmm.graphik.graal.core.DefaultAtom
 import fr.lirmm.graphik.graal.core.term.DefaultTermFactory
 import org.scalatest.FunSuite
-import uk.ac.bbk.dcs.stypes.Clause
+import uk.ac.bbk.dcs.stypes.{Clause, ReWriter, TestUtil}
 
 import scala.util.Random
 
@@ -58,6 +58,17 @@ class JoinOrderEvalTest extends FunSuite {
     }
 
     assert(datalogOptimised.foldLeft(false)(op))
+  }
+
+  test("optimise q30")  {
+    val datalog = ReWriter.getDatalogRewriting(s"src/test/resources/rewriting/q30-rew.dlp")
+    TestUtil.printDatalog(datalog)
+
+
+//    CatalogStatistics(
+//      atoms.map(atom => atom -> EdbStatistic(Math.abs(Random.nextInt(200)))).toMap
+//    )
+//    val datalogOptimised = JoinOrderEval.optimise(datalog, catalogStatistics)
   }
 
   private def getClause(body: List[Atom], atomsInBody: Int) = {

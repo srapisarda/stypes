@@ -169,8 +169,8 @@ object TransformUtilService {
     //println(s"$clause ----->   $joinAtoms")
 
     val script = generateClauseFlinkScript(headPredicateIdentifier, clause.head, joinAtoms, "")
-//    println(script)
-//    println()
+    //    println(script)
+    //    println()
     s"\t// $clause\n$script"
   }
 
@@ -189,22 +189,41 @@ object TransformUtilService {
     }
 
 
-    def getProjectedAsScript: String = {
+    def getProjectedAsScript(isHeadProjection: Boolean = false): String = {
       val rhs = joinAtoms.rhs.asInstanceOf[Option[(Atom, Int)]].get._1
       val termsIdsMarked: List[(Term, Int, Int)] = joinAtoms.projected
         .groupBy(_._1) // group by terms
         .map { g => (g._1, g._2.head._2) } // remove terms duplicate
         .map { case (term, idx) => (term, idx, rhs.indexOf(term)) }
         .toList // mark left terms with -1
-      getProjectedMappedTermsAsString(termsIdsMarked)
+      if (isHeadProjection) getProjectedHeadMappedTermsAsString(termsIdsMarked)
+      else getProjectedMappedTermsAsString(termsIdsMarked)
     }
 
+    def getProjectedHeadMappedTermsAsString(termsIdsMarked: List[(Term, Int, Int)]): String = {
+      val script = head.getTerms.asScala.toList.map(
+        term => {
+          val el = termsIdsMarked.find { case (termMarked, _, _) => termMarked == term }
+          if (el.isDefined) {
+            val t = el.get
+            if (t._2 == t._3) s"p._2._${t._2 + 1}" else s"p._1._${t._2 + 1}"
+          } else {
+            ""
+          }
+        }
+      ).filter(_.nonEmpty).mkString(",")
+
+      s"map(p => ($script))"
+    }
+
+
     def getProjectedMappedTermsAsString(termsIdsMarked: List[(Term, Int, Int)]): String = {
-      val leftIndex = termsIdsMarked.filter(t => t._2 != t._3).map(t => s"p._1._${t._2 + 1}") // list of lefts index
-      val rightIndex = termsIdsMarked.filter(t => t._2 == t._3).map(t => s"p._2._${t._2 + 1}") // list of lefts index
-      val leftIndexScript = if (leftIndex.isEmpty) "" else leftIndex.mkString(",")
-      val rightIndexScript = if (rightIndex.isEmpty) "" else rightIndex.mkString(",")
-      val separator = if (leftIndexScript.isEmpty ||  rightIndexScript.isEmpty ) "" else ","
+      val leftIndex = termsIdsMarked.filter(t => t._2 != t._3) // list of lefts index
+      val rightIndex = termsIdsMarked.filter(t => t._2 == t._3)
+      // list of lefts index
+      val leftIndexScript = if (leftIndex.isEmpty) "" else leftIndex.map(t => s"p._1._${t._2 + 1}").mkString(",")
+      val rightIndexScript = if (rightIndex.isEmpty) "" else rightIndex.map(t => s"p._2._${t._2 + 1}").mkString(",")
+      val separator = if (leftIndexScript.isEmpty || rightIndexScript.isEmpty) "" else ","
       val script = s"$leftIndexScript$separator $rightIndexScript".trim
       s"map(p => ($script))"
     }
@@ -240,10 +259,9 @@ object TransformUtilService {
     } else if (joinAtoms.rhs.isEmpty) {
       // case when the the body contains just an atom
       // e.g. R(x,y) = S(y,x)
-      val selection = getProjectedTermsForHeadAsScript
       val lhs: Atom = joinAtoms.asInstanceOf[SingleSelectJoinAtoms].lhs.get._1
       generateClauseFlinkScript(headPredicateIdentifier, head, SelectJoinAtoms.empty,
-        script = s"${lhs.getPredicate.getIdentifier}.map($selection)", first = false)
+        script = s"${lhs.getPredicate.getIdentifier}", first = false)
     } else {
       val joinScript = getJoinedAsScript
       // case when the the body contains more than an atom
@@ -254,7 +272,7 @@ object TransformUtilService {
           // check if is the first node visited therefore a
           // clause with two atoms on the body.
           // E.g.  R(x,w) = S(x,y), T(y,z)
-          val projectedScript = getProjectedAsScript
+          val projectedScript = getProjectedAsScript(first)
           val lhsPredicate = ja.lhs.get._1.getPredicate.getIdentifier
           val rhsPredicate = ja.rhs.get._1.getPredicate.getIdentifier
           val concatScript = if (script.isEmpty) script else s".$script"
@@ -264,7 +282,7 @@ object TransformUtilService {
         case ja: MultiSelectJoinAtoms =>
           //todo
           val rhsPredicate = ja.rhs.get._1.getPredicate.getIdentifier
-          val projectedScript = getProjectedAsScript
+          val projectedScript = getProjectedAsScript(first)
           val concatScript = if (script.isEmpty) script else s"\t.$script"
           generateClauseFlinkScript(headPredicateIdentifier, head, ja.lhs.get,
             script = s"join($rhsPredicate).$joinScript.$projectedScript\n$concatScript", first = false)
