@@ -43,11 +43,12 @@ object SubExpressionSubstitution extends OptimisationRule {
         atom.getPredicate == joinTuples.atomA.getPredicate || atom.getPredicate == joinTuples.atomB.getPredicate
       })
       val atomCombinations = for {x <- atoms; y <- atoms; if x != y} yield (x, y)
-      val atomsToSubstitute = atomCombinations.filter{ case (atomA, atomB) => {
+      val atomsToSubstitute = atomCombinations.filter { case (atomA, atomB) => {
         atomA.getPredicate == joinTuples.atomA.getPredicate &&
-        atomB.getPredicate == joinTuples.atomB.getPredicate &&
-        atomA.getTerm(joinTuples.positionTermA) == atomB.getTerm(joinTuples.positionTermB)
-      }}.flatMap(t  => List(t._1, t._2))
+          atomB.getPredicate == joinTuples.atomB.getPredicate &&
+          atomA.getTerm(joinTuples.positionTermA) == atomB.getTerm(joinTuples.positionTermB)
+      }
+      }.flatMap(t => List(t._1, t._2))
 
       if (atomsToSubstitute.size == joinSharedClause.body.size) {
         val updatedBody: List[Atom] =
@@ -125,8 +126,8 @@ object SubExpressionSubstitution extends OptimisationRule {
       else {
         val that = obj.asInstanceOf[JoinTuple]
         this.atomA.getPredicate == that.atomA.getPredicate &&
-          this.atomB.getPredicate == that.atomB.getPredicate
-        this.positionTermA == that.positionTermA && this.positionTermB == that.positionTermB
+          this.atomB.getPredicate == that.atomB.getPredicate &&
+          this.positionTermA == that.positionTermA && this.positionTermB == that.positionTermB
       }
     }
 
