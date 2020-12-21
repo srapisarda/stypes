@@ -20,6 +20,6 @@ object JoinOrderEval extends OptimisationRule {
       .sortBy(_._2)
       .map(_._1)
 
-    Clause(clause.head, atoms)
+    Clause(clause.head , atoms)
   }
 }
