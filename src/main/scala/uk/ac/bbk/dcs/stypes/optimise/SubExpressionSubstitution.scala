@@ -6,14 +6,15 @@ import uk.ac.bbk.dcs.stypes.Clause
 
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 
 object SubExpressionSubstitution extends OptimisationRule {
   val joinSharedPredicateIdentifier = "comp_"
 
   override def optimise(datalog: List[Clause], statistics: CatalogStatistics): List[Clause] = {
-
+    val tuples = getJoinTuplesMapToClauses(datalog)
     val joinTuplesMapToClauses: Map[JoinTuple, List[Clause]] =
-      getJoinTuplesMapToClauses(datalog).filter { case (_, clauses) => clauses.length > 1 }
+      tuples.filter { case (_, clauses) => clauses.length > 1 }.toMap
 
     if (joinTuplesMapToClauses.nonEmpty) {
       var dataLogUpdated = datalog
@@ -38,12 +39,15 @@ object SubExpressionSubstitution extends OptimisationRule {
       joinSharedClause :: datalog
 
     case clauseToUpdate :: tail =>
-      val atomsToSubstitute = clauseToUpdate
-        .body
-        .filter(atom => atom.getPredicate == joinTuples.atomA.getPredicate &&
-          atom.indexOf(joinTuples.term) == joinTuples.positionTermA ||
-          (atom.getPredicate == joinTuples.atomB.getPredicate &&
-            atom.indexOf(joinTuples.term) == joinTuples.positionTermB))
+      val atoms = clauseToUpdate.body.filter(atom => {
+        atom.getPredicate == joinTuples.atomA.getPredicate || atom.getPredicate == joinTuples.atomB.getPredicate
+      })
+      val atomCombinations = for {x <- atoms; y <- atoms; if x != y} yield (x, y)
+      val atomsToSubstitute = atomCombinations.filter{ case (atomA, atomB) => {
+        atomA.getPredicate == joinTuples.atomA.getPredicate &&
+        atomB.getPredicate == joinTuples.atomB.getPredicate &&
+        atomA.getTerm(joinTuples.positionTermA) == atomB.getTerm(joinTuples.positionTermB)
+      }}.flatMap(t  => List(t._1, t._2))
 
       if (atomsToSubstitute.size == joinSharedClause.body.size) {
         val updatedBody: List[Atom] =
@@ -79,8 +83,8 @@ object SubExpressionSubstitution extends OptimisationRule {
 
   @tailrec
   private def getJoinTuplesMapToClauses(datalog: List[Clause],
-                                        map: Map[JoinTuple, List[Clause]] =
-                                        Map()): Map[JoinTuple, List[Clause]] = datalog match {
+                                        map: mutable.Map[JoinTuple, List[Clause]] =
+                                        mutable.Map()): mutable.Map[JoinTuple, List[Clause]] = datalog match {
     case Nil => map
 
     case clause :: tail =>
@@ -93,19 +97,23 @@ object SubExpressionSubstitution extends OptimisationRule {
               .map(bodyAtom => JoinTuple(atom, bodyAtom, atom.indexOf(term), bodyAtom.indexOf(term), term)))
       }))
 
-      val updatedMap: Map[JoinTuple, List[Clause]] = joinTuples.map(jt => {
+      joinTuples.map(jt => {
         if (map.contains(jt)) {
-          (jt, clause :: map(jt))
+          map.put(jt, clause :: map(jt))
         } else {
-          (jt, clause :: Nil)
+          map.put(jt, clause :: Nil)
         }
-      }).toMap
+      })
 
-      getJoinTuplesMapToClauses(tail, updatedMap)
+      getJoinTuplesMapToClauses(tail, map)
   }
 
 
   case class JoinTuple(atomA: Atom, atomB: Atom, positionTermA: Int, positionTermB: Int, term: Term) {
+
+    override def hashCode(): Int = {
+      s"${this.atomA.getPredicate.getIdentifier}_${this.atomB.getPredicate.getIdentifier}_${this.positionTermA}_${this.positionTermB}".hashCode
+    }
 
     override def equals(obj: Any): Boolean = {
       if (obj == null) {
@@ -116,8 +124,8 @@ object SubExpressionSubstitution extends OptimisationRule {
       }
       else {
         val that = obj.asInstanceOf[JoinTuple]
-        this.atomA.getPredicate.getIdentifier == that.atomA.getPredicate.getIdentifier &&
-          this.atomB.getPredicate.getIdentifier == that.atomB.getPredicate.getIdentifier
+        this.atomA.getPredicate == that.atomA.getPredicate &&
+          this.atomB.getPredicate == that.atomB.getPredicate
         this.positionTermA == that.positionTermA && this.positionTermB == that.positionTermB
       }
     }
