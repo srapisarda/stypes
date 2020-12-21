@@ -25,7 +25,8 @@ class SubExpressionSubstitutionTest extends FunSuite {
 
     val optimised = SubExpressionSubstitution.optimise(datalog, CatalogStatistics(Map()))
     val actual = optimised.mkString("\n")
-    println(s"\ndatalog to optimised by sub-expression substistion:\n$actual")
+    println(s"\ndatalog optimised by sub-expression substistion:\n$actual")
+    println()
 
     val source = Source.fromFile(s"$fileName-res.txt")
     val expected = source.getLines().mkString("\n")
