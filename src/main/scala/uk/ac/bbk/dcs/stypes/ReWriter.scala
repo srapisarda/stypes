@@ -29,7 +29,6 @@ import fr.lirmm.graphik.graal.core.DefaultAtom
 import fr.lirmm.graphik.graal.core.atomset.graph.DefaultInMemoryGraphAtomSet
 import fr.lirmm.graphik.graal.forward_chaining.DefaultChase
 import fr.lirmm.graphik.graal.io.dlp.DlgpParser
-import org.slf4j.LoggerFactory
 import uk.ac.bbk.dcs.stypes.ConstantType.EPSILON
 
 import scala.annotation.tailrec
@@ -467,7 +466,7 @@ object ReWriter {
           val ds =
             if (!matchedDataSources.contains(rhs.getPredicate)) {
               if (dataSources.contains(rhs.getPredicate.getIdentifier.toString))
-                matchedDataSources + (rhs.getPredicate -> dataSources(rhs.getPredicate.getIdentifier.toString))
+                  matchedDataSources + (rhs.getPredicate -> dataSources(rhs.getPredicate.getIdentifier.toString))
               else matchedDataSources + (rhs.getPredicate -> unknownData)
             } else matchedDataSources
 

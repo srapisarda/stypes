@@ -8,7 +8,7 @@ private  def  stringMapper1: (String) => (String) = (p: String) => {
   line.head
 }
 
- private  def  stringMapper: (String) => (String, String) = (p: String) => {
+private  def  stringMapper: (String) => (String, String) = (p: String) => {
   val line = p.split(',')
   (line.head, line.last)
 }
