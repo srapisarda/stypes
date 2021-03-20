@@ -1,25 +1,39 @@
-package uk.ac.bbk.dcs.stypes
+package uk.ac.bbk.dcs.stypes.sql
 
 import fr.lirmm.graphik.graal.api.core.{Atom, Predicate, Term}
 import net.sf.jsqlparser.expression.Alias
 import net.sf.jsqlparser.schema.{Column, Table}
 import net.sf.jsqlparser.statement.Statement
-import net.sf.jsqlparser.statement.select.{FromItem, FromItemVisitor, Join, Pivot, PlainSelect, Select, SelectExpressionItem, SelectItem, SubJoin, SubSelect}
+import net.sf.jsqlparser.statement.select.{FromItem, Join, PlainSelect, Select, SelectExpressionItem, SelectItem, SubSelect}
+import uk.ac.bbk.dcs.stypes.Clause
 
 import scala.collection.JavaConverters._
 
 object SqlUtils {
 
-  def ndl2sql(ndl: List[Clause], eDbs: Set[Atom], goalPredicate: Predicate): Statement = {
+  /**
+    * The EDBs are atoms present in the body but not in the head a clause.
+    * The IDBs are atoms defined in the head of a clause.
+    *
+    * @return set of Predicate
+    */
+  def getEdbPredicates(ndl: List[Clause]): Set[Predicate] = {
+    val iDbPredicates = ndl.map(p => p.head.getPredicate).distinct
+    ndl.flatten(_.body.map(_.getPredicate).distinct)
+      .filter(!iDbPredicates.contains(_)).toSet
+  }
 
+  def ndl2sql(ndl: List[Clause], goalPredicate: Predicate): Statement = {
     var clauseToMap = ndl.toSet
     var aliasIndex = 0
+    val eDbPredicates = getEdbPredicates(ndl)
 
-    def removeClauseToMap(clause: Clause) = clauseToMap -= clause
 
-    def increaseAliasIndex = aliasIndex = aliasIndex + 1
+    def removeClauseToMap(clause: Clause): Unit = clauseToMap -= clause
 
-    def getTableFromTerm(term: Term, clause: Clause) = {
+    def increaseAliasIndex(): Unit = aliasIndex += 1
+
+    def getTableFromTerm(term: Term, clause: Clause): Table = {
       val name = clause.body
         .find(_.contains(term))
         .getOrElse(throw new RuntimeException("Term not in body clause!"))
@@ -37,11 +51,11 @@ object SqlUtils {
         join.setInner(true)
 
         val rightItem =
-          if (eDbs.contains(atom)) {
+          if (eDbPredicates.contains(atom.getPredicate)) {
             val tableName = atom.getPredicate.getIdentifier.toString
             val table = new Table(tableName)
             table.setAlias(new Alias(s"$tableName$aliasIndex"))
-            increaseAliasIndex
+            increaseAliasIndex()
             table
           } else {
             new SubSelect()
@@ -53,7 +67,7 @@ object SqlUtils {
 
 
     def getSelectFromBody(atom: Atom, aliasIndex: Int): FromItem = {
-      if (eDbs.contains(atom)) {
+      if (eDbPredicates.contains(atom.getPredicate)) {
         val identifier = atom.getPredicate.getIdentifier.toString
         val from = new Table(identifier)
         from.setAlias(new Alias(s"identifier$aliasIndex"))
@@ -67,10 +81,10 @@ object SqlUtils {
       val subSelect = new SubSelect()
 
       val clause = clauseToMap
-        .find(_.head.getPredicate==atom.getPredicate)
-        .getOrElse( throw new RuntimeException("Atom is not present in select"))
+        .find(_.head.getPredicate == atom.getPredicate)
+        .getOrElse(throw new RuntimeException("Atom is not present in select"))
 
-      subSelect.setSelectBody( getSelectBody( clause))
+      subSelect.setSelectBody(getSelectBody(clause))
 
       subSelect
     }
@@ -86,7 +100,7 @@ object SqlUtils {
       val selectBody = new PlainSelect()
       selectBody.setSelectItems(columns.asJava)
       val fromItem = getSelectFromBody(clause.body.head, aliasIndex)
-      increaseAliasIndex
+      increaseAliasIndex()
       selectBody.setFromItem(fromItem)
       //selectBody.setJoins(getJoinsFromClause(clause).asJava)
 
@@ -101,7 +115,7 @@ object SqlUtils {
       .getOrElse(throw new RuntimeException("Goal predicate is not present"))
 
     val select = new Select
-    select.setSelectBody( getSelectBody(clause))
+    select.setSelectBody(getSelectBody(clause))
     select
 
   }
