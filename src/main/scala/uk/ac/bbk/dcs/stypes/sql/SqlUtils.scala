@@ -2,6 +2,7 @@ package uk.ac.bbk.dcs.stypes.sql
 
 import fr.lirmm.graphik.graal.api.core.{Atom, Predicate, Term}
 import net.sf.jsqlparser.expression.Alias
+import net.sf.jsqlparser.expression.operators.relational.EqualsTo
 import net.sf.jsqlparser.schema.{Column, Table}
 import net.sf.jsqlparser.statement.Statement
 import net.sf.jsqlparser.statement.select.{FromItem, Join, PlainSelect, Select, SelectExpressionItem, SelectItem, SubSelect}
@@ -34,18 +35,19 @@ object SqlUtils {
     def increaseAliasIndex(): Unit = aliasIndex += 1
 
     def getTableFromTerm(term: Term, clause: Clause): Table = {
-      val name = clause.body
-        .find(_.contains(term))
+      val predicateIndexed = clause.body.zipWithIndex
+        .find(_._1.contains(term))
         .getOrElse(throw new RuntimeException("Term not in body clause!"))
-        .getPredicate.getIdentifier.toString
+
+        val name = s"${predicateIndexed._1.getPredicate.getIdentifier.toString}${predicateIndexed._2}"
       new Table(name)
     }
 
     def getJoinsFromClause(clause: Clause) = {
 
-      var atomToJoin = clause.body.toSet
-
-      clause.body.map(atom => {
+      var atomToJoin: Set[Atom] = clause.body.tail.toSet
+      val atomIndexed = clause.body.toArray
+      val joins: List[Join] = clause.body.tail.map(atom => {
         atomToJoin -= atom
         val join = new Join()
         join.setInner(true)
@@ -61,8 +63,13 @@ object SqlUtils {
             new SubSelect()
           }
         join.setRightItem(rightItem)
-        //join.setOnExpression()
+        val onExpression = new EqualsTo()
+        val term: Term = ??? //todo:
+        onExpression.setLeftExpression(new Column(getTableFromTerm(term, clause), term.getIdentifier.toString))
+        join.setOnExpression(onExpression)
+        join
       })
+      joins
     }
 
 
@@ -70,7 +77,7 @@ object SqlUtils {
       if (eDbPredicates.contains(atom.getPredicate)) {
         val identifier = atom.getPredicate.getIdentifier.toString
         val from = new Table(identifier)
-        from.setAlias(new Alias(s"identifier$aliasIndex"))
+        from.setAlias(new Alias(s"$identifier$aliasIndex"))
         from
       } else {
         getSubSelect(atom)
@@ -93,16 +100,17 @@ object SqlUtils {
 
       removeClauseToMap(clause)
 
-      val columns: List[SelectItem] = clause.head.getTerms.asScala.map(term =>
+      val columns: List[SelectItem] = clause.head.getTerms.asScala.map(term => {
+
         new SelectExpressionItem(new Column(getTableFromTerm(term, clause), term.getIdentifier.toString))
-      ).toList
+      }).toList
 
       val selectBody = new PlainSelect()
-      selectBody.setSelectItems(columns.asJava)
       val fromItem = getSelectFromBody(clause.body.head, aliasIndex)
       increaseAliasIndex()
       selectBody.setFromItem(fromItem)
-      //selectBody.setJoins(getJoinsFromClause(clause).asJava)
+      selectBody.setJoins(getJoinsFromClause(clause).asJava)
+      selectBody.setSelectItems(columns.asJava)
 
       // add union
 
