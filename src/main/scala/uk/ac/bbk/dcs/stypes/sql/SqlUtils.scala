@@ -24,30 +24,21 @@ object SqlUtils {
       .filter(!iDbPredicates.contains(_)).toSet
   }
 
-  def ndl2sql(ndl: List[Clause], goalPredicate: Predicate): Statement = {
+  def ndl2sql(ndl: List[Clause], goalPredicate: Predicate, dbCatalog: EDBCatalog): Statement = {
     var clauseToMap = ndl.toSet
     var aliasIndex = 0
     val eDbPredicates = getEdbPredicates(ndl)
-
 
     def removeClauseToMap(clause: Clause): Unit = clauseToMap -= clause
 
     def increaseAliasIndex(): Unit = aliasIndex += 1
 
-    def getTableFromTerm(term: Term, clause: Clause): Table = {
-      val predicateIndexed = clause.body.zipWithIndex
-        .find(_._1.contains(term))
-        .getOrElse(throw new RuntimeException("Term not in body clause!"))
-
-        val name = s"${predicateIndexed._1.getPredicate.getIdentifier.toString}${predicateIndexed._2}"
-      new Table(name)
-    }
-
     def getJoinsFromClause(clause: Clause) = {
+
 
       var atomToJoin: Set[Atom] = clause.body.tail.toSet
       val atomIndexed = clause.body.toArray
-      val joins: List[Join] = clause.body.tail.map(atom => {
+      val joins: List[Join] = atomIndexed.tail.map(atom => {
         atomToJoin -= atom
         val join = new Join()
         join.setInner(true)
@@ -64,14 +55,13 @@ object SqlUtils {
           }
         join.setRightItem(rightItem)
         val onExpression = new EqualsTo()
-        val term: Term = ??? //todo:
-        onExpression.setLeftExpression(new Column(getTableFromTerm(term, clause), term.getIdentifier.toString))
-        join.setOnExpression(onExpression)
+        //        val term: Term = ??? //todo:
+        //        onExpression.setLeftExpression(new Column(getTableFromTerm(term, clause), term.getIdentifier.toString))
+        //        join.setOnExpression(onExpression)
         join
-      })
+      }).toList
       joins
     }
-
 
     def getSelectFromBody(atom: Atom, aliasIndex: Int): FromItem = {
       if (eDbPredicates.contains(atom.getPredicate)) {
@@ -96,14 +86,28 @@ object SqlUtils {
       subSelect
     }
 
+    def getSelectExpressionItem(term: Term, clauseBodyWithIndex: List[(Atom, Int)]) = {
+      val bodyAtomsIndexed: (Atom, Int) = clauseBodyWithIndex
+        .find(_._1.contains(term))
+        .getOrElse(throw new RuntimeException("Term not in body clause!"))
+
+      val table = new Table(s"${bodyAtomsIndexed._1.getPredicate.getIdentifier.toString}${bodyAtomsIndexed._2}")
+      val catalogAtom: Atom = dbCatalog.getAtomFromPredicate(bodyAtomsIndexed._1.getPredicate).get
+      val sqlTerm = catalogAtom.getTerm(bodyAtomsIndexed._1.indexOf(term))
+      new SelectExpressionItem(new Column(table, sqlTerm.getIdentifier.toString))
+    }
+
     def getSelectBody(clause: Clause) = {
 
       removeClauseToMap(clause)
 
-      val columns: List[SelectItem] = clause.head.getTerms.asScala.map(term => {
+      def atom = clause.head
 
-        new SelectExpressionItem(new Column(getTableFromTerm(term, clause), term.getIdentifier.toString))
-      }).toList
+      def clauseBodyWithIndex: List[(Atom, Int)] = clause.body.zipWithIndex
+
+      val columns: List[SelectItem] = atom.getTerms.asScala.map(
+        getSelectExpressionItem(_, clauseBodyWithIndex)
+      ).toList
 
       val selectBody = new PlainSelect()
       val fromItem = getSelectFromBody(clause.body.head, aliasIndex)
@@ -127,6 +131,4 @@ object SqlUtils {
     select
 
   }
-
-
 }
