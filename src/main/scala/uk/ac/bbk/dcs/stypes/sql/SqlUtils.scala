@@ -92,7 +92,9 @@ object SqlUtils {
         .getOrElse(throw new RuntimeException("Term not in body clause!"))
 
       val table = new Table(s"${bodyAtomsIndexed._1.getPredicate.getIdentifier.toString}${bodyAtomsIndexed._2}")
-      val catalogAtom: Atom = dbCatalog.getAtomFromPredicate(bodyAtomsIndexed._1.getPredicate).get
+      val catalogAtom: Atom = dbCatalog.getAtomFromPredicate(bodyAtomsIndexed._1.getPredicate)
+        .getOrElse(throw new RuntimeException("Predicate not present in EDB Catalog!"))
+
       val sqlTerm = catalogAtom.getTerm(bodyAtomsIndexed._1.indexOf(term))
       new SelectExpressionItem(new Column(table, sqlTerm.getIdentifier.toString))
     }
