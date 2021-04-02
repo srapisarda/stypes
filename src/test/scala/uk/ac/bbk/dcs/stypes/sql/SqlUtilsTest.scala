@@ -23,7 +23,7 @@ class SqlUtilsTest extends FunSpec {
 
 
     it("should return a statement for q01-rew_test.dlp") {
-      //p1(x0,x1) :- a(x0), r(x0, x1), b(x1).
+      // p1(x0,x1) :- a(x0), r(x0, x1), b(x1).
       val sqlExpected = "SELECT a0.X, r1.Y FROM a AS a0 " +
         "INNER JOIN r AS r1 on a0.X = r1.X " +
         "INNER JOIN b AS b2 on r1.Y = b2.X"

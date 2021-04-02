@@ -9,6 +9,7 @@ import net.sf.jsqlparser.statement.select.{FromItem, Join, PlainSelect, Select, 
 import uk.ac.bbk.dcs.stypes.Clause
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 
 object SqlUtils {
 
@@ -34,11 +35,11 @@ object SqlUtils {
     def increaseAliasIndex(): Unit = aliasIndex += 1
 
     def getJoinsFromClause(clause: Clause) = {
-
-
       var atomToJoin: Set[Atom] = clause.body.tail.toSet
-      val atomIndexed = clause.body.toArray
-      val joins: List[Join] = atomIndexed.tail.map(atom => {
+      val bodyAtoms = clause.body.toArray
+      val mapTermToBodyAtomsIndexed = getMapTermToBodyAtomsIndexed(clause.body)
+
+      val joins: List[Join] = bodyAtoms.tail.map(atom => {
         atomToJoin -= atom
         val join = new Join()
         join.setInner(true)
@@ -61,6 +62,22 @@ object SqlUtils {
         join
       }).toList
       joins
+    }
+
+    def getMapTermToBodyAtomsIndexed(clauseBody: List[Atom]): List[(Term, List[(Atom, Int)])] = {
+      val bodyAtomsIndexed = clauseBody.zipWithIndex
+
+      bodyAtomsIndexed.flatMap {
+        case (currentAtom, _) => {
+          currentAtom.getTerms.asScala.map(
+            term => {
+              val atomsIndexedAssociated = bodyAtomsIndexed.filter { case (atom, _) => atom != currentAtom && atom.getTerms.asScala.contains(term) }
+              (term, atomsIndexedAssociated)
+            })
+        }
+      }.filterNot { case (_, listAtoms) => listAtoms == Nil }
+        .groupBy { case (term, _) => term }
+        .map { case (term, tupleTermListAtoms) => (term, tupleTermListAtoms.flatten(_._2)) }.toList
     }
 
     def getSelectFromBody(atom: Atom, aliasIndex: Int): FromItem = {
