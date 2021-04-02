@@ -9,7 +9,6 @@ import net.sf.jsqlparser.statement.select.{FromItem, Join, PlainSelect, Select, 
 import uk.ac.bbk.dcs.stypes.Clause
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable
 
 object SqlUtils {
 
