@@ -33,39 +33,7 @@ object SqlUtils {
 
     def increaseAliasIndex(): Unit = aliasIndex += 1
 
-    def getJoinsFromClause(clause: Clause) = {
-      var atomToJoin: Set[Atom] = clause.body.tail.toSet
-      val bodyAtoms = clause.body.toArray
-      val mapTermToBodyAtomsIndexed = getMapTermToBodyAtomsIndexed(clause.body)
-
-      val joins: List[Join] = bodyAtoms.tail.map(atom => {
-        atomToJoin -= atom
-        val join = new Join()
-        join.setInner(true)
-
-        val rightItem =
-          if (eDbPredicates.contains(atom.getPredicate)) {
-            val tableName = atom.getPredicate.getIdentifier.toString
-            val table = new Table(tableName)
-            table.setAlias(new Alias(s"$tableName$aliasIndex"))
-            increaseAliasIndex()
-            table
-          } else {
-            new SubSelect()
-          }
-        join.setRightItem(rightItem)
-        val onExpression = new EqualsTo()
-        //        val term: Term = ??? //todo:
-        //        onExpression.setLeftExpression(new Column(getTableFromTerm(term, clause), term.getIdentifier.toString))
-        //        join.setOnExpression(onExpression)
-        join
-      }).toList
-      joins
-    }
-
-    def getMapTermToBodyAtomsIndexed(clauseBody: List[Atom]): List[(Term, List[(Atom, Int)])] = {
-      val bodyAtomsIndexed = clauseBody.zipWithIndex
-
+    def getMapOfCommonTermsToBodyAtomsIndexed(bodyAtomsIndexed: List[(Atom, Int)]): Map[Term, List[(Atom, Int)]] = {
       bodyAtomsIndexed.flatMap {
         case (currentAtom, _) => {
           currentAtom.getTerms.asScala.map(
@@ -76,7 +44,7 @@ object SqlUtils {
         }
       }.filterNot { case (_, listAtoms) => listAtoms == Nil }
         .groupBy { case (term, _) => term }
-        .map { case (term, tupleTermListAtoms) => (term, tupleTermListAtoms.flatten(_._2)) }.toList
+        .map { case (term, tupleTermListAtoms) => (term, tupleTermListAtoms.flatten(_._2)) }
     }
 
     def getSelectFromBody(atom: Atom, aliasIndex: Int): FromItem = {
@@ -116,27 +84,93 @@ object SqlUtils {
     }
 
     def getSelectBody(clause: Clause) = {
-
       removeClauseToMap(clause)
+      val clauseBodyWithIndex: List[(Atom, Int)] = clause.body.zipWithIndex
+      val mapOfCommonTermsToBodyAtomsIndexed = getMapOfCommonTermsToBodyAtomsIndexed(clauseBodyWithIndex)
 
-      def atom = clause.head
+      def getSelectBodyH(head: Atom, clauseBodyIndexed: List[(Atom, Int)],
+                         mapOfCommonTermsToBodyAtomsIndexed: Map[Term, List[(Atom, Int)]],
+                         joins: List[Join], mappedClauseBodyIndex: List[(Term, List[(Atom, Int)])],
+                         atomIndexedInSelect: Set[(Atom, Int)],
+                         selectBody: PlainSelect): PlainSelect =
+        clauseBodyIndexed match {
+          case Nil =>
+            selectBody.setJoins(joins.reverse.asJava)
+            selectBody
+          case (currentAtom, aliasIndex) :: tail =>
+            if (selectBody.getFromItem == null) {
+              val fromItem = getSelectFromBody(currentAtom, aliasIndex)
+              selectBody.setFromItem(fromItem)
+              val columns: List[SelectItem] = head.getTerms.asScala.map(
+                getSelectExpressionItem(_, clauseBodyWithIndex)
+              ).toList
+              selectBody.setSelectItems(columns.asJava)
+              getSelectBodyH(head, tail, mapOfCommonTermsToBodyAtomsIndexed, joins, mappedClauseBodyIndex,
+                Set((currentAtom, aliasIndex)), selectBody)
+            } else {
+              val mapFiltered: List[(Term, List[(Atom, Int)])] = mapOfCommonTermsToBodyAtomsIndexed
+                .filterNot(mappedClauseBodyIndex.contains)
+                .filter(_._2.contains((currentAtom, aliasIndex)))
+                .toList
 
-      def clauseBodyWithIndex: List[(Atom, Int)] = clause.body.zipWithIndex
+              val currentJoins = getCurrentJoin(mapFiltered, atomIndexedInSelect, List())
 
-      val columns: List[SelectItem] = atom.getTerms.asScala.map(
-        getSelectExpressionItem(_, clauseBodyWithIndex)
-      ).toList
+              getSelectBodyH(head, tail, mapOfCommonTermsToBodyAtomsIndexed, currentJoins ::: joins,
+                mapFiltered ::: mappedClauseBodyIndex, atomIndexedInSelect ++ mapFiltered.flatten(_._2), selectBody)
+            }
+        }
 
-      val selectBody = new PlainSelect()
-      val fromItem = getSelectFromBody(clause.body.head, aliasIndex)
-      increaseAliasIndex()
-      selectBody.setFromItem(fromItem)
-      selectBody.setJoins(getJoinsFromClause(clause).asJava)
-      selectBody.setSelectItems(columns.asJava)
+      def getCurrentJoin(mapFiltered: Seq[(Term, List[(Atom, Int)])],
+                         atomIndexedInSelect: Set[(Atom, Int)],
+                         joins: List[Join]): List[Join] = mapFiltered match {
+        case Nil =>
+          joins
+        case (term, atomsIndexed) :: xs =>
+          val join = new Join()
+          join.setInner(true)
+          val rightItemOption = atomsIndexed.find(!atomIndexedInSelect.contains(_))
+          if (rightItemOption.nonEmpty) {
+            val currentAtom = rightItemOption.get._1
+            val aliasIndex = rightItemOption.get._2
+            val rightItem = getRightJoinItem(currentAtom)
+            val onExpression = new EqualsTo()
+            join.setRightItem(rightItem)
 
-      // add union
+            val leftAtom = atomsIndexed.find(_ != (currentAtom, aliasIndex)).get
+            val leftTable = new Table(leftAtom._1.getPredicate.getIdentifier.toString)
+            leftTable.setAlias(new Alias(leftAtom._1.getPredicate.getIdentifier.toString + aliasIndex))
 
-      selectBody
+            val rightTable = new Table(currentAtom.getPredicate.getIdentifier.toString)
+            rightTable.setAlias(new Alias(currentAtom.getPredicate.getIdentifier.toString + aliasIndex))
+
+            onExpression.setRightExpression(new Column(rightTable, term.getIdentifier.toString))
+            onExpression.setLeftExpression(new Column(leftTable, term.getIdentifier.toString))
+            join.setOnExpression(onExpression)
+
+            getCurrentJoin(xs, atomIndexedInSelect + rightItemOption.get, join :: joins)
+          } else {
+            getCurrentJoin(xs, atomIndexedInSelect, joins)
+          }
+      }
+
+      getSelectBodyH(clause.head,
+        clauseBodyWithIndex,
+        mapOfCommonTermsToBodyAtomsIndexed,
+        List(), List(), Set(),
+        new PlainSelect())
+
+    }
+
+    def getRightJoinItem(atom: Atom) = {
+      if (eDbPredicates.contains(atom.getPredicate)) {
+        val tableName = atom.getPredicate.getIdentifier.toString
+        val table = new Table(tableName)
+        table.setAlias(new Alias(s"$tableName$aliasIndex"))
+        increaseAliasIndex()
+        table
+      } else {
+        new SubSelect()
+      }
     }
 
     //
