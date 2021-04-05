@@ -1,7 +1,5 @@
 package uk.ac.bbk.dcs.stypes.sql
 
-import java.util
-
 import fr.lirmm.graphik.graal.api.core.{Atom, Predicate, Term}
 import fr.lirmm.graphik.graal.api.factory.TermFactory
 import fr.lirmm.graphik.graal.core.DefaultAtom
