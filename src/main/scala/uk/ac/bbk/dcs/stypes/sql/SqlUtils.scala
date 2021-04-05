@@ -8,6 +8,7 @@ import net.sf.jsqlparser.statement.Statement
 import net.sf.jsqlparser.statement.select.{FromItem, Join, PlainSelect, Select, SelectExpressionItem, SelectItem, SubSelect}
 import uk.ac.bbk.dcs.stypes.Clause
 
+import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 
 object SqlUtils {
@@ -35,13 +36,13 @@ object SqlUtils {
 
     def getMapOfCommonTermsToBodyAtomsIndexed(bodyAtomsIndexed: List[(Atom, Int)]): Map[Term, List[(Atom, Int)]] = {
       bodyAtomsIndexed.flatMap {
-        case (currentAtom, _) => {
+        case (currentAtom, _) =>
           currentAtom.getTerms.asScala.map(
             term => {
               val atomsIndexedAssociated = bodyAtomsIndexed.filter { case (atom, _) => atom != currentAtom && atom.getTerms.asScala.contains(term) }
               (term, atomsIndexedAssociated)
             })
-        }
+
       }.filterNot { case (_, listAtoms) => listAtoms == Nil }
         .groupBy { case (term, _) => term }
         .map { case (term, tupleTermListAtoms) => (term, tupleTermListAtoms.flatten(_._2)) }
@@ -76,22 +77,29 @@ object SqlUtils {
         .getOrElse(throw new RuntimeException("Term not in body clause!"))
 
       val table = new Table(s"${bodyAtomsIndexed._1.getPredicate.getIdentifier.toString}${bodyAtomsIndexed._2}")
-      val catalogAtom: Atom = dbCatalog.getAtomFromPredicate(bodyAtomsIndexed._1.getPredicate)
-        .getOrElse(throw new RuntimeException("Predicate not present in EDB Catalog!"))
 
-      val sqlTerm = catalogAtom.getTerm(bodyAtomsIndexed._1.indexOf(term))
+      val sqlTerm = getTermFromCatalog(atom = bodyAtomsIndexed._1, term)
       new SelectExpressionItem(new Column(table, sqlTerm.getIdentifier.toString))
     }
 
-    def getSelectBody(clause: Clause) = {
+    def getTermFromCatalog(atom: Atom, term: Term): Term = {
+      val catalogAtom: Atom = dbCatalog.getAtomFromPredicate(atom.getPredicate)
+        .getOrElse(throw new RuntimeException("Predicate not present in EDB Catalog!"))
+
+      catalogAtom.getTerm(atom.indexOf(term))
+    }
+
+    def getSelectBody(clause: Clause): PlainSelect = {
       removeClauseToMap(clause)
       val clauseBodyWithIndex: List[(Atom, Int)] = clause.body.zipWithIndex
       val mapOfCommonTermsToBodyAtomsIndexed = getMapOfCommonTermsToBodyAtomsIndexed(clauseBodyWithIndex)
 
+      @tailrec
       def getSelectBodyH(head: Atom, clauseBodyIndexed: List[(Atom, Int)],
                          mapOfCommonTermsToBodyAtomsIndexed: Map[Term, List[(Atom, Int)]],
                          joins: List[Join], mappedClauseBodyIndex: List[(Term, List[(Atom, Int)])],
                          atomIndexedInSelect: Set[(Atom, Int)],
+                         lastInSelect: (Atom, Int),
                          selectBody: PlainSelect): PlainSelect =
         clauseBodyIndexed match {
           case Nil =>
@@ -106,25 +114,29 @@ object SqlUtils {
               ).toList
               selectBody.setSelectItems(columns.asJava)
               getSelectBodyH(head, tail, mapOfCommonTermsToBodyAtomsIndexed, joins, mappedClauseBodyIndex,
-                Set((currentAtom, aliasIndex)), selectBody)
+                Set((currentAtom, aliasIndex)), (currentAtom, aliasIndex), selectBody)
             } else {
               val mapFiltered: List[(Term, List[(Atom, Int)])] = mapOfCommonTermsToBodyAtomsIndexed
                 .filterNot(mappedClauseBodyIndex.contains)
                 .filter(_._2.contains((currentAtom, aliasIndex)))
                 .toList
 
-              val currentJoins = getCurrentJoin(mapFiltered, atomIndexedInSelect, List())
+              val lastItemAndCurrentJoins =
+                getCurrentJoin(mapFiltered.filter(_._2.contains(lastInSelect)) ++ mapFiltered.filterNot(_._2.contains(lastInSelect)),
+                  atomIndexedInSelect, (lastInSelect, List()))
 
-              getSelectBodyH(head, tail, mapOfCommonTermsToBodyAtomsIndexed, currentJoins ::: joins,
-                mapFiltered ::: mappedClauseBodyIndex, atomIndexedInSelect ++ mapFiltered.flatten(_._2), selectBody)
+              getSelectBodyH(head, tail, mapOfCommonTermsToBodyAtomsIndexed, lastItemAndCurrentJoins._2 ::: joins,
+                mapFiltered ::: mappedClauseBodyIndex, atomIndexedInSelect ++ mapFiltered.flatten(_._2),
+                lastItemAndCurrentJoins._1, selectBody)
             }
         }
 
+      @tailrec
       def getCurrentJoin(mapFiltered: Seq[(Term, List[(Atom, Int)])],
                          atomIndexedInSelect: Set[(Atom, Int)],
-                         joins: List[Join]): List[Join] = mapFiltered match {
+                         acc: ((Atom, Int), List[Join])): ((Atom, Int), List[Join]) = mapFiltered match {
         case Nil =>
-          joins
+          acc
         case (term, atomsIndexed) :: xs =>
           val join = new Join()
           join.setInner(true)
@@ -132,24 +144,26 @@ object SqlUtils {
           if (rightItemOption.nonEmpty) {
             val currentAtom = rightItemOption.get._1
             val aliasIndex = rightItemOption.get._2
-            val rightItem = getRightJoinItem(currentAtom)
+            val rightItem = getRightJoinItem(currentAtom, aliasIndex)
             val onExpression = new EqualsTo()
             join.setRightItem(rightItem)
 
             val leftAtom = atomsIndexed.find(_ != (currentAtom, aliasIndex)).get
             val leftTable = new Table(leftAtom._1.getPredicate.getIdentifier.toString)
-            leftTable.setAlias(new Alias(leftAtom._1.getPredicate.getIdentifier.toString + aliasIndex))
+            leftTable.setAlias(new Alias(leftAtom._1.getPredicate.getIdentifier.toString + leftAtom._2))
 
             val rightTable = new Table(currentAtom.getPredicate.getIdentifier.toString)
             rightTable.setAlias(new Alias(currentAtom.getPredicate.getIdentifier.toString + aliasIndex))
 
-            onExpression.setRightExpression(new Column(rightTable, term.getIdentifier.toString))
-            onExpression.setLeftExpression(new Column(leftTable, term.getIdentifier.toString))
+
+            onExpression.setRightExpression(new Column(rightTable, getTermFromCatalog(currentAtom, term).getIdentifier.toString))
+            onExpression.setLeftExpression(new Column(leftTable, getTermFromCatalog(leftAtom._1, term).toString))
+
             join.setOnExpression(onExpression)
 
-            getCurrentJoin(xs, atomIndexedInSelect + rightItemOption.get, join :: joins)
+            getCurrentJoin(xs, atomIndexedInSelect + rightItemOption.get, (rightItemOption.get, join :: acc._2))
           } else {
-            getCurrentJoin(xs, atomIndexedInSelect, joins)
+            getCurrentJoin(xs, atomIndexedInSelect, acc)
           }
       }
 
@@ -157,11 +171,12 @@ object SqlUtils {
         clauseBodyWithIndex,
         mapOfCommonTermsToBodyAtomsIndexed,
         List(), List(), Set(),
+        null,
         new PlainSelect())
 
     }
 
-    def getRightJoinItem(atom: Atom) = {
+    def getRightJoinItem(atom: Atom, aliasIndex: Int) = {
       if (eDbPredicates.contains(atom.getPredicate)) {
         val tableName = atom.getPredicate.getIdentifier.toString
         val table = new Table(tableName)
