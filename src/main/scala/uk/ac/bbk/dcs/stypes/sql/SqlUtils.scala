@@ -5,7 +5,7 @@ import net.sf.jsqlparser.expression.Alias
 import net.sf.jsqlparser.expression.operators.relational.EqualsTo
 import net.sf.jsqlparser.schema.{Column, Table}
 import net.sf.jsqlparser.statement.Statement
-import net.sf.jsqlparser.statement.select.{FromItem, Join, PlainSelect, Select, SelectExpressionItem, SelectItem, SubSelect}
+import net.sf.jsqlparser.statement.select.{FromItem, Join, PlainSelect, Select, SelectBody, SelectExpressionItem, SelectItem, SetOperation, SetOperationList, SubSelect, UnionOp}
 import uk.ac.bbk.dcs.stypes.Clause
 
 import scala.annotation.tailrec
@@ -189,13 +189,23 @@ object SqlUtils {
     }
 
     //
-    val clause = clauseToMap
-      .find(_.head.getPredicate == goalPredicate)
-      .getOrElse(throw new RuntimeException("Goal predicate is not present"))
+    val selects: List[SelectBody] = clauseToMap
+      .filter(_.head.getPredicate == goalPredicate)
+      .map(clause => getSelectBody(clause)).toList
+
+    if (selects.isEmpty)
+      throw new RuntimeException("Goal predicate is not present")
 
     val select = new Select
-    select.setSelectBody(getSelectBody(clause))
+    if (selects.size == 1) {
+      select.setSelectBody(selects.head)
+    } else {
+      val ops: List[SetOperation] = selects.map(_ => new UnionOp())
+      val sol = new SetOperationList()
+      sol.setSelects(selects.asJava)
+      sol.setOperations(ops.asJava)
+      select.setSelectBody(sol)
+    }
     select
-
   }
 }

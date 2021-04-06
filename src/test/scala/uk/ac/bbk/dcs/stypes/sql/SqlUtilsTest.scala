@@ -4,6 +4,7 @@ import fr.lirmm.graphik.graal.api.core.{Atom, Predicate, Term}
 import fr.lirmm.graphik.graal.api.factory.TermFactory
 import fr.lirmm.graphik.graal.core.DefaultAtom
 import fr.lirmm.graphik.graal.core.term.DefaultTermFactory
+import net.sf.jsqlparser.parser.CCJSqlParserUtil
 import org.scalatest.FunSpec
 import uk.ac.bbk.dcs.stypes.ReWriter
 
@@ -23,9 +24,32 @@ class SqlUtilsTest extends FunSpec {
     it("should return a statement for q01-rew_test.dlp") {
       // p1(x0,x1) :- a(x0), r(x0, x1), b(x1).
       val sqlExpected = "SELECT a0.X, r1.Y FROM a AS a0 " +
-        "INNER JOIN r AS r1 ON a.X = r.X " +
-        "INNER JOIN b AS b2 ON r.Y = b.X"
+        "INNER JOIN r AS r1 ON a0.X = r1.X " +
+        "INNER JOIN b AS b2 ON r1.Y = b2.X"
       val ndl = ReWriter.getDatalogRewriting(s"src/test/resources/rewriting/q01-rew_test.dlp")
+      val goalPredicate: Predicate = new Predicate("p1", 2)
+      val actual = SqlUtils.ndl2sql(ndl, goalPredicate, getEDBCatalog)
+      val sqlActual = actual.toString
+      println(ndl)
+      println("----")
+      println(sqlActual)
+
+      assert(sqlActual === sqlExpected)
+    }
+
+    it("should return a statement for q02-rew_test.dlp") {
+      // p1(x0,x1) :- a(x0), r(x0, x1), b(x1).
+      // p1(x0,x2) :- r(x0, x1), s(x1, x2), b(x2).
+      val sqlExpected = "(SELECT a0.X, r1.Y FROM a AS a0 " +
+        "INNER JOIN r AS r1 ON a0.X = r1.X " +
+        "INNER JOIN b AS b2 ON r1.Y = b2.X) " +
+        "UNION " +
+        "(SELECT r0.X, s1.Y FROM r AS r0 " +
+        "INNER JOIN s AS s1 ON r0.Y = s1.X " +
+        "INNER JOIN b AS b2 ON s1.Y = b2.X)"
+      val stmt = CCJSqlParserUtil.parseStatements(sqlExpected)
+
+      val ndl = ReWriter.getDatalogRewriting(s"src/test/resources/rewriting/q02-rew_test.dlp")
       val goalPredicate: Predicate = new Predicate("p1", 2)
       val actual = SqlUtils.ndl2sql(ndl, goalPredicate, getEDBCatalog)
       val sqlActual = actual.toString
@@ -48,6 +72,6 @@ class SqlUtilsTest extends FunSpec {
     val a: Atom = new DefaultAtom(new Predicate("a", 1), List(x).asJava)
     val b: Atom = new DefaultAtom(new Predicate("b", 1), List(x).asJava)
 
-    EDBCatalog(Set(a,b,r,s))
+    EDBCatalog(Set(a, b, r, s))
   }
 }
