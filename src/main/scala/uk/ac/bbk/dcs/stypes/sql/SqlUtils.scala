@@ -14,21 +14,26 @@ import scala.collection.JavaConverters._
 object SqlUtils {
 
   /**
-    * The EDBs are atoms present in the body but not in the head a clause.
+    * The EDBs are atoms present in the body but not in the head of a clause.
     * The IDBs are atoms defined in the head of a clause.
     *
     * @return set of Predicate
     */
-  def getEdbPredicates(ndl: List[Clause]): Set[Predicate] = {
-    val iDbPredicates = ndl.map(p => p.head.getPredicate).distinct
+  def getEdbPredicates(ndl: List[Clause], optIDbPredicates: Option[Set[Predicate]] = None): Set[Predicate] = {
+    val iDbPredicates = optIDbPredicates.getOrElse(getIdbPredicates(ndl))
     ndl.flatten(_.body.map(_.getPredicate).distinct)
       .filter(!iDbPredicates.contains(_)).toSet
+  }
+
+  def getIdbPredicates(ndl: List[Clause]): Set[Predicate] = {
+    ndl.map(p => p.head.getPredicate).toSet
   }
 
   def ndl2sql(ndl: List[Clause], goalPredicate: Predicate, dbCatalog: EDBCatalog): Statement = {
     var clauseToMap = ndl.toSet
     var aliasIndex = 0
-    val eDbPredicates = getEdbPredicates(ndl)
+    val iDbPredicates = getIdbPredicates(ndl)
+    val eDbPredicates = getEdbPredicates(ndl, Some(iDbPredicates))
 
     def removeClauseToMap(clause: Clause): Unit = clauseToMap -= clause
 
@@ -77,16 +82,20 @@ object SqlUtils {
         .getOrElse(throw new RuntimeException("Term not in body clause!"))
 
       val table = new Table(s"${bodyAtomsIndexed._1.getPredicate.getIdentifier.toString}${bodyAtomsIndexed._2}")
-
-      val sqlTerm = getTermFromCatalog(atom = bodyAtomsIndexed._1, term)
+      val atom = bodyAtomsIndexed._1
+      val sqlTerm = getTermFromCatalog(atom, term)
       new SelectExpressionItem(new Column(table, sqlTerm.getIdentifier.toString))
     }
 
     def getTermFromCatalog(atom: Atom, term: Term): Term = {
-      val catalogAtom: Atom = dbCatalog.getAtomFromPredicate(atom.getPredicate)
-        .getOrElse(throw new RuntimeException("Predicate not present in EDB Catalog!"))
+      if (iDbPredicates.contains(atom.getPredicate)) {
+       term
+      }else {
+        val catalogAtom: Atom = dbCatalog.getAtomFromPredicate(atom.getPredicate)
+          .getOrElse(throw new RuntimeException("Predicate not present in EDB Catalog!"))
 
-      catalogAtom.getTerm(atom.indexOf(term))
+        catalogAtom.getTerm(atom.indexOf(term))
+      }
     }
 
     def getSelectBody(clause: Clause): PlainSelect = {
@@ -153,7 +162,7 @@ object SqlUtils {
             leftTable.setAlias(new Alias(leftAtom._1.getPredicate.getIdentifier.toString + leftAtom._2))
 
             val rightTable = new Table(currentAtom.getPredicate.getIdentifier.toString)
-            rightTable.setAlias(new Alias(currentAtom.getPredicate.getIdentifier.toString + aliasIndex))
+            rightTable.setAlias(new Alias(currentAtom.getPredicate.getIdentifier.toString +  aliasIndex))
 
 
             onExpression.setRightExpression(new Column(rightTable, getTermFromCatalog(currentAtom, term).getIdentifier.toString))
