@@ -31,6 +31,7 @@ object SqlUtils {
 
   def ndl2sql(ndl: List[Clause], goalPredicate: Predicate, dbCatalog: EDBCatalog): Statement = {
     var clauseToMap = ndl.toSet
+    var predicateMapToSelects: Map[Predicate, Select] = Map()
     var aliasIndex = 0
     val iDbPredicates = getIdbPredicates(ndl)
     val eDbPredicates = getEdbPredicates(ndl, Some(iDbPredicates))
@@ -71,12 +72,12 @@ object SqlUtils {
         .find(_.head.getPredicate == atom.getPredicate)
         .getOrElse(throw new RuntimeException("Atom is not present in select"))
 
-      subSelect.setSelectBody(getSelectBody(clause))
+      subSelect.setSelectBody(getSelectBody(clause, addSelectAlias = true))
 
       subSelect
     }
 
-    def getSelectExpressionItem(term: Term, clauseBodyWithIndex: List[(Atom, Int)]) = {
+    def getSelectExpressionItem(term: Term, clauseBodyWithIndex: List[(Atom, Int)], addSelectAlias: Boolean = false) = {
       val bodyAtomsIndexed: (Atom, Int) = clauseBodyWithIndex
         .find(_._1.contains(term))
         .getOrElse(throw new RuntimeException("Term not in body clause!"))
@@ -84,13 +85,17 @@ object SqlUtils {
       val table = new Table(s"${bodyAtomsIndexed._1.getPredicate.getIdentifier.toString}${bodyAtomsIndexed._2}")
       val atom = bodyAtomsIndexed._1
       val sqlTerm = getTermFromCatalog(atom, term)
-      new SelectExpressionItem(new Column(table, sqlTerm.getIdentifier.toString))
+      val selectExpressionItem = new SelectExpressionItem(new Column(table, sqlTerm.getIdentifier.toString))
+      if (addSelectAlias) {
+        selectExpressionItem.setAlias(new Alias(term.getLabel))
+      }
+      selectExpressionItem
     }
 
     def getTermFromCatalog(atom: Atom, term: Term): Term = {
       if (iDbPredicates.contains(atom.getPredicate)) {
-       term
-      }else {
+        term
+      } else {
         val catalogAtom: Atom = dbCatalog.getAtomFromPredicate(atom.getPredicate)
           .getOrElse(throw new RuntimeException("Predicate not present in EDB Catalog!"))
 
@@ -98,7 +103,7 @@ object SqlUtils {
       }
     }
 
-    def getSelectBody(clause: Clause): PlainSelect = {
+    def getSelectBody(clause: Clause, addSelectAlias: Boolean = false): PlainSelect = {
       removeClauseToMap(clause)
       val clauseBodyWithIndex: List[(Atom, Int)] = clause.body.zipWithIndex
       val mapOfCommonTermsToBodyAtomsIndexed = getMapOfCommonTermsToBodyAtomsIndexed(clauseBodyWithIndex)
@@ -119,7 +124,7 @@ object SqlUtils {
               val fromItem = getSelectFromBody(currentAtom, aliasIndex)
               selectBody.setFromItem(fromItem)
               val columns: List[SelectItem] = head.getTerms.asScala.map(
-                getSelectExpressionItem(_, clauseBodyWithIndex)
+                getSelectExpressionItem(_, clauseBodyWithIndex, addSelectAlias)
               ).toList
               selectBody.setSelectItems(columns.asJava)
               getSelectBodyH(head, tail, mapOfCommonTermsToBodyAtomsIndexed, joins, mappedClauseBodyIndex,
@@ -162,7 +167,7 @@ object SqlUtils {
             leftTable.setAlias(new Alias(leftAtom._1.getPredicate.getIdentifier.toString + leftAtom._2))
 
             val rightTable = new Table(currentAtom.getPredicate.getIdentifier.toString)
-            rightTable.setAlias(new Alias(currentAtom.getPredicate.getIdentifier.toString +  aliasIndex))
+            rightTable.setAlias(new Alias(currentAtom.getPredicate.getIdentifier.toString + aliasIndex))
 
 
             onExpression.setRightExpression(new Column(rightTable, getTermFromCatalog(currentAtom, term).getIdentifier.toString))
@@ -193,28 +198,44 @@ object SqlUtils {
         increaseAliasIndex()
         table
       } else {
-        new SubSelect()
+        val subSelect = new SubSelect
+        subSelect.setSelectBody(getSelect(atom.getPredicate, addSelectAlias = true).getSelectBody)
+        subSelect.setAlias(new Alias(atom.getPredicate.getIdentifier.toString + aliasIndex))
+        subSelect
+
       }
     }
 
-    //
-    val selects: List[SelectBody] = clauseToMap
-      .filter(_.head.getPredicate == goalPredicate)
-      .map(clause => getSelectBody(clause)).toList
+    def getSelect(headPredicate: Predicate, addSelectAlias: Boolean = false): Select = {
+      if (predicateMapToSelects.contains(headPredicate)) {
+        predicateMapToSelects(headPredicate)
+      }
+      else {
+        //
+        val selects: List[SelectBody] = clauseToMap
+          .filter(_.head.getPredicate == headPredicate)
+          .map(clause => getSelectBody(clause, addSelectAlias)).toList
 
-    if (selects.isEmpty)
-      throw new RuntimeException("Goal predicate is not present")
+        if (selects.isEmpty)
+          throw new RuntimeException(s"head predicate $headPredicate is not present")
 
-    val select = new Select
-    if (selects.size == 1) {
-      select.setSelectBody(selects.head)
-    } else {
-      val ops: List[SetOperation] = selects.map(_ => new UnionOp())
-      val sol = new SetOperationList()
-      sol.setSelects(selects.asJava)
-      sol.setOperations(ops.asJava)
-      select.setSelectBody(sol)
+        val select = new Select
+        if (selects.size == 1) {
+          select.setSelectBody(selects.head)
+        } else {
+          val ops: List[SetOperation] = selects.map(_ => new UnionOp())
+          val sol = new SetOperationList()
+          sol.setSelects(selects.asJava)
+          sol.setOperations(ops.asJava)
+          select.setSelectBody(sol)
+        }
+
+        predicateMapToSelects += headPredicate -> select
+
+        select
+      }
     }
-    select
+
+    getSelect(goalPredicate)
   }
 }
