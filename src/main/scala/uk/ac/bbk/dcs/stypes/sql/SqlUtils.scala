@@ -29,12 +29,25 @@ object SqlUtils {
     ndl.map(p => p.head.getPredicate).toSet
   }
 
+  def orderBodyClauseByTerm(body: List[Atom], acc: List[Atom] = Nil): List[Atom] = body match {
+    case Nil => acc.reverse
+    case atom :: tail =>
+      val atomsMatched:List[Atom] = tail.filter(_.getTerms.asScala.toSet.intersect(atom.getTerms().asScala.toSet).nonEmpty)
+      val atomsNonMatched:List[Atom] = tail.filter(_.getTerms.asScala.toSet.intersect(atom.getTerms().asScala.toSet).isEmpty)
+      orderBodyClauseByTerm( atomsMatched ++ atomsNonMatched, atom::acc )
+  }
+
+  def orderNdlByTerm(ndl: List[Clause]): List[Clause] = {
+    ndl.map(c=> Clause(c.head, orderBodyClauseByTerm(c.body)))
+  }
+
   def ndl2sql(ndl: List[Clause], goalPredicate: Predicate, dbCatalog: EDBCatalog): Statement = {
-    var clauseToMap = ndl.toSet
+    val ndlOrdered = orderNdlByTerm(ndl)
+    var clauseToMap =   ndlOrdered.toSet
     var predicateMapToSelects: Map[Predicate, Select] = Map()
     var aliasIndex = 0
-    val iDbPredicates = getIdbPredicates(ndl)
-    val eDbPredicates = getEdbPredicates(ndl, Some(iDbPredicates))
+    val iDbPredicates = getIdbPredicates(ndlOrdered)
+    val eDbPredicates = getEdbPredicates(ndlOrdered, Some(iDbPredicates))
 
     def removeClauseToMap(clause: Clause): Unit = clauseToMap -= clause
 
@@ -196,9 +209,9 @@ object SqlUtils {
     }
 
     def getJoinExpressionColumnName(atom: Atom, term: Term) = {
-      if (iDbPredicates.contains(atom.getPredicate) ) {
+      if (iDbPredicates.contains(atom.getPredicate)) {
         s"X${atom.indexOf(term)}"
-      }else {
+      } else {
         getTermFromCatalog(atom, term).getIdentifier.toString
       }
     }
@@ -236,10 +249,12 @@ object SqlUtils {
         if (selects.size == 1) {
           select.setSelectBody(selects.head)
         } else {
-          val ops: List[SetOperation] = selects.map(_ => new UnionOp())
+          val ops: List[SetOperation] = (0 until selects.size - 1).toList.map(_ => new UnionOp())
           val sol = new SetOperationList()
-          sol.setSelects(selects.asJava)
-          sol.setOperations(ops.asJava)
+          sol.withSelects(selects.asJava)
+          sol.withOperations(ops.asJava)
+          // sol.addBrackets(false)
+          (selects.indices map (_ != 0)).foreach(sol.addBrackets(_))
           select.setSelectBody(sol)
         }
 
