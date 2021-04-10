@@ -15,7 +15,7 @@ object SqlUtils {
 
   /**
     * The EDBs are atoms present in the body but not in the head of a clause.
-    * The IDBs are atoms defined in the head of a clause.
+    * The IDBs are atoms defined as the head of a clause.
     *
     * @return set of Predicate
     */
@@ -72,23 +72,28 @@ object SqlUtils {
         .find(_.head.getPredicate == atom.getPredicate)
         .getOrElse(throw new RuntimeException("Atom is not present in select"))
 
-      subSelect.setSelectBody(getSelectBody(clause, addSelectAlias = true))
+      subSelect.setSelectBody(getSelectBody(clause))
 
       subSelect
     }
 
-    def getSelectExpressionItem(term: Term, clauseBodyWithIndex: List[(Atom, Int)], addSelectAlias: Boolean = false) = {
+    def getSelectExpressionItem(termIndexed: (Term, Int), clauseBodyWithIndex: List[(Atom, Int)]) = {
       val bodyAtomsIndexed: (Atom, Int) = clauseBodyWithIndex
-        .find(_._1.contains(term))
+        .find(_._1.contains(termIndexed._1))
         .getOrElse(throw new RuntimeException("Term not in body clause!"))
 
       val table = new Table(s"${bodyAtomsIndexed._1.getPredicate.getIdentifier.toString}${bodyAtomsIndexed._2}")
       val atom = bodyAtomsIndexed._1
-      val sqlTerm = getTermFromCatalog(atom, term)
-      val selectExpressionItem = new SelectExpressionItem(new Column(table, sqlTerm.getIdentifier.toString))
-      if (addSelectAlias) {
-        selectExpressionItem.setAlias(new Alias(term.getLabel))
+      val sqlTerm = getTermFromCatalog(atom, termIndexed._1)
+
+      val columnName = if (iDbPredicates.contains(bodyAtomsIndexed._1.getPredicate)) {
+        s"X${termIndexed._2}"
+      } else {
+        sqlTerm.getIdentifier.toString
       }
+
+      val selectExpressionItem = new SelectExpressionItem(new Column(table, columnName))
+      selectExpressionItem.setAlias(new Alias(s"X${termIndexed._2}"))
       selectExpressionItem
     }
 
@@ -103,7 +108,7 @@ object SqlUtils {
       }
     }
 
-    def getSelectBody(clause: Clause, addSelectAlias: Boolean = false): PlainSelect = {
+    def getSelectBody(clause: Clause): PlainSelect = {
       removeClauseToMap(clause)
       val clauseBodyWithIndex: List[(Atom, Int)] = clause.body.zipWithIndex
       val mapOfCommonTermsToBodyAtomsIndexed = getMapOfCommonTermsToBodyAtomsIndexed(clauseBodyWithIndex)
@@ -123,8 +128,8 @@ object SqlUtils {
             if (selectBody.getFromItem == null) {
               val fromItem = getSelectFromBody(currentAtom, aliasIndex)
               selectBody.setFromItem(fromItem)
-              val columns: List[SelectItem] = head.getTerms.asScala.map(
-                getSelectExpressionItem(_, clauseBodyWithIndex, addSelectAlias)
+              val columns: List[SelectItem] = head.getTerms.asScala.zipWithIndex.map(
+                getSelectExpressionItem(_, clauseBodyWithIndex)
               ).toList
               selectBody.setSelectItems(columns.asJava)
               getSelectBodyH(head, tail, mapOfCommonTermsToBodyAtomsIndexed, joins, mappedClauseBodyIndex,
@@ -170,8 +175,8 @@ object SqlUtils {
             rightTable.setAlias(new Alias(currentAtom.getPredicate.getIdentifier.toString + aliasIndex))
 
 
-            onExpression.setRightExpression(new Column(rightTable, getTermFromCatalog(currentAtom, term).getIdentifier.toString))
-            onExpression.setLeftExpression(new Column(leftTable, getTermFromCatalog(leftAtom._1, term).toString))
+            onExpression.setRightExpression(new Column(rightTable, getJoinExpressionColumnName(currentAtom, term)))
+            onExpression.setLeftExpression(new Column(leftTable, getJoinExpressionColumnName(leftAtom._1, term)))
 
             join.setOnExpression(onExpression)
 
@@ -188,6 +193,14 @@ object SqlUtils {
         null,
         new PlainSelect())
 
+    }
+
+    def getJoinExpressionColumnName(atom: Atom, term: Term) = {
+      if (iDbPredicates.contains(atom.getPredicate) ) {
+        s"X${atom.indexOf(term)}"
+      }else {
+        getTermFromCatalog(atom, term).getIdentifier.toString
+      }
     }
 
     def getRightJoinItem(atom: Atom, aliasIndex: Int) = {
@@ -214,7 +227,7 @@ object SqlUtils {
         //
         val selects: List[SelectBody] = clauseToMap
           .filter(_.head.getPredicate == headPredicate)
-          .map(clause => getSelectBody(clause, addSelectAlias)).toList
+          .map(clause => getSelectBody(clause)).toList
 
         if (selects.isEmpty)
           throw new RuntimeException(s"head predicate $headPredicate is not present")
