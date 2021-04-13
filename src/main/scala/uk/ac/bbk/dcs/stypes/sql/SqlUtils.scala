@@ -58,13 +58,15 @@ object SqlUtils {
         case (currentAtom, _) =>
           currentAtom.getTerms.asScala.map(
             term => {
-              val atomsIndexedAssociated = bodyAtomsIndexed.filter { case (atom, _) => atom != currentAtom && atom.getTerms.asScala.contains(term) }
+              val atomsIndexedAssociated = bodyAtomsIndexed
+                .filter { case (atom, _) => atom != currentAtom && atom.getTerms.asScala.contains(term) }
               (term, atomsIndexedAssociated)
+
             })
 
       }.filterNot { case (_, listAtoms) => listAtoms == Nil }
         .groupBy { case (term, _) => term }
-        .map { case (term, tupleTermListAtoms) => (term, tupleTermListAtoms.flatten(_._2)) }
+        .map { case (term, tupleTermListAtoms) => (term, tupleTermListAtoms.flatten(_._2).distinct.sortBy(_._2)) }
     }
 
     def getSelectFromBody(atom: Atom, aliasIndex: Int): FromItem = {
@@ -172,10 +174,10 @@ object SqlUtils {
         case (term, atomsIndexed) :: xs =>
           val join = new Join()
           join.setInner(true)
-          val rightItemOption = atomsIndexed.find(!atomIndexedInSelect.contains(_))
+          val rightItemOption = atomsIndexed.filter(!atomIndexedInSelect.contains(_))
           if (rightItemOption.nonEmpty) {
-            val currentAtom = rightItemOption.get._1
-            val aliasIndex = rightItemOption.get._2
+            val currentAtom = rightItemOption.head._1
+            val aliasIndex = rightItemOption.head._2
             val rightItem = getRightJoinItem(currentAtom, aliasIndex)
             val onExpression = new EqualsTo()
             join.setRightItem(rightItem)
@@ -187,13 +189,13 @@ object SqlUtils {
             val rightTable = new Table(currentAtom.getPredicate.getIdentifier.toString)
             rightTable.setAlias(new Alias(currentAtom.getPredicate.getIdentifier.toString + aliasIndex))
 
-
             onExpression.setRightExpression(new Column(rightTable, getJoinExpressionColumnName(currentAtom, term)))
             onExpression.setLeftExpression(new Column(leftTable, getJoinExpressionColumnName(leftAtom._1, term)))
 
             join.setOnExpression(onExpression)
 
-            getCurrentJoin(xs, atomIndexedInSelect + rightItemOption.get, (rightItemOption.get, join :: acc._2))
+            val tail = if (rightItemOption.length > 1) mapFiltered else xs
+            getCurrentJoin(tail, atomIndexedInSelect + rightItemOption.head, (rightItemOption.head, join :: acc._2))
           } else {
             getCurrentJoin(xs, atomIndexedInSelect, acc)
           }

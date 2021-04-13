@@ -4,7 +4,6 @@ import fr.lirmm.graphik.graal.api.core.{Atom, Predicate, Term}
 import fr.lirmm.graphik.graal.api.factory.TermFactory
 import fr.lirmm.graphik.graal.core.DefaultAtom
 import fr.lirmm.graphik.graal.core.term.DefaultTermFactory
-import net.sf.jsqlparser.parser.CCJSqlParserUtil
 import net.sf.jsqlparser.util.validation.feature.DatabaseType
 import net.sf.jsqlparser.util.validation.{Validation, Validator}
 import org.scalatest.FunSpec
@@ -88,33 +87,31 @@ class SqlUtilsTest extends FunSpec {
       val sqlExpected = "SELECT a0.X AS X0, s5.Y AS X1 " +
         "FROM a AS a0 " +
         "INNER JOIN r AS r1 ON a0.X = r1.X " +
-        "INNER JOIN b AS b2 ON r3.X = b2.X " +
+        "INNER JOIN b AS b2 ON r1.Y = b2.X " +
+        "INNER JOIN r AS r3 ON r1.Y = r3.X " +
         "INNER JOIN s AS s4 ON r3.Y = s4.X " +
         "INNER JOIN s AS s5 ON s4.Y = s5.X"
 
       commonAssertions("src/test/resources/rewriting/q05-rew_test.dlp", sqlExpected)
-
     }
 
     it("should return a statement for q06-rew_test.dlp") {
       // p1(x0, x4) :- a(x0), s(x3, x4), r(x0, x1), r(x1, x2), s(x2, x3), b(x1).
-      val sqlExpected = "SELECT a0.X AS X0, s5.Y AS X1 " +
-        "FROM a AS a0 " +
+      val sqlExpected = "SELECT a0.X AS X0, s5.Y " +
+        "AS X1 FROM a AS a0 " +
         "INNER JOIN r AS r1 ON a0.X = r1.X " +
-        "INNER JOIN r AS r2 ON b3.X = r2.X " +
+        "INNER JOIN r AS r2 ON r1.Y = r2.X " +
+        "INNER JOIN b AS b3 ON r1.Y = b3.X " +
         "INNER JOIN s AS s4 ON r2.Y = s4.X " +
         "INNER JOIN s AS s5 ON s4.Y = s5.X"
 
       commonAssertions("src/test/resources/rewriting/q06-rew_test.dlp", sqlExpected)
-
     }
-
 
   }
 
   private def commonAssertions(datalogFileRewriting:String, sqlExpected: String ): Unit ={
-    val stmt = CCJSqlParserUtil.parseStatements(sqlExpected)
-
+//    val stmt = CCJSqlParserUtil.parseStatements(sqlExpected)
     val ndl = ReWriter.getDatalogRewriting(datalogFileRewriting)
     val goalPredicate: Predicate = new Predicate("p1", 2)
     val actual = SqlUtils.ndl2sql(ndl, goalPredicate, getEDBCatalog)
