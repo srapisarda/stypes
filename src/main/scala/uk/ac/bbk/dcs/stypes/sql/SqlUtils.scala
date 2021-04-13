@@ -29,21 +29,22 @@ object SqlUtils {
     ndl.map(p => p.head.getPredicate).toSet
   }
 
+  @tailrec
   def orderBodyClauseByTerm(body: List[Atom], acc: List[Atom] = Nil): List[Atom] = body match {
     case Nil => acc.reverse
     case atom :: tail =>
-      val atomsMatched:List[Atom] = tail.filter(_.getTerms.asScala.toSet.intersect(atom.getTerms().asScala.toSet).nonEmpty)
-      val atomsNonMatched:List[Atom] = tail.filter(_.getTerms.asScala.toSet.intersect(atom.getTerms().asScala.toSet).isEmpty)
-      orderBodyClauseByTerm( atomsMatched ++ atomsNonMatched, atom::acc )
+      val atomsMatched: List[Atom] = tail.filter(_.getTerms.asScala.toSet.intersect(atom.getTerms().asScala.toSet).nonEmpty)
+      val atomsNonMatched: List[Atom] = tail.filter(_.getTerms.asScala.toSet.intersect(atom.getTerms().asScala.toSet).isEmpty)
+      orderBodyClauseByTerm(atomsMatched ++ atomsNonMatched, atom :: acc)
   }
 
   def orderNdlByTerm(ndl: List[Clause]): List[Clause] = {
-    ndl.map(c=> Clause(c.head, orderBodyClauseByTerm(c.body)))
+    ndl.map(c => Clause(c.head, orderBodyClauseByTerm(c.body)))
   }
 
   def ndl2sql(ndl: List[Clause], goalPredicate: Predicate, dbCatalog: EDBCatalog): Statement = {
     val ndlOrdered = orderNdlByTerm(ndl)
-    var clauseToMap =   ndlOrdered.toSet
+    var clauseToMap = ndlOrdered.toSet
     var predicateMapToSelects: Map[Predicate, Select] = Map()
     var aliasIndex = 0
     val iDbPredicates = getIdbPredicates(ndlOrdered)
