@@ -5,7 +5,7 @@ import fr.lirmm.graphik.graal.api.factory.TermFactory
 import fr.lirmm.graphik.graal.core.DefaultAtom
 import fr.lirmm.graphik.graal.core.term.DefaultTermFactory
 import net.sf.jsqlparser.util.validation.feature.DatabaseType
-import net.sf.jsqlparser.util.validation.{Validation, Validator}
+import net.sf.jsqlparser.util.validation.Validation
 import org.scalatest.FunSpec
 import uk.ac.bbk.dcs.stypes.ReWriter
 
@@ -16,7 +16,7 @@ class SqlUtilsTest extends FunSpec {
     it("should return the eDBs predicates the NDL contains") {
       val expected = Seq("a", "b", "s", "r")
       val ndl = ReWriter.getDatalogRewriting(s"src/test/resources/rewriting/q15-rew.dlp")
-      val eDbPredicates = SqlUtils.getEdbPredicates(ndl,None)
+      val eDbPredicates = SqlUtils.getEdbPredicates(ndl, None)
       val actual = eDbPredicates.map(_.getIdentifier)
       expected.foreach(exp => assert(actual.contains(exp)))
     }
@@ -70,14 +70,14 @@ class SqlUtilsTest extends FunSpec {
       //  p3(x0,x1) :- a(x0), r(x0, x1), b(x1).
       val sqlExpected = "SELECT a0.X AS X0, p21.X1 AS X1 FROM a AS a0 " +
         "INNER JOIN " +
-          "(SELECT r0.X AS X0, p32.X1 AS X1 FROM r AS r0 " +
-          "INNER JOIN s AS s1 ON r0.Y = s1.X " +
-          "INNER JOIN " +
-            "(SELECT a0.X AS X0, r1.Y AS X1 FROM a AS a0 " +
-            "INNER JOIN r AS r1 ON a0.X = r1.X " +
-            "INNER JOIN b AS b2 ON r1.Y = b2.X) AS p32 " +
-          "ON s1.Y = p32.X0) AS p21 ON a0.X = p21.X0 " +
-          "INNER JOIN b AS b2 ON p21.X1 = b2.X"
+        "(SELECT r0.X AS X0, p32.X1 AS X1 FROM r AS r0 " +
+        "INNER JOIN s AS s1 ON r0.Y = s1.X " +
+        "INNER JOIN " +
+        "(SELECT a0.X AS X0, r1.Y AS X1 FROM a AS a0 " +
+        "INNER JOIN r AS r1 ON a0.X = r1.X " +
+        "INNER JOIN b AS b2 ON r1.Y = b2.X) AS p32 " +
+        "ON s1.Y = p32.X0) AS p21 ON a0.X = p21.X0 " +
+        "INNER JOIN b AS b2 ON p21.X1 = b2.X"
 
       commonAssertions("src/test/resources/rewriting/q04-rew_test.dlp", sqlExpected)
     }
@@ -108,12 +108,55 @@ class SqlUtilsTest extends FunSpec {
       commonAssertions("src/test/resources/rewriting/q06-rew_test.dlp", sqlExpected)
     }
 
+
+    it("should return a statement for q07-rew_test.dlp") {
+      // p1(x0, x4) :- a(x0), s(x3, x4), r(x0, x1), r(x1, x2), s(x2, x3), b(x1).
+      val sqlExpected = "SELECT p30.X0 AS X0 FROM (SELECT a0.X AS X0 FROM a AS a0 INNER JOIN (SELECT a0.X AS X0 FROM a AS a0 UNION (SELECT s0.X AS X0 FROM s AS s0)) AS p91 ON a0.X = p91.X0) AS p30 INNER JOIN (SELECT r1.Y AS X0 FROM (SELECT s0.Y AS X0 FROM s AS s0) AS p60 INNER JOIN r AS r1 ON p60.X0 = r1.X INNER JOIN b AS b2 ON r1.Y = b2.X UNION (SELECT a0.X AS X0 FROM a AS a0 INNER JOIN b AS b1 ON a0.X = b1.X)) AS p21 ON p30.X0 = p21.X0 INNER JOIN b AS b2 ON p30.X0 = b2.X UNION (SELECT s1.Y AS X0 FROM (SELECT r2.Y AS X0 FROM (SELECT b0.X AS X0 FROM b AS b0) AS p60 INNER JOIN r AS r1 ON p60.X0 = r1.X INNER JOIN r AS r2 ON r1.Y = r2.X) AS p120 INNER JOIN s AS s1 ON p120.X0 = s1.X INNER JOIN (SELECT s0.X AS X0 FROM s AS s0 INNER JOIN r AS r1 ON s0.Y = r1.X INNER JOIN (SELECT a0.X AS X0 FROM a AS a0 UNION (SELECT s0.X AS X0 FROM s AS s0)) AS p92 ON r1.Y = p92.X0 UNION (SELECT s0.X AS X0 FROM s AS s0 INNER JOIN b AS b1 ON s0.Y = b1.X) UNION (SELECT a0.X AS X0 FROM a AS a0 INNER JOIN (SELECT a0.X AS X0 FROM a AS a0 UNION (SELECT s0.X AS X0 FROM s AS s0)) AS p91 ON a0.X = p91.X0)) AS p32 ON s1.Y = p32.X0)"
+
+      commonAssertions("src/test/resources/rewriting/q07-rew_test.dlp", sqlExpected, new Predicate("p1", 1))
+    }
+
+    it("should return a statement for q07p2-rew_test.dlp") {
+      val sqlExpected = ""
+      commonAssertions("src/test/resources/rewriting/q07p2-rew_test.dlp", sqlExpected, new Predicate("p1", 1))
+    }
+
+
+    it("should return a statement for q07p3-rew_test.dlp") {
+      //p1(X4) :- p3(X4), b(X4).
+      //p3(X4) :- r(X5,X6), s(X4,X5), b(X6).
+      //p3(X4) :- s(X4,X7), b(X7).
+      //p3(X4) :- a(X4), b(x).
+
+      val sqlExpected = "SELECT p30.X0 AS X0 FROM " +
+        "(SELECT s0.X AS X0 FROM s AS s0 " +
+        "INNER JOIN r AS r1 ON s0.Y = r1.X " +
+        "INNER JOIN b AS b2 ON r1.Y = b2.X) AS p30 " +
+        "INNER JOIN b AS b1 ON p30.X0 = b1.X"
+
+      commonAssertions("src/test/resources/rewriting/q07p3-rew_test.dlp", sqlExpected, new Predicate("p1", 1))
+    }
+
+    //    it("should return a statement for q15-rew_test.dlp") {
+    //      // p1(x0, x4) :- a(x0), s(x3, x4), r(x0, x1), r(x1, x2), s(x2, x3), b(x1).
+    //      val sqlExpected = "SELECT a0.X AS X0, s5.Y " +
+    //        "AS X1 FROM a AS a0 " +
+    //        "INNER JOIN r AS r1 ON a0.X = r1.X " +
+    //        "INNER JOIN r AS r2 ON r1.Y = r2.X " +
+    //        "INNER JOIN b AS b3 ON r1.Y = b3.X " +
+    //        "INNER JOIN s AS s4 ON r2.Y = s4.X " +
+    //        "INNER JOIN s AS s5 ON s4.Y = s5.X"
+    //
+    //      commonAssertions("src/test/resources/rewriting/q15-rew.dlp", sqlExpected)
+    //    }
+
+
   }
 
-  private def commonAssertions(datalogFileRewriting:String, sqlExpected: String ): Unit ={
-//    val stmt = CCJSqlParserUtil.parseStatements(sqlExpected)
+  private def commonAssertions(datalogFileRewriting: String, sqlExpected: String,
+                               goalPredicate: Predicate = new Predicate("p1", 2)): Unit = {
+    //    val stmt = CCJSqlParserUtil.parseStatements(sqlExpected)
     val ndl = ReWriter.getDatalogRewriting(datalogFileRewriting)
-    val goalPredicate: Predicate = new Predicate("p1", 2)
     val actual = SqlUtils.ndl2sql(ndl, goalPredicate, getEDBCatalog)
     val sqlActual = actual.toString
     println(ndl)
@@ -124,7 +167,7 @@ class SqlUtilsTest extends FunSpec {
   }
 
   private def isValidSql(sql: String) = {
-    val  validation = new Validation(List(DatabaseType.POSTGRESQL).asJava, sql)
+    val validation = new Validation(List(DatabaseType.POSTGRESQL).asJava, sql)
     val errors = validation.validate()
     println(errors)
     errors.isEmpty

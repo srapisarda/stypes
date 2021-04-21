@@ -39,7 +39,17 @@ object SqlUtils {
   }
 
   def orderNdlByTerm(ndl: List[Clause]): List[Clause] = {
-    ndl.map(c => Clause(c.head, orderBodyClauseByTerm(c.body)))
+    ndl.map(c => Clause(c.head, orderBodyClauseByTerm( minInFront(c.body))))
+  }
+
+  def minInFront(body: List[Atom]) = {
+    if ( body.isEmpty) body
+    else {
+      val term = body.flatten(_.getTerms().asScala).min
+      val front =  body.filter(_.contains(term)).sortBy(_.getTerms.size())
+      val back = body.filter(!_.contains(term))
+      front:::back
+    }
   }
 
   def ndl2sql(ndl: List[Clause], goalPredicate: Predicate, dbCatalog: EDBCatalog): Statement = {
@@ -77,26 +87,34 @@ object SqlUtils {
         from.setAlias(new Alias(s"$identifier$aliasIndex"))
         from
       } else {
-        getSubSelect(atom)
+        getSubSelect(atom, aliasIndex)
       }
     }
 
-    def getSubSelect(atom: Atom): SubSelect = {
+    def getSubSelect(atom: Atom, aliasIndex: Int): SubSelect = {
+
+      val selectBody = if (predicateMapToSelects.contains(atom.getPredicate)) {
+        predicateMapToSelects(atom.getPredicate).getSelectBody()
+      } else {
+        val clause = {
+
+          clauseToMap
+            .find(_.head.getPredicate == atom.getPredicate)
+            .getOrElse(throw new RuntimeException(s"Atom $atom is not present in select"))
+        }
+        getSelectBody(clause)
+      }
+
       val subSelect = new SubSelect()
-
-      val clause = clauseToMap
-        .find(_.head.getPredicate == atom.getPredicate)
-        .getOrElse(throw new RuntimeException("Atom is not present in select"))
-
-      subSelect.setSelectBody(getSelectBody(clause))
-
+      subSelect.setSelectBody(selectBody)
+      subSelect.setAlias(new Alias(atom.getPredicate.getIdentifier.toString + aliasIndex))
       subSelect
     }
 
     def getSelectExpressionItem(termIndexed: (Term, Int), clauseBodyWithIndex: List[(Atom, Int)]) = {
       val bodyAtomsIndexed: (Atom, Int) = clauseBodyWithIndex
         .find(_._1.contains(termIndexed._1))
-        .getOrElse(throw new RuntimeException("Term not in body clause!"))
+        .getOrElse(throw new RuntimeException(s"Term $termIndexed not in body clause!"))
 
       val table = new Table(s"${bodyAtomsIndexed._1.getPredicate.getIdentifier.toString}${bodyAtomsIndexed._2}")
       val atom = bodyAtomsIndexed._1
@@ -118,7 +136,7 @@ object SqlUtils {
         term
       } else {
         val catalogAtom: Atom = dbCatalog.getAtomFromPredicate(atom.getPredicate)
-          .getOrElse(throw new RuntimeException("Predicate not present in EDB Catalog!"))
+          .getOrElse(throw new RuntimeException(s"Predicate ${atom.getPredicate} not present in EDB Catalog!"))
 
         catalogAtom.getTerm(atom.indexOf(term))
       }
@@ -235,18 +253,18 @@ object SqlUtils {
       }
     }
 
-    def getSelect(headPredicate: Predicate, addSelectAlias: Boolean = false): Select = {
-      if (predicateMapToSelects.contains(headPredicate)) {
-        predicateMapToSelects(headPredicate)
+    def getSelect(predicate: Predicate, addSelectAlias: Boolean = false): Select = {
+      if (predicateMapToSelects.contains(predicate)) {
+        predicateMapToSelects(predicate)
       }
       else {
         //
-        val selects: List[SelectBody] = clauseToMap
-          .filter(_.head.getPredicate == headPredicate)
-          .map(clause => getSelectBody(clause)).toList
+        val selects: List[SelectBody] = ndlOrdered
+          .filter(_.head.getPredicate == predicate)
+          .map(clause => getSelectBody(clause))
 
         if (selects.isEmpty)
-          throw new RuntimeException(s"head predicate $headPredicate is not present")
+          throw new RuntimeException(s"head predicate $predicate is not present")
 
         val select = new Select
         if (selects.size == 1) {
@@ -261,7 +279,7 @@ object SqlUtils {
           select.setSelectBody(sol)
         }
 
-        predicateMapToSelects += headPredicate -> select
+        predicateMapToSelects += predicate -> select
 
         select
       }
