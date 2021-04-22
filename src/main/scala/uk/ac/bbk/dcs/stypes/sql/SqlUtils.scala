@@ -102,7 +102,7 @@ object SqlUtils {
             .find(_.head.getPredicate == atom.getPredicate)
             .getOrElse(throw new RuntimeException(s"Atom $atom is not present in select"))
         }
-        getSelectBody(clause)
+        getSelect(clause.head.getPredicate).getSelectBody()
       }
 
       val subSelect = new SubSelect()
