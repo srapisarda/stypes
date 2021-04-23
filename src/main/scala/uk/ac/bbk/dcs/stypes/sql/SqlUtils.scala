@@ -84,7 +84,7 @@ object SqlUtils {
       if (eDbPredicates.contains(atom.getPredicate)) {
         val identifier = atom.getPredicate.getIdentifier.toString
         val from = new Table(identifier)
-        from.setAlias(new Alias(s"$identifier$aliasIndex"))
+        from.setAlias(new Alias(s"${identifier}_${aliasIndex}"))
         from
       } else {
         getSubSelect(atom, aliasIndex)
@@ -107,7 +107,7 @@ object SqlUtils {
 
       val subSelect = new SubSelect()
       subSelect.setSelectBody(selectBody)
-      subSelect.setAlias(new Alias(atom.getPredicate.getIdentifier.toString + aliasIndex))
+      subSelect.setAlias(new Alias(atom.getPredicate.getIdentifier.toString + "_" + aliasIndex))
       subSelect
     }
 
@@ -116,7 +116,7 @@ object SqlUtils {
         .find(_._1.contains(termIndexed._1))
         .getOrElse(throw new RuntimeException(s"Term $termIndexed not in body clause!"))
 
-      val table = new Table(s"${bodyAtomsIndexed._1.getPredicate.getIdentifier.toString}${bodyAtomsIndexed._2}")
+      val table = new Table(s"${bodyAtomsIndexed._1.getPredicate.getIdentifier.toString}_${bodyAtomsIndexed._2}")
       val atom = bodyAtomsIndexed._1
       val sqlTerm = getTermFromCatalog(atom, termIndexed._1)
 
@@ -203,10 +203,10 @@ object SqlUtils {
 
             val leftAtom = atomsIndexed.find(_ != (currentAtom, aliasIndex)).get
             val leftTable = new Table(leftAtom._1.getPredicate.getIdentifier.toString)
-            leftTable.setAlias(new Alias(leftAtom._1.getPredicate.getIdentifier.toString + leftAtom._2))
+            leftTable.setAlias(new Alias(leftAtom._1.getPredicate.getIdentifier.toString + "_" + leftAtom._2))
 
             val rightTable = new Table(currentAtom.getPredicate.getIdentifier.toString)
-            rightTable.setAlias(new Alias(currentAtom.getPredicate.getIdentifier.toString + aliasIndex))
+            rightTable.setAlias(new Alias(currentAtom.getPredicate.getIdentifier.toString + "_" + aliasIndex))
 
             onExpression.setRightExpression(new Column(rightTable, getJoinExpressionColumnName(currentAtom, term)))
             onExpression.setLeftExpression(new Column(leftTable, getJoinExpressionColumnName(leftAtom._1, term)))
@@ -241,13 +241,13 @@ object SqlUtils {
       if (eDbPredicates.contains(atom.getPredicate)) {
         val tableName = atom.getPredicate.getIdentifier.toString
         val table = new Table(tableName)
-        table.setAlias(new Alias(s"$tableName$aliasIndex"))
+        table.setAlias(new Alias(s"${tableName}_${aliasIndex}"))
         increaseAliasIndex()
         table
       } else {
         val subSelect = new SubSelect
         subSelect.setSelectBody(getSelect(atom.getPredicate, addSelectAlias = true).getSelectBody)
-        subSelect.setAlias(new Alias(atom.getPredicate.getIdentifier.toString + aliasIndex))
+        subSelect.setAlias(new Alias(atom.getPredicate.getIdentifier.toString + "_" + aliasIndex))
         subSelect
 
       }
