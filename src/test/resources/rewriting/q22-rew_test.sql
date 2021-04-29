@@ -1,4 +1,4 @@
-SELECT p3_0.X0 AS X0, p12_2.X1 AS X1
+SELECT p3_0.X0 AS X0, p12_2.X0 AS X1
 FROM (SELECT a_0.X AS X0, r_1.Y AS X1
       FROM a AS a_0
                INNER JOIN r AS r_1 ON a_0.X = r_1.X

@@ -118,11 +118,12 @@ object SqlUtils {
 
       val table = new Table(s"${bodyAtomsIndexed._1.getPredicate.getIdentifier.toString}_${bodyAtomsIndexed._2}")
       val atom = bodyAtomsIndexed._1
-      val sqlTerm = getTermFromCatalog(atom, termIndexed._1)
 
       val columnName = if (iDbPredicates.contains(bodyAtomsIndexed._1.getPredicate)) {
-        s"X${termIndexed._2}"
+        val termIndex = bodyAtomsIndexed._1.indexOf(termIndexed._1)
+        s"X$termIndex"
       } else {
+        val sqlTerm = getTermFromCatalog(atom, termIndexed._1)
         sqlTerm.getIdentifier.toString
       }
 
