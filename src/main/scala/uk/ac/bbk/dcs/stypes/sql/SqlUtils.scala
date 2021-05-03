@@ -84,12 +84,10 @@ object SqlUtils {
         case x :: xs =>
           if (dependencies.isEmpty) {
             placePredicateAfterDependencies(Nil, predicate, dependencies, xs.reverse ::: x :: predicate :: acc)
+          } else if (dependencies.contains(x)) {
+            placePredicateAfterDependencies(xs, predicate, dependencies - x, x :: acc)
           } else {
-            if (dependencies.contains(x)) {
-              placePredicateAfterDependencies(xs, predicate, dependencies - x, x :: acc)
-            } else {
-              placePredicateAfterDependencies(xs, predicate, dependencies, x :: acc)
-            }
+            placePredicateAfterDependencies(xs, predicate, dependencies, x :: acc)
           }
       }
 
