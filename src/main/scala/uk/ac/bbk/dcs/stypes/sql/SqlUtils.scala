@@ -39,16 +39,70 @@ object SqlUtils {
   }
 
   def orderNdlByTerm(ndl: List[Clause]): List[Clause] = {
-    ndl.map(c => Clause(c.head, orderBodyClauseByTerm( minInFront(c.body))))
+    ndl.map(c => Clause(c.head, orderBodyClauseByTerm(minInFront(c.body))))
+  }
+
+  def getIdbDependenciesSpanningTree(statPredicate: Predicate,
+                                     ndl: List[Clause],
+                                     optionIDBs: Option[Set[Predicate]] = None): List[Predicate] = {
+
+    val iDBs = optionIDBs.getOrElse(getIdbPredicates(ndl))
+    val mapPredicateToIdbPredicateBody = ndl.groupBy(_.head)
+      .map(group => group._1.getPredicate ->
+        group._2.flatten(clause => clause.body.filter(atom => iDBs.contains(atom.getPredicate)).map(_.getPredicate)))
+
+    @tailrec
+    def getIdbDependenciesSpanningTreeH(toVisit: List[Predicate],
+                                        visited: Set[Predicate],
+                                        acc: List[Predicate]): List[Predicate] =
+      toVisit match {
+        case List() => acc
+        case predicate :: tail =>
+          if (!visited.contains(predicate)) {
+            val dependenciesVisited = mapPredicateToIdbPredicateBody(predicate).filter(visited(_))
+            val accumulator =
+              if (dependenciesVisited.isEmpty) predicate :: acc
+              else placePredicateAfterDependencies(acc, predicate, dependenciesVisited.toSet)
+
+            getIdbDependenciesSpanningTreeH(
+              mapPredicateToIdbPredicateBody(predicate).filterNot(visited(_)) ::: tail,
+              visited + predicate,
+              accumulator
+            )
+          } else {
+            getIdbDependenciesSpanningTreeH(tail, visited, acc)
+          }
+      }
+
+    @tailrec
+    def placePredicateAfterDependencies(visited: List[Predicate],
+                                        predicate: Predicate,
+                                        dependencies: Set[Predicate],
+                                        acc: List[Predicate] = Nil): List[Predicate] =
+      visited match {
+        case Nil => acc.reverse
+        case x :: xs =>
+          if (dependencies.isEmpty) {
+            placePredicateAfterDependencies(Nil, predicate, dependencies, xs.reverse ::: x :: predicate :: acc)
+          } else {
+            if (dependencies.contains(x)) {
+              placePredicateAfterDependencies(xs, predicate, dependencies - x, x :: acc)
+            } else {
+              placePredicateAfterDependencies(xs, predicate, dependencies, x :: acc)
+            }
+          }
+      }
+
+    getIdbDependenciesSpanningTreeH(mapPredicateToIdbPredicateBody(statPredicate), Set(statPredicate), List(statPredicate))
   }
 
   def minInFront(body: List[Atom]) = {
-    if ( body.isEmpty) body
+    if (body.isEmpty) body
     else {
       val term = body.flatten(_.getTerms().asScala).min
-      val front =  body.filter(_.contains(term)).sortBy(_.getTerms.size())
+      val front = body.filter(_.contains(term)).sortBy(_.getTerms.size())
       val back = body.filter(!_.contains(term))
-      front:::back
+      front ::: back
     }
   }
 

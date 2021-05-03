@@ -14,6 +14,28 @@ import scala.io.Source
 
 class SqlUtilsTest extends FunSpec {
   describe("sql util tests") {
+
+    it("should return a correct list of IDB predicate dependencies for qw01-rew_test.dlp") {
+      val ndl = ReWriter.getDatalogRewriting(s"src/test/resources/rewriting/qw01-rew_test.dlp")
+      val spanningTree = SqlUtils.getIdbDependenciesSpanningTree(new Predicate("p1", 2), ndl)
+      val expected = List("p2", "p3", "p1").map(new Predicate(_, 2))
+      assert(spanningTree === expected)
+    }
+
+    it("should return a correct list of IDB predicate dependencies for q15-rew.dlp") {
+      val ndl = ReWriter.getDatalogRewriting(s"src/test/resources/rewriting/q15-rew.dlp")
+      val spanningTree = SqlUtils.getIdbDependenciesSpanningTree(new Predicate("p1", 2), ndl)
+      val expected = List("p28", "p40", "p19", "p3", "p43", "p35", "p5", "p7", "p14", "p2", "p1").map(new Predicate(_, 2))
+      assert( expected == spanningTree)
+    }
+
+    it("should return a correct list of IDB predicate dependencies for q22-rew_test.dlp") {
+      val ndl = ReWriter.getDatalogRewriting(s"src/test/resources/rewriting/q22-rew_test.dlp")
+      val spanningTree = SqlUtils.getIdbDependenciesSpanningTree(new Predicate("p1", 2), ndl)
+      val expected = List("p12", "p3", "p1").map(new Predicate(_, 2))
+      assert( expected == spanningTree)
+    }
+
     it("should return the eDBs predicates the NDL contains") {
       val expected = Seq("a", "b", "s", "r")
       val ndl = ReWriter.getDatalogRewriting(s"src/test/resources/rewriting/q15-rew.dlp")
@@ -28,7 +50,7 @@ class SqlUtilsTest extends FunSpec {
     }
 
     it("should return a statement for q02-rew_test.dlp") {
-     commonAssertions("src/test/resources/rewriting/q02-rew_test.dlp")
+      commonAssertions("src/test/resources/rewriting/q02-rew_test.dlp")
     }
 
 
@@ -45,7 +67,7 @@ class SqlUtilsTest extends FunSpec {
     }
 
     it("should return a statement for q06-rew_test.dlp") {
-        commonAssertions("src/test/resources/rewriting/q06-rew_test.dlp")
+      commonAssertions("src/test/resources/rewriting/q06-rew_test.dlp")
     }
 
     it("should return a statement for q07-rew_test.dlp") {
