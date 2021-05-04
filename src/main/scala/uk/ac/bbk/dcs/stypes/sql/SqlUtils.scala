@@ -5,7 +5,10 @@ import net.sf.jsqlparser.expression.Alias
 import net.sf.jsqlparser.expression.operators.relational.EqualsTo
 import net.sf.jsqlparser.schema.{Column, Table}
 import net.sf.jsqlparser.statement.Statement
-import net.sf.jsqlparser.statement.select.{FromItem, Join, PlainSelect, Select, SelectBody, SelectExpressionItem, SelectItem, SetOperation, SetOperationList, SubSelect, UnionOp}
+import net.sf.jsqlparser.statement.select.{
+  FromItem, Join, PlainSelect, Select, SelectBody, SelectExpressionItem,
+  SelectItem, SetOperation, SetOperationList, SubSelect, UnionOp, WithItem
+}
 import uk.ac.bbk.dcs.stypes.Clause
 
 import scala.annotation.tailrec
@@ -94,7 +97,7 @@ object SqlUtils {
     getIdbDependenciesSpanningTreeH(mapPredicateToIdbPredicateBody(statPredicate), Set(statPredicate), List(statPredicate))
   }
 
-  def minInFront(body: List[Atom]) = {
+  def minInFront(body: List[Atom]): List[Atom] = {
     if (body.isEmpty) body
     else {
       val term = body.flatten(_.getTerms().asScala).min
@@ -104,7 +107,10 @@ object SqlUtils {
     }
   }
 
-  def ndl2sql(ndl: List[Clause], goalPredicate: Predicate, dbCatalog: EDBCatalog): Statement = {
+  def ndl2sql(ndl: List[Clause], goalPredicate: Predicate,
+              dbCatalog: EDBCatalog,
+              useWith: Boolean = false): Statement = {
+
     val ndlOrdered = orderNdlByTerm(ndl)
     var clauseToMap = ndlOrdered.toSet
     var predicateMapToSelects: Map[Predicate, Select] = Map()
@@ -133,10 +139,10 @@ object SqlUtils {
     }
 
     def getSelectFromBody(atom: Atom, aliasIndex: Int): FromItem = {
-      if (eDbPredicates.contains(atom.getPredicate)) {
+      if (eDbPredicates.contains(atom.getPredicate) || useWith) {
         val identifier = atom.getPredicate.getIdentifier.toString
         val from = new Table(identifier)
-        from.setAlias(new Alias(s"${identifier}_${aliasIndex}"))
+        from.setAlias(new Alias(s"${identifier}_$aliasIndex"))
         from
       } else {
         getSubSelect(atom, aliasIndex)
@@ -291,10 +297,10 @@ object SqlUtils {
     }
 
     def getRightJoinItem(atom: Atom, aliasIndex: Int) = {
-      if (eDbPredicates.contains(atom.getPredicate)) {
+      if (eDbPredicates.contains(atom.getPredicate) || useWith) {
         val tableName = atom.getPredicate.getIdentifier.toString
         val table = new Table(tableName)
-        table.setAlias(new Alias(s"${tableName}_${aliasIndex}"))
+        table.setAlias(new Alias(s"${tableName}_$aliasIndex"))
         increaseAliasIndex()
         table
       } else {
@@ -302,7 +308,6 @@ object SqlUtils {
         subSelect.setSelectBody(getSelect(atom.getPredicate, addSelectAlias = true).getSelectBody)
         subSelect.setAlias(new Alias(atom.getPredicate.getIdentifier.toString + "_" + aliasIndex))
         subSelect
-
       }
     }
 
@@ -338,6 +343,42 @@ object SqlUtils {
       }
     }
 
-    getSelect(goalPredicate)
+    def getSelectWith(startPredicate: Predicate): Select = {
+      val idbDependencySpanningTreeList = getIdbDependenciesSpanningTree(startPredicate, ndlOrdered)
+
+      val withItems: List[WithItem] = idbDependencySpanningTreeList.map(predicate => {
+        val withItem = new WithItem()
+        val selectBody = getSelect(predicate).getSelectBody
+        withItem.setSelectBody(selectBody)
+        withItem.setName(predicate.getIdentifier.toString)
+        withItem
+      })
+
+      val fromItem = new Table(startPredicate.getIdentifier.toString)
+      val selectBody = new PlainSelect()
+      selectBody.setFromItem(fromItem)
+
+      val startClause = ndlOrdered.find(_.head.getPredicate == startPredicate)
+        .getOrElse(throw new RuntimeException("Start predicate not found!"))
+
+      val selectItems: List[SelectItem] = startClause.head.getTerms.asScala.zipWithIndex.map(termIndexed => {
+        val selectExpressionItem = new SelectExpressionItem(new Column(fromItem, s"X${termIndexed._2}"))
+        //selectExpressionItem.setAlias(new Alias(s"X${termIndexed._2}"))
+        selectExpressionItem
+      }).toList
+
+      selectBody.setSelectItems(selectItems.asJava)
+
+      val select = new Select()
+      select.setSelectBody(selectBody)
+      select.setWithItemsList(withItems.asJava)
+      select
+    }
+
+    if (useWith)
+      getSelectWith(goalPredicate)
+    else
+      getSelect(goalPredicate)
+
   }
 }
