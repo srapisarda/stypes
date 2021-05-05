@@ -99,6 +99,12 @@ class SqlUtilsTest extends FunSpec {
     it("should return a statement for q22-rew_test.dlp") {
       commonAssertions("src/test/resources/rewriting/q22-rew_test.dlp")
     }
+
+
+    it("should return a statement for q22-rew_test-with.dlp") {
+      commonAssertions("src/test/resources/rewriting/q22-rew_test.dlp",
+        new Predicate("p1", 2), useWith = true)
+    }
   }
 
   private def commonAssertions(datalogFileRewriting: String,
