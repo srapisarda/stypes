@@ -591,7 +591,7 @@ object ReWriter {
   }
 
   def termConcat(ontologyTerm: Term, queryTerm: Term) : Term = {
-    TypeTermFactory.createOntologyVariable(s"${ontologyTerm.getIdentifier}@${queryTerm.getIdentifier}")
+    TypeTermFactory.createOntologyVariable(s"${ontologyTerm.getIdentifier}_${queryTerm.getIdentifier}")
   }
 
 }
