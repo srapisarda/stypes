@@ -37,7 +37,6 @@ import scala.collection.JavaConverters._
 import scala.io.Source
 
 
-
 /**
   * Created by
   * Salvatore Rapisarda
@@ -47,19 +46,20 @@ import scala.io.Source
   */
 object ReWriter {
   val logger = Logger(this.getClass)
+
   /**
     * Generates a set of generating atoms
     *
     * @param ontology a RuleSet
     * @return List[Atom]
     */
-  def makeGeneratingAtoms(ontology: List[Rule], includeAllAtoms:Boolean=false): List[Atom] = {
+  def makeGeneratingAtoms(ontology: List[Rule], includeAllAtoms: Boolean = false): List[Atom] = {
 
     @tailrec
     def visitRuleSet(rules: List[Rule], acc: List[Atom]): List[Atom] = rules match {
       case List() => acc
       case x :: xs =>
-        if (includeAllAtoms || containsExistentialQuantifier(x) ) visitRuleSet(xs, acc ::: x.getBody.asScala.toList)
+        if (includeAllAtoms || containsExistentialQuantifier(x)) visitRuleSet(xs, acc ::: x.getBody.asScala.toList)
         else visitRuleSet(xs, acc)
     }
 
@@ -89,14 +89,15 @@ object ReWriter {
     * @param ontology which contains a [[List]] of [[Rule]]
     * @return a [[List]] of [[Rule]]
     */
-  def createAdditionalRules(ontology: List[Rule]): List[Clause] ={
+  def createAdditionalRules(ontology: List[Rule]): List[Clause] = {
     val generatingAtoms = makeGeneratingAtoms(ontology, includeAllAtoms = true)
 
-    def collectRules( generatingAtom : Atom ): List[Clause] = {
+    def collectRules(generatingAtom: Atom): List[Clause] = {
       val canonicalModel: AtomSet = canonicalModelList(ontology, List(generatingAtom)).head
-      for (atom <- canonicalModel.asScala.toList; if atom!=generatingAtom && !atom.getTerms.asScala.exists(isAnonymous))
-        yield Clause(atom, List(generatingAtom)  )
+      for (atom <- canonicalModel.asScala.toList; if atom != generatingAtom && !atom.getTerms.asScala.exists(isAnonymous))
+        yield Clause(atom, List(generatingAtom))
     }
+
     generatingAtoms.flatMap(collectRules)
   }
 
@@ -135,7 +136,7 @@ object ReWriter {
 
   case class TermsTupleList(value: List[(Term, Term)])
 
-  def generateDatalog(rewriting: Seq[RuleTemplate], additionalRules:List[Clause] = List()): List[Clause] = {
+  def generateDatalog(rewriting: Seq[RuleTemplate], additionalRules: List[Clause] = List()): List[Clause] = {
 
     def getAtomsFromRewrite(ruleTemplate: RuleTemplate, map: Map[Int, Int], currentIndex: Int): (List[Clause], Map[Int, Int], Int) = {
 
@@ -390,14 +391,14 @@ object ReWriter {
       datalog
     }
     else {
-      ReWriter.logger.debug( s"datalog 1 : $datalog" )
+      ReWriter.logger.debug(s"datalog 1 : $datalog")
 
       val removalResult: List[Clause] = removeEmptyClauses(removeDuplicate(datalog))
 
-      ReWriter.logger.debug( s"datalog removal result : $removalResult" )
+      ReWriter.logger.debug(s"datalog removal result : $removalResult")
       val predicateSubstitutionRes: List[Clause] = predicateSubstitution(removalResult)
 
-      ReWriter.logger.debug( s"datalog predicateSubstitutionRes : $predicateSubstitutionRes" )
+      ReWriter.logger.debug(s"datalog predicateSubstitutionRes : $predicateSubstitutionRes")
 
       equalitySubstitution(predicateSubstitutionRes) ::: additionalRules
     }
@@ -418,17 +419,17 @@ object ReWriter {
           mapPositionTerm(xs, acc + mappedTerm, idx)
       }
 
-      def getProjection(head: Atom,  lhsTermsPosMap:Map[Term, List[Int]],  rhsTermsPosMap: Map[Term, List[Int]]): (List[Term], String) = {
-        def projectAtLeastTuple2( proj: List[String] ) = if (proj.lengthCompare(1)==0)  List(proj.head, proj.head) else proj
+      def getProjection(head: Atom, lhsTermsPosMap: Map[Term, List[Int]], rhsTermsPosMap: Map[Term, List[Int]]): (List[Term], String) = {
+        def projectAtLeastTuple2(proj: List[String]) = if (proj.lengthCompare(1) == 0) List(proj.head, proj.head) else proj
 
         val terms: List[Term] = (lhsTermsPosMap.keys ++ rhsTermsPosMap.keys).toList
-        val termsToProject = getTermsToProject( head, terms  )
+        val termsToProject = getTermsToProject(head, terms)
         val projection =
-          if ( termsToProject.isEmpty )
+          if (termsToProject.isEmpty)
             (List(), "")
-          else{
+          else {
 
-            if ( rhsTermsPosMap.isEmpty){
+            if (rhsTermsPosMap.isEmpty) {
               val lhsProjection = termsToProject.get
                 .filter(term => lhsTermsPosMap.contains(term))
                 .map(term => lhsTermsPosMap(term).head)
@@ -436,7 +437,7 @@ object ReWriter {
 
               (termsToProject.get, s".map(t=> (${projectAtLeastTuple2(lhsProjection).mkString(",")}))")
 
-            }else {
+            } else {
               val rhsTermsNotInLhl = rhsTermsPosMap
                 .filter(p => !lhsTermsPosMap.contains(p._1))
 
@@ -447,9 +448,9 @@ object ReWriter {
 
               val rhsTermsProjection =
                 termsToProject.get
-                .filter(term => rhsTermsPosMap.contains(term) && rhsTermsNotInLhl.contains(term) )
-                .map(term => rhsTermsNotInLhl(term).head)
-                .map(p => s"t._2._${p + 1}")
+                  .filter(term => rhsTermsPosMap.contains(term) && rhsTermsNotInLhl.contains(term))
+                  .map(term => rhsTermsNotInLhl(term).head)
+                  .map(p => s"t._2._${p + 1}")
 
               (termsToProject.get, s".map(t=> (${projectAtLeastTuple2(lhsProjection ++ rhsTermsProjection).mkString(",")}))")
             }
@@ -472,7 +473,7 @@ object ReWriter {
             } else matchedDataSources
 
           if (lhs.isEmpty) {
-            val mappedTerms =  getProjection(head,  mapPositionTerm(rhs.getTerms.asScala.toList), Map() )
+            val mappedTerms = getProjection(head, mapPositionTerm(rhs.getTerms.asScala.toList), Map())
             visitClauseBody(xs, head, (ds, rhs.getPredicate.getIdentifier.toString + mappedTerms._2), Some(rhs))
           } else {
             val lhsTermsPosMap = mapPositionTerm(lhs.get.getTerms.asScala.toList)
@@ -485,13 +486,13 @@ object ReWriter {
 
 
             // check for arity on the head
-            val postBooleanCondition =  if (head.getPredicate.getArity>0 ) "" else ".count()>0"
+            val postBooleanCondition = if (head.getPredicate.getArity > 0) "" else ".count()>0"
             // condition
             val queryConditions =
               if (commonPairs.isEmpty) ""
               else s".where(${commonPairs.map(_._1).mkString(",")}).equalTo(${commonPairs.map(_._2).mkString(",")})$postBooleanCondition"
             // projection
-            val mappedTerms =  getProjection(head, lhsTermsPosMap, mapPositionTerm(rhs.getTerms.asScala.toList) )
+            val mappedTerms = getProjection(head, lhsTermsPosMap, mapPositionTerm(rhs.getTerms.asScala.toList))
             // new relation
             val mergedAtom = new DefaultAtom(new Predicate(UUID.randomUUID().toString, mappedTerms._1.size),
               mappedTerms._1.asJava)
@@ -502,7 +503,7 @@ object ReWriter {
 
       }
 
-      def getTermsToProject( head:Atom, bodyTerms: => List[Term]) = {
+      def getTermsToProject(head: Atom, bodyTerms: => List[Term]) = {
         if (head.getPredicate.getArity > 0) {
           Some(bodyTerms.filter(p => head.getTerms.asScala
             .map(_.getIdentifier.toString).contains(p.getIdentifier.toString)).distinct)
@@ -522,7 +523,7 @@ object ReWriter {
         }
 
       val scriptsAndDataSources = getUnionScript(clauses, (matchedDataSources, List()))
-      lazy val binaryOperator = if ( clauses.head.head.getPredicate.getArity > 0 ) "union" else "||"
+      lazy val binaryOperator = if (clauses.head.head.getPredicate.getArity > 0) "union" else "||"
       (scriptsAndDataSources._1, scriptsAndDataSources._2.reduce((a1, a2) => s"($a1 $binaryOperator $a2)\n"))
     }
 
@@ -549,18 +550,18 @@ object ReWriter {
         // filter all predicates already defined as head in any declared clause
         // because it is not necessary to declare something that will be declared later
         .filter(p =>
-        !datalog.exists(
-          clause => clause.head.getPredicate.getIdentifier == p._1.getIdentifier))
+          !datalog.exists(
+            clause => clause.head.getPredicate.getIdentifier == p._1.getIdentifier))
         // data mapping
         .map(p => {
-        val variable = s"private lazy val ${p._1.getIdentifier.toString}  = "
+          val variable = s"private lazy val ${p._1.getIdentifier.toString}  = "
 
-        val data =
-          if (p._2 == unknownData)
-            s"unknownData${p._1.getArity}" else "env.readTextFile(\"" + p._2 + "\")" + s".map(stringMapper${p._1.getArity})"
+          val data =
+            if (p._2 == unknownData)
+              s"unknownData${p._1.getArity}" else "env.readTextFile(\"" + p._2 + "\")" + s".map(stringMapper${p._1.getArity})"
 
-        variable + data
-      })
+          variable + data
+        })
         //Rewriting
         .mkString("\n") + "\n\n//Rewriting\n" + result._2.mkString("\n") +
       "\n\n}"
@@ -568,12 +569,19 @@ object ReWriter {
   }
 
   def getOntology(filename: String): List[Rule] = {
-    for ( rule <-  new DlgpParser(new File(filename)).asScala.toList; if rule.isInstanceOf[Rule] )
+    for (rule <- new DlgpParser(new File(filename)).asScala.toList; if rule.isInstanceOf[Rule])
       yield rule.asInstanceOf[Rule]
   }
 
+  def getDatalogRewritingFromString(ndl: String): List[Clause] = {
+    getDatalogRewriting(new DlgpParser(ndl))
+  }
+
   def getDatalogRewriting(filename: String): List[Clause] = {
-    val dlgpParser = new DlgpParser(new File(filename))
+    getDatalogRewriting(new DlgpParser(new File(filename)))
+  }
+
+  private def getDatalogRewriting(dlgpParser: DlgpParser): List[Clause] = {
     val clauses = dlgpParser.asScala.toList
     clauses.map {
       case rule: Rule =>
@@ -590,7 +598,7 @@ object ReWriter {
     }
   }
 
-  def termConcat(ontologyTerm: Term, queryTerm: Term) : Term = {
+  def termConcat(ontologyTerm: Term, queryTerm: Term): Term = {
     TypeTermFactory.createOntologyVariable(s"${ontologyTerm.getIdentifier}_${queryTerm.getIdentifier}")
   }
 
@@ -615,7 +623,7 @@ class ReWriter(ontology: List[Rule]) {
   def makeAtoms(bag: Bag, theType: Type): List[Any] = {
 
     def getEqualities(variables: List[Term], constants: List[Term], acc: List[(Term, Term)]): List[(Term, Term)] = {
-      val anonymousTerm = getFirstAnonymousTerm( variables )
+      val anonymousTerm = getFirstAnonymousTerm(variables)
 
       @tailrec
       def getEqualitiesH(variables: List[Term], constants: List[Term], acc: List[(Term, Term)]): List[(Term, Term)] = constants match {
@@ -629,8 +637,6 @@ class ReWriter(ontology: List[Rule]) {
       getEqualitiesH(variables, constants, acc)
 
     }
-
-
 
 
     def isMixed(terms: List[Term]): Boolean =
@@ -653,13 +659,11 @@ class ReWriter(ontology: List[Rule]) {
         }
     }
 
-    def markAtom(atom: Atom, queryTerm: Term):Atom =
-      new DefaultAtom(atom.getPredicate, markTerms(atom.getTerms.asScala.toList, queryTerm).asJava )
+    def markAtom(atom: Atom, queryTerm: Term): Atom =
+      new DefaultAtom(atom.getPredicate, markTerms(atom.getTerms.asScala.toList, queryTerm).asJava)
 
-    def markTerms(terms: List[Term], queryTerm: Term):List[Term] =
-      terms.map(ReWriter.termConcat( _ , queryTerm))
-
-
+    def markTerms(terms: List[Term], queryTerm: Term): List[Term] =
+      terms.map(ReWriter.termConcat(_, queryTerm))
 
 
     def getTypedAtom(atom: Atom, f: Term => Term): Atom = {
@@ -681,8 +685,8 @@ class ReWriter(ontology: List[Rule]) {
               if (index < arrayGeneratingAtoms.length) {
                 val atom = arrayGeneratingAtoms(index)
                 visitBagAtoms(xs,
-                              markAtom ( getTypedAtom(atom, OntologyTerm),
-                                        getFirstAnonymousTerm(currentAtom.getTerms.asScala.toList )):: acc)
+                  markAtom(getTypedAtom(atom, OntologyTerm),
+                    getFirstAnonymousTerm(currentAtom.getTerms.asScala.toList)) :: acc)
               } else {
                 visitBagAtoms(xs, acc)
               }
@@ -713,8 +717,8 @@ class ReWriter(ontology: List[Rule]) {
             .map(atom => getEqualities(currentAtom.getTerms.asScala.toList, atom.getTerms.asScala.toList, List()))
 
           visitBagAtoms(xs,
-            markAtom ( arrayGeneratingAtoms(index),
-              getFirstAnonymousTerm(currentAtom.getTerms.asScala.toList))  :: expression :: acc)
+            markAtom(arrayGeneratingAtoms(index),
+              getFirstAnonymousTerm(currentAtom.getTerms.asScala.toList)) :: expression :: acc)
 
         }
     }
@@ -738,7 +742,7 @@ class ReWriter(ontology: List[Rule]) {
 
   def generateRewriting(borderType: Type, splitter: Splitter): List[RuleTemplate] = {
     val typeExtender = new TypeExtender(splitter.getSplittingVertex, borderType.homomorphism, canonicalModels.toVector)
-    val types= typeExtender.collectTypes
+    val types = typeExtender.collectTypes
     //val body = new LinkedListAtomSet
     //val rule :Rule = new DefaultRule()
     types.map(s => new RuleTemplate(splitter, borderType, s, generatingAtoms, this))

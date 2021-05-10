@@ -109,7 +109,8 @@ object SqlUtils {
 
   def ndl2sql(ndl: List[Clause], goalPredicate: Predicate,
               dbCatalog: EDBCatalog,
-              useWith: Boolean = false): Statement = {
+              useWith: Boolean = false,
+              selectAlias: List[String] = Nil ): Statement = {
 
     val ndlOrdered = orderNdlByTerm(ndl)
     var clauseToMap = ndlOrdered.toSet
@@ -343,7 +344,7 @@ object SqlUtils {
       }
     }
 
-    def getSelectWith(startPredicate: Predicate): Select = {
+    def getSelectWith(startPredicate: Predicate, selectAlias: List[String]): Select = {
       val idbDependencySpanningTreeList = getIdbDependenciesSpanningTree(startPredicate, ndlOrdered)
 
       val withItems: List[WithItem] = idbDependencySpanningTreeList.map(predicate => {
@@ -361,9 +362,13 @@ object SqlUtils {
       val startClause = ndlOrdered.find(_.head.getPredicate == startPredicate)
         .getOrElse(throw new RuntimeException("Start predicate not found!"))
 
+      val selectAliasVector =  selectAlias.toVector
+      val selectAliasVectorSize = selectAlias.size
       val selectItems: List[SelectItem] = startClause.head.getTerms.asScala.zipWithIndex.map(termIndexed => {
         val selectExpressionItem = new SelectExpressionItem(new Column(fromItem, s"X${termIndexed._2}"))
-        //selectExpressionItem.setAlias(new Alias(s"X${termIndexed._2}"))
+        if(selectAliasVector.nonEmpty && termIndexed._2 <= selectAliasVectorSize - 1 ) {
+          selectExpressionItem.setAlias(new Alias(selectAliasVector(termIndexed._2)))
+        }
         selectExpressionItem
       }).toList
 
@@ -376,7 +381,7 @@ object SqlUtils {
     }
 
     if (useWith)
-      getSelectWith(goalPredicate)
+      getSelectWith(goalPredicate, selectAlias)
     else
       getSelect(goalPredicate)
 

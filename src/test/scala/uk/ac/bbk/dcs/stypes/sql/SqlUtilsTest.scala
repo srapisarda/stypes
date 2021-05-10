@@ -105,25 +105,32 @@ class SqlUtilsTest extends FunSpec {
       commonAssertions("src/test/resources/rewriting/q22-rew_test.dlp")
     }
 
-
     it("should return a statement for q22-rew_test-with.dlp using with") {
       commonAssertions("src/test/resources/rewriting/q22-rew_test.dlp",
         new Predicate("p1", 2), useWith = true)
     }
+
+    it("should return a statement for q22-rew_test-with.dlp using with alias") {
+      commonAssertions("src/test/resources/rewriting/q22-rew_test.dlp",
+        new Predicate("p1", 2), useWith = true, List("x", "y"))
+    }
   }
 
   private def commonAssertions(datalogFileRewriting: String,
-                               goalPredicate: Predicate = new Predicate("p1", 2), useWith: Boolean = false): Unit = {
+                               goalPredicate: Predicate = new Predicate("p1", 2),
+                               useWith: Boolean = false,
+                               selectAlias: List[String] = Nil): Unit = {
 
     val sUseWith = if (useWith) "-with" else ""
-    val expectedFileName = datalogFileRewriting.replace(".dlp", s"$sUseWith.sql")
+    val sAlias = if (selectAlias.nonEmpty) "-alias" else ""
+    val expectedFileName = datalogFileRewriting.replace(".dlp", s"$sUseWith$sAlias.sql")
     val expectedFile = Source.fromFile(expectedFileName)
     val sqlExpected = expectedFile.getLines().map(_.trim).mkString(" ")
     expectedFile.close()
     val stmt = CCJSqlParserUtil.parse(sqlExpected)
 
     val ndl = ReWriter.getDatalogRewriting(datalogFileRewriting)
-    val actual = SqlUtils.ndl2sql(ndl, goalPredicate, getEDBCatalog, useWith)
+    val actual = SqlUtils.ndl2sql(ndl, goalPredicate, getEDBCatalog, useWith, selectAlias)
     val sqlActual = actual.toString
     println(ndl)
     println("----")
