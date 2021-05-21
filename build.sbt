@@ -1,6 +1,6 @@
 name := "stypes"
 
-version := "1.1.0"
+version := "1.1.1"
 
 scalaVersion := "2.12.6"
 
@@ -25,6 +25,7 @@ libraryDependencies ++= Seq( "fr.lirmm.graphik" % "graal-core" % graalVersion
                 ,"fr.lirmm.graphik" % "graal-homomorphism" % graalVersion
                 ,"com.typesafe.scala-logging" %% "scala-logging" % "3.9.0"
                 ,"com.tinkerpop.blueprints" % "blueprints-core" % "2.6.0"
+                ,"com.github.jsqlparser" % "jsqlparser" % "4.0"
                 // test
                 ,"org.scalatest" %% "scalatest" % "3.0.4" % "test"
                 ,"ch.qos.logback" % "logback-classic" % "1.2.3" % "test"

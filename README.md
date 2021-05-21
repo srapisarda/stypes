@@ -37,7 +37,7 @@ A tree decomposition of a CQ **q** with variables **var(q)** is a pair **(T, λ)
   * for any atom **P(z) ∈ q**, there exists **v ∈ V** with **z ⊆ λ(v)**;
   * for any variable **z** in **q**, the set of vertices **{v ∈ V | z ∈ λ(v)}** is connected in **T**.
 
-
+ 
 
 In order to execute the NDL-rewriting algorithm we need to use and execute 
 the jar created above:  ***java -cp stypes-assembly-1.1.0.jar (CQ) (GML) (O)***
