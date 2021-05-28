@@ -81,6 +81,11 @@ class SqlUtilsTest extends FunSpec {
         new Predicate("p1", 1))
     }
 
+    it("should return a statement for q07-rew_test.dlp using with") {
+      commonAssertions("src/test/resources/rewriting/q07-rew_test.dlp",
+        new Predicate("p1", 1), useWith = true)
+    }
+
     it("should return a statement for q07p2-rew_test.dlp") {
       commonAssertions("src/test/resources/rewriting/q07p2-rew_test.dlp",
         new Predicate("p1", 1))
@@ -112,6 +117,11 @@ class SqlUtilsTest extends FunSpec {
 
     it("should return a statement for q22-rew_test-with.dlp using with alias") {
       commonAssertions("src/test/resources/rewriting/q22-rew_test.dlp",
+        new Predicate("p1", 2), useWith = true, List("x", "y"))
+    }
+
+    it("should return a statement for q45-rew_test-with.dlp using with alias") {
+      commonAssertions("src/test/resources/rewriting/q45-rew_test.dlp",
         new Predicate("p1", 2), useWith = true, List("x", "y"))
     }
   }
