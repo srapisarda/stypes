@@ -495,6 +495,17 @@ class ReWriterTest extends FunSpec {
       assert(datalog.lengthCompare(24) == 0)
     }
 
+    it("should rewrite query report 20121 example.cq") {
+      val decomposedQuery: (TreeDecomposition, List[Variable]) =
+        TreeDecomposition.getTreeDecomposition(s"src/test/resources/report-2021/example.gml", "src/test/resources/report-2021/example.cq")
+      val ont = ReWriter.getOntology("src/test/resources/report-2021/example.dlp")
+      val datalog = new ReWriter(ont).rewrite(decomposedQuery)
+
+      printDatalog(datalog)
+      assert(datalog.lengthCompare(2) == 0)
+    }
+
+
     it("should rewrite query q-report.cq  using  report.dlp") {
       val decomposedQuery: (TreeDecomposition, List[Variable]) =
         TreeDecomposition.getTreeDecomposition(s"src/test/resources/q-report.gml", "src/test/resources/q-report.cq")
