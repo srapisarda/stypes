@@ -501,8 +501,11 @@ class ReWriterTest extends FunSpec {
       val ont = ReWriter.getOntology("src/test/resources/report-2021/example.dlp")
       val datalog = new ReWriter(ont).rewrite(decomposedQuery)
 
-      printDatalog(datalog)
       assert(datalog.lengthCompare(2) == 0)
+      val expectedRewritingFile = Source.fromFile("src/test/resources/report-2021/example-rev.dlp")
+      val expectedRewriting = expectedRewritingFile.getLines().mkString("\n")
+      expectedRewritingFile.close()
+      printDatalog(datalog, Some(expectedRewriting))
     }
 
 
@@ -610,7 +613,7 @@ class ReWriterTest extends FunSpec {
     }
 
     it("has to read a lines data ttl and transform to CSV file ") {
-      val ttlFiles = getListOfFiles(s"$pathToLine/data").filter( p=> p.getName.contains(".ttl"))
+      val ttlFiles = getListOfFiles(s"$pathToLine/data").filter(p => p.getName.contains(".ttl"))
       val fileTypes = List("R", "A", "B")
       ttlFiles.foreach(f => {
         fileTypes.foreach(ft => {
@@ -646,8 +649,12 @@ class ReWriterTest extends FunSpec {
   }
 
 
-  private def printDatalog(datalog: List[Clause]): Unit =
-    println(s"${datalog.mkString(".\n")}.".replaceAll("""\[\d+\]""", ""))
+  private def printDatalog(datalog: List[Clause], outputToVerify: Option[String] = None): Unit = {
+    val output = s"${datalog.mkString(".\n")}.".replaceAll("""\[\d+\]""", "")
+    println(output)
+    if (outputToVerify.nonEmpty)
+      assert(outputToVerify.get === output)
+  }
 
   private def getListOfFiles(dir: String): List[File] = {
     val d = new File(dir)
