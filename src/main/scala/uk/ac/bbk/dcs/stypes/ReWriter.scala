@@ -29,7 +29,6 @@ import fr.lirmm.graphik.graal.core.DefaultAtom
 import fr.lirmm.graphik.graal.core.atomset.graph.DefaultInMemoryGraphAtomSet
 import fr.lirmm.graphik.graal.forward_chaining.DefaultChase
 import fr.lirmm.graphik.graal.io.dlp.DlgpParser
-import org.slf4j.LoggerFactory
 import uk.ac.bbk.dcs.stypes.ConstantType.EPSILON
 
 import scala.annotation.tailrec
