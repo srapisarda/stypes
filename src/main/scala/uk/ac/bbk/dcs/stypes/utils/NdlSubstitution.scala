@@ -1,7 +1,7 @@
 package uk.ac.bbk.dcs.stypes.utils
 
-import fr.lirmm.graphik.graal.api.core.{Atom, Substitution}
-import fr.lirmm.graphik.graal.core.{DefaultAtom, TreeMapSubstitution}
+import fr.lirmm.graphik.graal.api.core.Atom
+import fr.lirmm.graphik.graal.core.DefaultAtom
 import uk.ac.bbk.dcs.stypes.Clause
 
 import scala.collection.JavaConverters._
