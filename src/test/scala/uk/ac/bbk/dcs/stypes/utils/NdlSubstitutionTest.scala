@@ -19,6 +19,9 @@ class NdlSubstitutionTest extends FunSpec {
       executeTest("example-rew-q22-p3", "p3")
     }
 
+    it("should sobstitute p3(x,y) in example-rew-q22-p12") {
+      executeTest("example-rew-q22-p12", "p12")
+    }
   }
 
   private def executeTest(fileTest:String, predicateIdentifier: String) = {
