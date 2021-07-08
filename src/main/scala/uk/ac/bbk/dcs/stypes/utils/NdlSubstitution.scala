@@ -12,7 +12,6 @@ object NdlSubstitution {
 
     def bodySubstitutionH(substitutionClause: Clause) = {
       val zipTermsWithIndexSubstitution = ((Stream from 0) zip substitutionClause.head.getTerms.asScala) toMap
-
       val bodySubstituted: List[Atom] = clauseBody
         .flatten(atom => {
           if (atom.getPredicate == substitutionClause.head.getPredicate) {
@@ -33,7 +32,6 @@ object NdlSubstitution {
             List(atom)
           }
         })
-
       bodySubstituted.distinct
     }
 
@@ -47,8 +45,12 @@ object NdlSubstitution {
       val substitutionClauses = idbSubstitutionOption.get._2
       ndl.filterNot(_.head.getPredicate.getIdentifier.toString == predicateIdentifier)
         .flatten(clause => {
-          bodySubstitutions(substitutionClauses, clause.body)
-            .map(bodySubstituted => Clause(clause.head, bodySubstituted))
+          if (clause.body.exists(_.getPredicate.getIdentifier.toString == predicateIdentifier)) {
+            bodySubstitutions(substitutionClauses, clause.body)
+              .map(bodySubstituted => Clause(clause.head, bodySubstituted))
+          } else {
+            List(clause)
+          }
         })
     }
     else ndl
