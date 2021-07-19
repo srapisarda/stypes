@@ -3,7 +3,7 @@ package uk.ac.bbk.dcs.stypes.utils
 import org.scalatest.FunSpec
 import uk.ac.bbk.dcs.stypes.ReWriter
 
-class NdlSubstitutionTest extends FunSpec {
+  class NdlSubstitutionTest extends FunSpec {
 
   describe("IDB predicate substitution") {
 
@@ -22,6 +22,11 @@ class NdlSubstitutionTest extends FunSpec {
     it("should sobstitute p3(x,y) in example-rew-q22-p12") {
       executeTest("example-rew-q22-p12", "p12")
     }
+
+    it("should sobstitute p3(x,y) in example-rew-mono-term") {
+      executeTest("example-rew-mono-term", "p5")
+    }
+
   }
 
   private def executeTest(fileTest:String, predicateIdentifier: String) = {

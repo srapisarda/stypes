@@ -4,22 +4,30 @@ import fr.lirmm.graphik.graal.api.core.Atom
 import fr.lirmm.graphik.graal.core.DefaultAtom
 import uk.ac.bbk.dcs.stypes.Clause
 
+import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 import scala.language.postfixOps
 
 object NdlSubstitution {
-  private def bodySubstitutions(substitutionClauses: List[Clause], clauseBody: List[Atom]): List[List[Atom]] = {
+  private def clauseSubstitution(substitutionClauses: List[Clause], clause: Clause) = {
 
-    def bodySubstitutionH(substitutionClause: Clause) = {
+    def clauseSubstitutionH(substitutionClause: Clause) = {
       val zipTermsWithIndexSubstitution = ((Stream from 0) zip substitutionClause.head.getTerms.asScala) toMap
-      val bodySubstituted: List[Atom] = clauseBody
-        .flatten(atom => {
-          if (atom.getPredicate == substitutionClause.head.getPredicate) {
-            val substitutionMap = atom.getTerms.asScala
-              .zipWithIndex
-              .map(termZipped => (zipTermsWithIndexSubstitution(termZipped._2), termZipped._1)).toMap
 
-            substitutionClause.body.map(atomToSubstitute => {
+      @tailrec
+      def traverseClause(clauseBody: List[Atom], clauseResult: Clause): Clause = clauseBody match {
+        case Nil =>
+          clauseResult
+
+        case atom :: tail =>
+          if (atom.getPredicate == substitutionClause.head.getPredicate) {
+            val substitutionList = atom.getTerms.asScala
+              .zipWithIndex
+              .map(termZipped => (zipTermsWithIndexSubstitution(termZipped._2), termZipped._1))
+
+            val substitutionMap = substitutionList.toMap
+
+            val res = substitutionClause.body.map(atomToSubstitute => {
               val newAtom = new DefaultAtom(atomToSubstitute)
               atomToSubstitute.getTerms.asScala.zipWithIndex.foreach(termIndexed => {
                 if (substitutionMap.contains(termIndexed._1)) {
@@ -28,14 +36,19 @@ object NdlSubstitution {
               })
               newAtom
             })
+            // todo: check on the clause head for any substitution.
+            traverseClause(tail, Clause(clauseResult.head, clauseResult.body ::: res))
           } else {
-            List(atom)
+            traverseClause(tail, Clause(clauseResult.head, clauseResult.body :+ atom))
           }
-        })
-      bodySubstituted.distinct
+
+      }
+
+      val substituted = traverseClause(clause.body, Clause(clause.head, List()))
+      Clause(substituted.head, substituted.body distinct)
     }
 
-    substitutionClauses.map(bodySubstitutionH)
+    substitutionClauses.map(clauseSubstitutionH)
   }
 
   def idbPredicateSubstitution(ndl: List[Clause], predicateIdentifier: String): List[Clause] = {
@@ -46,8 +59,7 @@ object NdlSubstitution {
       ndl.filterNot(_.head.getPredicate.getIdentifier.toString == predicateIdentifier)
         .flatten(clause => {
           if (clause.body.exists(_.getPredicate.getIdentifier.toString == predicateIdentifier)) {
-            bodySubstitutions(substitutionClauses, clause.body)
-              .map(bodySubstituted => Clause(clause.head, bodySubstituted))
+            clauseSubstitution(substitutionClauses, clause)
           } else {
             List(clause)
           }
