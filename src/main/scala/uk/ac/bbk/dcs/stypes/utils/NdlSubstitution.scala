@@ -2,7 +2,7 @@ package uk.ac.bbk.dcs.stypes.utils
 
 import fr.lirmm.graphik.graal.api.core.Atom
 import fr.lirmm.graphik.graal.core.DefaultAtom
-import uk.ac.bbk.dcs.stypes.Clause
+import uk.ac.bbk.dcs.stypes.{Clause, Equality}
 
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
@@ -24,10 +24,11 @@ object NdlSubstitution {
             val substitutionList = atom.getTerms.asScala
               .zipWithIndex
               .map(termZipped => (zipTermsWithIndexSubstitution(termZipped._2), termZipped._1))
+              .toList
 
             val substitutionMap = substitutionList.toMap
 
-            val res = substitutionClause.body.map(atomToSubstitute => {
+            val res : List[Atom] = substitutionClause.body.map(atomToSubstitute => {
               val newAtom = new DefaultAtom(atomToSubstitute)
               atomToSubstitute.getTerms.asScala.zipWithIndex.foreach(termIndexed => {
                 if (substitutionMap.contains(termIndexed._1)) {
@@ -36,8 +37,39 @@ object NdlSubstitution {
               })
               newAtom
             })
+
+            val equalities = substitutionList.groupBy(_._1).filter(_._2.length > 1).flatten(g => {
+              g._2.sliding(2)
+                .toList
+                .map(list => Equality(list.head._1, list.head._2))
+            }).toList
+
+            val newBody = clauseResult.body ::: res ::: equalities
+
+//            equalities.foreach(
+//              equality => {
+//                newBody.filter(_.contains(equality.t2))
+//                  .foreach(atom => atom.setTerm(atom.indexOf(equality.t2), equality.t1))
+//                if (clauseResult.head.contains(equality.t2)) {
+//                  clauseResult.head.setTerm(atom.indexOf(equality.t2), equality.t1)
+//                }
+//              })
+
+            //            substitutionList
+            //              .filterNot(tuple => tuple._1 == tuple._2).foreach {
+            //              case (sigma1, sigma2) => {
+            //                // body substitution
+            //                newBody.filter(_.contains(sigma2))
+            //                  .foreach(atom => atom.setTerm(atom.indexOf(sigma2), sigma1))
+            //                // head substitution
+            //                if (clauseResult.head.contains(sigma2)) {
+            //                  res.head.setTerm(atom.indexOf(sigma2), sigma1)
+            //                }
+            //              }
+            //            }
+
             // todo: check on the clause head for any substitution.
-            traverseClause(tail, Clause(clauseResult.head, clauseResult.body ::: res))
+            traverseClause(tail, Clause(clauseResult.head, newBody))
           } else {
             traverseClause(tail, Clause(clauseResult.head, clauseResult.body :+ atom))
           }

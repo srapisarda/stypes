@@ -15,15 +15,15 @@ import uk.ac.bbk.dcs.stypes.ReWriter
       executeTest( "example-rew-02", "p")
     }
 
-    it("should sobstitute p3(x,y) in example-rew-q22-p3") {
+    it("should substitute p3(x,y) in example-rew-q22-p3") {
       executeTest("example-rew-q22-p3", "p3")
     }
 
-    it("should sobstitute p3(x,y) in example-rew-q22-p12") {
+    it("should substitute p12(x,y) in example-rew-q22-p12") {
       executeTest("example-rew-q22-p12", "p12")
     }
 
-    it("should sobstitute p3(x,y) in example-rew-mono-term") {
+    it("should substitute p5(x,y) in example-rew-mono-term") {
       executeTest("example-rew-mono-term", "p5")
     }
 
@@ -34,6 +34,12 @@ import uk.ac.bbk.dcs.stypes.ReWriter
     val ndlExpected = ReWriter.getDatalogRewriting(s"$folderPathTest$fileTest-res.dlp")
     val ndl = ReWriter.getDatalogRewriting(s"$folderPathTest$fileTest.dlp")
     val actual = NdlSubstitution.idbPredicateSubstitution(ndl, predicateIdentifier)
+    println("actual")
+    actual.foreach(println(_))
+
+    println()
+    println("expected")
+    ndlExpected.foreach(println(_))
 
     assert(actual === ndlExpected)
   }
