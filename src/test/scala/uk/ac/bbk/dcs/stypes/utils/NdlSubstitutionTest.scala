@@ -29,17 +29,20 @@ import uk.ac.bbk.dcs.stypes.ReWriter
 
   }
 
-  private def executeTest(fileTest:String, predicateIdentifier: String) = {
+  private def executeTest(fileTest:String, predicateIdentifier: String, printLog:Boolean = false) = {
     val folderPathTest = "src/test/resources/rewriting/substitution/"
     val ndlExpected = ReWriter.getDatalogRewriting(s"$folderPathTest$fileTest-res.dlp")
     val ndl = ReWriter.getDatalogRewriting(s"$folderPathTest$fileTest.dlp")
     val actual = NdlSubstitution.idbPredicateSubstitution(ndl, predicateIdentifier)
-    println("actual")
-    actual.foreach(println(_))
 
-    println()
-    println("expected")
-    ndlExpected.foreach(println(_))
+    if ( printLog ) {
+      println(s"begin substituting file test: $fileTest")
+      println("actual")
+      actual.foreach(println(_))
+      println("expected")
+      ndlExpected.foreach(println(_))
+      println(s"end substituting file test: $fileTest")
+    }
 
     assert(actual === ndlExpected)
   }

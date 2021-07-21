@@ -1,6 +1,6 @@
 package uk.ac.bbk.dcs.stypes.utils
 
-import fr.lirmm.graphik.graal.api.core.Atom
+import fr.lirmm.graphik.graal.api.core.{Atom, Term}
 import fr.lirmm.graphik.graal.core.DefaultAtom
 import uk.ac.bbk.dcs.stypes.{Clause, Equality}
 
@@ -14,6 +14,44 @@ object NdlSubstitution {
     def clauseSubstitutionH(substitutionClause: Clause) = {
       val zipTermsWithIndexSubstitution = ((Stream from 0) zip substitutionClause.head.getTerms.asScala) toMap
 
+      def getSubstitutionList(atom: Atom) = atom.getTerms.asScala
+        .zipWithIndex
+        .map(termZipped => (zipTermsWithIndexSubstitution(termZipped._2), termZipped._1))
+        .toList
+
+      def getSubstitutionCloseBody(substitutionMap: Map[Term, Term]) =
+        substitutionClause.body.map(atomToSubstitute => {
+          val newAtom = new DefaultAtom(atomToSubstitute)
+          atomToSubstitute.getTerms.asScala.zipWithIndex.foreach(termIndexed => {
+            if (substitutionMap.contains(termIndexed._1)) {
+              newAtom.setTerm(termIndexed._2, substitutionMap(termIndexed._1))
+            }
+          })
+          newAtom
+        })
+
+      def getEqualitySubstitution(substitutionList: List[(Term, Term)]) =
+        substitutionList
+          .groupBy(_._1)
+          .filter(_._2.length > 1)
+          .flatten(g => {
+            g._2.sliding(2)
+              .toList
+              .map(list => Equality(list.head._1, list.head._2))
+          }).toList
+
+      def applyEqualitySubstitution(equalities: List[Equality], atom: Atom, clause: Clause) = {
+        equalities.foreach(
+          equality => {
+            clause.body.filter(_.contains(equality.t2))
+              .foreach(atom => atom.setTerm(atom.indexOf(equality.t2), equality.t1))
+            if (clause.head.contains(equality.t2)) {
+              clause.head.setTerm(atom.indexOf(equality.t2), equality.t1)
+            }
+          })
+        clause
+      }
+
       @tailrec
       def traverseClause(clauseBody: List[Atom], clauseResult: Clause): Clause = clauseBody match {
         case Nil =>
@@ -21,62 +59,17 @@ object NdlSubstitution {
 
         case atom :: tail =>
           if (atom.getPredicate == substitutionClause.head.getPredicate) {
-            val substitutionList = atom.getTerms.asScala
-              .zipWithIndex
-              .map(termZipped => (zipTermsWithIndexSubstitution(termZipped._2), termZipped._1))
-              .toList
-
-            val substitutionMap = substitutionList.toMap
-
-            val res: List[Atom] = substitutionClause.body.map(atomToSubstitute => {
-              val newAtom = new DefaultAtom(atomToSubstitute)
-              atomToSubstitute.getTerms.asScala.zipWithIndex.foreach(termIndexed => {
-                if (substitutionMap.contains(termIndexed._1)) {
-                  newAtom.setTerm(termIndexed._2, substitutionMap(termIndexed._1))
-                }
-              })
-              newAtom
-            })
-
-            //            val equalities = substitutionList.groupBy(_._1).filter(_._2.length > 1).flatten(g => {
-            //              g._2.sliding(2)
-            //                .toList
-            //                .map(list => Equality(list.head._1, list.head._2))
-            //            }).toList
-
-            val newBody = clauseResult.body ::: res //::: equalities
-
-            //            equalities.foreach(
-            //              equality => {
-            //                newBody.filter(_.contains(equality.t2))
-            //                  .foreach(atom => atom.setTerm(atom.indexOf(equality.t2), equality.t1))
-            //                if (clauseResult.head.contains(equality.t2)) {
-            //                  clauseResult.head.setTerm(atom.indexOf(equality.t2), equality.t1)
-            //                }
-            //              })
-
-            substitutionList
-              .filterNot { case (t1, t2) => t1 == t2 }
-              .foreach {
-                case (sigma1, sigma2) => {
-                  // body substitution
-                  newBody.filter(_.contains(sigma2))
-                    .foreach(atom => atom.setTerm(atom.indexOf(sigma2), sigma1))
-                  // head substitution
-                  if (clauseResult.head.contains(sigma2)) {
-                    clauseResult.head.setTerm(atom.indexOf(sigma2), sigma1)
-                  }
-                }
-              }
-
-            traverseClause(tail, Clause(clauseResult.head, newBody))
+            val substitutionList = getSubstitutionList(atom)
+            val substitutionCloseBody = getSubstitutionCloseBody(substitutionList.toMap)
+            val newClause = Clause(clauseResult.head, clauseResult.body ::: substitutionCloseBody)
+            val equalitySubstitution = getEqualitySubstitution(substitutionList)
+            traverseClause(tail, applyEqualitySubstitution(equalitySubstitution, atom, newClause))
           } else {
             traverseClause(tail, Clause(clauseResult.head, clauseResult.body :+ new DefaultAtom(atom)))
           }
-
       }
 
-      val substituted = traverseClause(clause.body, Clause(clause.head, List()))
+      val substituted = traverseClause(clause.body, Clause(new DefaultAtom(clause.head), List()))
       Clause(substituted.head, substituted.body distinct)
     }
 
