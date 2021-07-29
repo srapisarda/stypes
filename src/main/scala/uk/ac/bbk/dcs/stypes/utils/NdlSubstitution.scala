@@ -37,7 +37,7 @@ object NdlSubstitution {
           .flatten(g => {
             g._2.sliding(2)
               .toList
-              .map(list => Equality(list.head._1, list.head._2))
+              .map(list => Equality(list.tail.head._2, list.head._2))
           }).toList
 
       def applyEqualitySubstitution(equalities: List[Equality], atom: Atom, clause: Clause) = {
@@ -52,6 +52,15 @@ object NdlSubstitution {
         clause
       }
 
+      def applyEqualitySubstitutionToBody(equalities: List[Equality], atom: Atom, body: List[Atom]) = {
+        equalities.foreach(
+          equality => {
+            body.filter(_.contains(equality.t2))
+              .foreach(atom => atom.setTerm(atom.indexOf(equality.t2), equality.t1))
+          })
+        body
+      }
+
       @tailrec
       def traverseClause(clauseBody: List[Atom], clauseResult: Clause): Clause = clauseBody match {
         case Nil =>
@@ -63,7 +72,8 @@ object NdlSubstitution {
             val substitutionCloseBody = getSubstitutionCloseBody(substitutionList.toMap)
             val newClause = Clause(clauseResult.head, clauseResult.body ::: substitutionCloseBody)
             val equalitySubstitution = getEqualitySubstitution(substitutionList)
-            traverseClause(tail, applyEqualitySubstitution(equalitySubstitution, atom, newClause))
+            traverseClause(applyEqualitySubstitutionToBody(equalitySubstitution, atom, tail),
+              applyEqualitySubstitution(equalitySubstitution, atom, newClause))
           } else {
             traverseClause(tail, Clause(clauseResult.head, clauseResult.body :+ new DefaultAtom(atom)))
           }

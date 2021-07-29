@@ -27,6 +27,22 @@ import uk.ac.bbk.dcs.stypes.ReWriter
       executeTest("example-rew-mono-term", "p5")
     }
 
+    it("should substitute p5(x,y) in example-rew-q15-p5") {
+      executeTest("example-rew-q15-p5", "p5")
+    }
+
+    it("should substitute p28(x,y) in example-rew-mono-s-p28") {
+      executeTest("example-rew-mono-s-p28", "p28", true)
+    }
+
+    it("should substitute p28(x,y) in example-rew-mono-p28") {
+      executeTest("example-rew-mono-p28", "p28", true)
+    }
+
+    it("should substitute p28(x,y) in example-rew-q15-p28") {
+      executeTest("example-rew-q15-p28", "p28", true)
+    }
+
   }
 
   private def executeTest(fileTest:String, predicateIdentifier: String, printLog:Boolean = false) = {
