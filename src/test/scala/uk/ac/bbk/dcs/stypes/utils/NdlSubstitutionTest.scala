@@ -48,9 +48,16 @@ import uk.ac.bbk.dcs.stypes.ReWriter
     }
 
     it("should substitute p7(x,y) in example-rew-q15-p7") {
-      executeTest("example-rew-q15-p7", "p7", true)
+      executeTest("example-rew-q15-p7", "p7")
     }
 
+    it("should substitute p3(x,y) in example-rew-only-p3") {
+      executeTest("example-rew-only-p3", "p3")
+    }
+
+    it("should substitute p3(x,y) in example-rew-q15-p3") {
+      executeTest("example-rew-q15-p3", "p3")
+    }
   }
 
   private def executeTest(fileTest:String, predicateIdentifier: String, printLog:Boolean = false) = {
