@@ -32,15 +32,23 @@ import uk.ac.bbk.dcs.stypes.ReWriter
     }
 
     it("should substitute p28(x,y) in example-rew-mono-s-p28") {
-      executeTest("example-rew-mono-s-p28", "p28", true)
+      executeTest("example-rew-mono-s-p28", "p28")
     }
 
     it("should substitute p28(x,y) in example-rew-mono-p28") {
-      executeTest("example-rew-mono-p28", "p28", true)
+      executeTest("example-rew-mono-p28", "p28")
     }
 
     it("should substitute p28(x,y) in example-rew-q15-p28") {
-      executeTest("example-rew-q15-p28", "p28", true)
+      executeTest("example-rew-q15-p28", "p28")
+    }
+
+    it("should substitute p7(x,y) in example-rew-mono-p7") {
+      executeTest("example-rew-mono-p7", "p7")
+    }
+
+    it("should substitute p7(x,y) in example-rew-q15-p7") {
+      executeTest("example-rew-q15-p7", "p7", true)
     }
 
   }
@@ -53,6 +61,8 @@ import uk.ac.bbk.dcs.stypes.ReWriter
 
     if ( printLog ) {
       println(s"begin substituting file test: $fileTest")
+      println("ndl")
+      ndl.foreach(println(_))
       println("actual")
       actual.foreach(println(_))
       println("expected")
