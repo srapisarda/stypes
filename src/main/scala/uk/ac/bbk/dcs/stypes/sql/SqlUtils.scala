@@ -5,32 +5,14 @@ import net.sf.jsqlparser.expression.Alias
 import net.sf.jsqlparser.expression.operators.relational.EqualsTo
 import net.sf.jsqlparser.schema.{Column, Table}
 import net.sf.jsqlparser.statement.Statement
-import net.sf.jsqlparser.statement.select.{
-  FromItem, Join, PlainSelect, Select, SelectBody, SelectExpressionItem,
-  SelectItem, SetOperation, SetOperationList, SubSelect, UnionOp, WithItem
-}
+import net.sf.jsqlparser.statement.select.{FromItem, Join, PlainSelect, Select, SelectBody, SelectExpressionItem, SelectItem, SetOperation, SetOperationList, SubSelect, UnionOp, WithItem}
 import uk.ac.bbk.dcs.stypes.Clause
+import uk.ac.bbk.dcs.stypes.utils.NdlUtils
 
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 
 object SqlUtils {
-
-  /**
-    * The EDBs are atoms present in the body but not in the head of a clause.
-    * The IDBs are atoms defined as the head of a clause.
-    *
-    * @return set of Predicate
-    */
-  def getEdbPredicates(ndl: List[Clause], optIDbPredicates: Option[Set[Predicate]] = None): Set[Predicate] = {
-    val iDbPredicates = optIDbPredicates.getOrElse(getIdbPredicates(ndl))
-    ndl.flatten(_.body.map(_.getPredicate).distinct)
-      .filter(!iDbPredicates.contains(_)).toSet
-  }
-
-  def getIdbPredicates(ndl: List[Clause]): Set[Predicate] = {
-    ndl.map(p => p.head.getPredicate).toSet
-  }
 
   @tailrec
   def orderBodyClauseByTerm(body: List[Atom], acc: List[Atom] = Nil): List[Atom] = body match {
@@ -49,7 +31,7 @@ object SqlUtils {
                                      ndl: List[Clause],
                                      optionIDBs: Option[Set[Predicate]] = None): List[Predicate] = {
 
-    val iDBs = optionIDBs.getOrElse(getIdbPredicates(ndl))
+    val iDBs = optionIDBs.getOrElse(NdlUtils.getIdbPredicates(ndl))
     val mapPredicateToIdbPredicateBody = ndl.groupBy(_.head)
       .map(group => group._1.getPredicate ->
         group._2.flatten(clause => clause.body.filter(atom => iDBs.contains(atom.getPredicate)).map(_.getPredicate)))
@@ -116,8 +98,8 @@ object SqlUtils {
     var clauseToMap = ndlOrdered.toSet
     var predicateMapToSelects: Map[Predicate, Select] = Map()
     var aliasIndex = 0
-    val iDbPredicates = getIdbPredicates(ndlOrdered)
-    val eDbPredicates = getEdbPredicates(ndlOrdered, Some(iDbPredicates))
+    val iDbPredicates = NdlUtils.getIdbPredicates(ndlOrdered)
+    val eDbPredicates = NdlUtils.getEdbPredicates(ndlOrdered, Some(iDbPredicates))
 
     def removeClauseToMap(clause: Clause): Unit = clauseToMap -= clause
 

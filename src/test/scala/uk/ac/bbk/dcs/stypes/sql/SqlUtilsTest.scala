@@ -4,11 +4,12 @@ import fr.lirmm.graphik.graal.api.core.{Atom, Predicate, Term}
 import fr.lirmm.graphik.graal.api.factory.TermFactory
 import fr.lirmm.graphik.graal.core.DefaultAtom
 import fr.lirmm.graphik.graal.core.term.DefaultTermFactory
-import net.sf.jsqlparser.parser.{CCJSqlParserUtil, JSqlParser}
+import net.sf.jsqlparser.parser.CCJSqlParserUtil
 import net.sf.jsqlparser.util.validation.feature.DatabaseType
 import net.sf.jsqlparser.util.validation.Validation
 import org.scalatest.FunSpec
 import uk.ac.bbk.dcs.stypes.ReWriter
+import uk.ac.bbk.dcs.stypes.utils.NdlUtils
 
 import scala.collection.JavaConverters._
 import scala.io.Source
@@ -40,7 +41,7 @@ class SqlUtilsTest extends FunSpec {
     it("should return the eDBs predicates the NDL contains") {
       val expected = Seq("a", "b", "s", "r")
       val ndl = ReWriter.getDatalogRewriting(s"src/test/resources/rewriting/q15-rew.dlp")
-      val eDbPredicates = SqlUtils.getEdbPredicates(ndl, None)
+      val eDbPredicates = NdlUtils.getEdbPredicates(ndl, None)
       val actual = eDbPredicates.map(_.getIdentifier)
       expected.foreach(exp => assert(actual.contains(exp)))
     }
