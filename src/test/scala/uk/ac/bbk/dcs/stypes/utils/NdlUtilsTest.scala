@@ -12,17 +12,17 @@ class NdlUtilsTest extends FunSpec {
   describe("Ndl Utils: get goal predicate") {
 
     it("should find the GOL predicate in q01-rew_test.dlp") {
-      val expected = Some(new Predicate("p1", 2))
+      val expected = new Predicate("p1", 2)
       assertGoalPredicate(expected, "q01-rew_test.dlp")
     }
 
     it("should find the GOL predicate in q02-rew_test.dlp") {
-      val expected = Some(new Predicate("p1", 2))
+      val expected = new Predicate("p1", 2)
       assertGoalPredicate(expected, "q02-rew_test.dlp")
     }
 
     it("should find the GOL predicate in q15-rew.dlp") {
-      val expected = Some(new Predicate("p1", 2))
+      val expected = new Predicate("p1", 2)
       assertGoalPredicate(expected, "q15-rew.dlp")
     }
   }
@@ -66,7 +66,29 @@ class NdlUtilsTest extends FunSpec {
 
   }
 
-  private def assertGoalPredicate(expected: Option[Predicate], ndlFileName: String) = {
+  describe("Ndl Utils: get depth by Idb predicate") {
+    it("should get the depth of q03-rew_test") {
+      executeDepthTest("q03-rew_test", 2)
+    }
+
+    it("should get the depth of q07-rew_test") {
+      executeDepthTest("q07-rew_test", 6)
+    }
+
+    it("should get the depth of q22-rew_test") {
+      executeDepthTest("q22-rew_test", 3)
+    }
+
+  }
+
+  private def executeDepthTest(fileTest: String, expected: Int): Unit = {
+    val folderPathTest = "src/test/resources/rewriting/"
+    val ndl = ReWriter.getDatalogRewriting(s"$folderPathTest$fileTest.dlp")
+    val actual = NdlUtils.getDepthByIdbPredicate(ndl)
+    assert(actual === expected)
+  }
+
+  private def assertGoalPredicate(expected: Predicate, ndlFileName: String) = {
     val ndl = ReWriter.getDatalogRewriting(s"$folderPathTest$ndlFileName")
     val actual = NdlUtils.getGoalPredicate(ndl)
     assert(actual === expected)

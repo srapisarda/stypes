@@ -21,14 +21,32 @@ object NdlUtils {
       .filter(!iDbPredicates.contains(_)).toSet
   }
 
-  def getGoalPredicate(ndl: List[Clause]): Option[Predicate] = {
+  def getGoalPredicate(ndl: List[Clause]): Predicate = {
     val iDBs = getIdbPredicates(ndl)
     val predicatesClauseBodyContains = ndl.flatten(clause => clause.body.map(atom => atom.getPredicate).toSet)
     iDBs.find(predicate => !predicatesClauseBodyContains.contains(predicate))
+      .getOrElse(throw new RuntimeException("The NDL does not contains any goal predicate"))
   }
 
-  def ndlDepth(ndl: List[Clause], goalPredicateOption: Option[Predicate] = None): Int = {
+  def getDepthByIdbPredicate(ndl: List[Clause], goalPredicateOption: Option[Predicate] = None): Int = {
+    val goalPredicate = goalPredicateOption.getOrElse(getGoalPredicate(ndl))
+    val eDBs = getEdbPredicates(ndl)
+    val ndlGroupedByPredicate: Map[Predicate, List[Predicate]] = ndl
+      .groupBy(_.head.getPredicate)
+      .map {
+        case (predicate, clauses) =>
+          predicate -> clauses.flatMap(_.body.map(_.getPredicate)).filterNot(eDBs).distinct
+      }
 
-    0
+    def bfs(toVisit: List[Predicate], visited: Set[Predicate], depth: Int): Int = toVisit match {
+      case List() => depth
+      case predicate :: tail =>
+        if (visited.contains(predicate))
+          bfs(tail, visited, depth)
+        else
+          bfs(tail ++ ndlGroupedByPredicate(predicate), visited + predicate, depth + 1)
+    }
+
+    bfs(List(goalPredicate), Set(), 0)
   }
 }
