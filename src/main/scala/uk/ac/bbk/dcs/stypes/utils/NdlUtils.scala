@@ -1,16 +1,15 @@
 package uk.ac.bbk.dcs.stypes.utils
 
 import fr.lirmm.graphik.graal.api.core.Predicate
-import uk.ac.bbk.dcs.stypes.Clause
+import uk.ac.bbk.dcs.stypes.{Clause, ReWriter}
 
 object NdlUtils {
-
   /**
     * The EDBs are atoms present in the body but not in the head of a clause.
     * The IDBs are atoms defined as the head of a clause.
     *
     * @return set of Predicate
-    **/
+    * */
   def getIdbPredicates(ndl: List[Clause]): Set[Predicate] = {
     ndl.map(p => p.head.getPredicate).toSet
   }
@@ -48,5 +47,18 @@ object NdlUtils {
     }
 
     bfs(List(goalPredicate), Set(), 0)
+  }
+
+  def main(args: Array[String]): Unit = {
+    if (args.isEmpty || args.length < 2) println("Please provide the path to NDL file and option (depth|goal|edb|idb)")
+    else {
+      val ndl = ReWriter.getDatalogRewriting(args(0))
+      args(1) match {
+        case "depth" => println(getDepthByIdbPredicate(ndl, Some(getGoalPredicate(ndl))))
+        case "goal" => println(getGoalPredicate(ndl))
+        case "edb" => println(getEdbPredicates(ndl))
+        case "idb" => println(getIdbPredicates(ndl))
+      }
+    }
   }
 }

@@ -6,13 +6,26 @@ import net.sf.jsqlparser.expression.operators.relational.EqualsTo
 import net.sf.jsqlparser.schema.{Column, Table}
 import net.sf.jsqlparser.statement.Statement
 import net.sf.jsqlparser.statement.select.{FromItem, Join, PlainSelect, Select, SelectBody, SelectExpressionItem, SelectItem, SetOperation, SetOperationList, SubSelect, UnionOp, WithItem}
-import uk.ac.bbk.dcs.stypes.Clause
+import uk.ac.bbk.dcs.stypes.{Clause, ReWriter}
 import uk.ac.bbk.dcs.stypes.utils.NdlUtils
 
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 
 object SqlUtils {
+  /**
+    * use
+    * @param args
+    */
+  def main(args: Array[String]): Unit = {
+    if (args.isEmpty || args.length < 2) println("Please provide di NDL and EDB catalog")
+    else {
+        val ndl = ReWriter.getDatalogRewriting(args(0))
+        val catalog = EDBCatalog.getEDBCatalogFromFile(args(1))
+        val statement = ndl2sql(ndl, new Predicate("p1", 2), catalog, useWith = true, List("x", "y"))
+        println(statement.toString)
+    }
+  }
 
   @tailrec
   def orderBodyClauseByTerm(body: List[Atom], acc: List[Atom] = Nil): List[Atom] = body match {
@@ -92,7 +105,7 @@ object SqlUtils {
   def ndl2sql(ndl: List[Clause], goalPredicate: Predicate,
               dbCatalog: EDBCatalog,
               useWith: Boolean = false,
-              selectAlias: List[String] = Nil ): Statement = {
+              selectAlias: List[String] = Nil): Statement = {
 
     val ndlOrdered = orderNdlByTerm(ndl)
     var clauseToMap = ndlOrdered.toSet
@@ -344,11 +357,11 @@ object SqlUtils {
       val startClause = ndlOrdered.find(_.head.getPredicate == startPredicate)
         .getOrElse(throw new RuntimeException("Start predicate not found!"))
 
-      val selectAliasVector =  selectAlias.toVector
+      val selectAliasVector = selectAlias.toVector
       val selectAliasVectorSize = selectAlias.size
       val selectItems: List[SelectItem] = startClause.head.getTerms.asScala.zipWithIndex.map(termIndexed => {
         val selectExpressionItem = new SelectExpressionItem(new Column(fromItem, s"X${termIndexed._2}"))
-        if(selectAliasVector.nonEmpty && termIndexed._2 <= selectAliasVectorSize - 1 ) {
+        if (selectAliasVector.nonEmpty && termIndexed._2 <= selectAliasVectorSize - 1) {
           selectExpressionItem.setAlias(new Alias(selectAliasVector(termIndexed._2)))
         }
         selectExpressionItem
