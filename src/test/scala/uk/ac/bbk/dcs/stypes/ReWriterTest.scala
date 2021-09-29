@@ -650,7 +650,7 @@ class ReWriterTest extends FunSpec {
 
 
   private def printDatalog(datalog: List[Clause], outputToVerify: Option[String] = None): Unit = {
-    val output = s"${datalog.mkString(".\n")}.".replaceAll("""\[\d+\]""", "")
+    val output = s"${datalog.mkString("\n")}".replaceAll("""\[\d+\]""", "")
     println(output)
     if (outputToVerify.nonEmpty)
       assert(outputToVerify.get === output)

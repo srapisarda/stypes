@@ -2,7 +2,7 @@ package uk.ac.bbk.dcs.stypes.utils
 
 import fr.lirmm.graphik.graal.api.core.{Atom, Term}
 import fr.lirmm.graphik.graal.core.DefaultAtom
-import uk.ac.bbk.dcs.stypes.{Clause, Equality}
+import uk.ac.bbk.dcs.stypes.{Clause, Equality, ReWriter}
 
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
@@ -101,5 +101,14 @@ object NdlSubstitution {
         })
     }
     else ndl
+  }
+
+  def main(args: Array[String]): Unit = {
+    if (args.isEmpty || args.length < 2) println("Please provide the path to NDL file and predicate to substitute")
+    else {
+      val ndl = ReWriter.getDatalogRewriting(args(0))
+      val substitution = idbPredicateSubstitution(ndl, args(1))
+      println(substitution.mkString("\n"))
+    }
   }
 }

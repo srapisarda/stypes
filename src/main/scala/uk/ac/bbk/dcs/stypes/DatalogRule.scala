@@ -47,7 +47,7 @@ case class Fact(head: Atom) extends DatalogRule {
 }
 
 case class Clause(head: Atom, body: List[Atom]) extends DatalogRule {
-  override def toString: String = s"$head :- ${body.map(a => a).mkString(", ")}"
+  override def toString: String = s"$head :- ${body.map(a => a).mkString(", ")}.".replaceAll("""\[\d+\]""", "")
 
   override def equals(obj: Any): Boolean = {
     if (obj == null || !obj.isInstanceOf[Clause])
