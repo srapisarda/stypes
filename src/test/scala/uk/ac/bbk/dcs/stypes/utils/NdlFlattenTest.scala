@@ -3,7 +3,7 @@ package uk.ac.bbk.dcs.stypes.utils
 import org.scalatest.FunSpec
 import uk.ac.bbk.dcs.stypes.ReWriter
 
-  class NdlSubstitutionTest extends FunSpec {
+  class NdlFlattenTest extends FunSpec {
 
   describe("IDB predicate substitution") {
 
@@ -64,7 +64,7 @@ import uk.ac.bbk.dcs.stypes.ReWriter
     val folderPathTest = "src/test/resources/rewriting/substitution/"
     val ndlExpected = ReWriter.getDatalogRewriting(s"$folderPathTest$fileTest-res.dlp")
     val ndl = ReWriter.getDatalogRewriting(s"$folderPathTest$fileTest.dlp")
-    val actual = NdlSubstitution.idbPredicateSubstitution(ndl, predicateIdentifier)
+    val actual = NdlFlatten.idbPredicateFlatten(ndl, predicateIdentifier)
 
     if ( printLog ) {
       println(s"begin substituting file test: $fileTest")

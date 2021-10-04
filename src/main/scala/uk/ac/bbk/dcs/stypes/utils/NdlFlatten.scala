@@ -8,7 +8,7 @@ import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 import scala.language.postfixOps
 
-object NdlSubstitution {
+object NdlFlatten {
   private def clauseSubstitution(substitutionClauses: List[Clause], clause: Clause) = {
 
     def clauseSubstitutionH(substitutionClause: Clause) = {
@@ -86,7 +86,7 @@ object NdlSubstitution {
     substitutionClauses.map(clauseSubstitutionH)
   }
 
-  def idbPredicateSubstitution(ndl: List[Clause], predicateIdentifier: String): List[Clause] = {
+  def idbPredicateFlatten(ndl: List[Clause], predicateIdentifier: String): List[Clause] = {
     val iDbPredicates = ndl.groupBy(_.head.getPredicate)
     val idbSubstitutionOption = iDbPredicates.find(_._1.getIdentifier.toString == predicateIdentifier)
     if (idbSubstitutionOption.nonEmpty) {
@@ -107,7 +107,7 @@ object NdlSubstitution {
     if (args.isEmpty || args.length < 2) println("Please provide the path to NDL file and predicate to substitute")
     else {
       val ndl = ReWriter.getDatalogRewriting(args(0))
-      val substitution = idbPredicateSubstitution(ndl, args(1))
+      val substitution = idbPredicateFlatten(ndl, args(1))
       println(substitution.mkString("\n"))
     }
   }
