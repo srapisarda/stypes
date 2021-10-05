@@ -80,7 +80,7 @@ object NdlFlatten {
       }
 
       val substituted = traverseClause(clause.body, Clause(new DefaultAtom(clause.head), List()))
-      Clause(substituted.head, substituted.body distinct)
+      Clause(substituted.head, substituted.body.distinct )
     }
 
     substitutionClauses.map(clauseSubstitutionH)
