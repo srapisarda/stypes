@@ -125,12 +125,18 @@ class SqlUtilsTest extends FunSpec {
       commonAssertions("src/test/resources/rewriting/q45-rew_test.dlp",
         new Predicate("p1", 2), useWith = true, List("x", "y"))
     }
+
+    it("should return a statement for example-rew-q22-p3-res.dlp using with alias") {
+      commonAssertions("src/test/resources/rewriting/example-rew-q22-p3-res.dlp",
+        new Predicate("p1", 2), useWith = true, List("x", "y"), true)
+    }
   }
 
   private def commonAssertions(datalogFileRewriting: String,
                                goalPredicate: Predicate = new Predicate("p1", 2),
                                useWith: Boolean = false,
-                               selectAlias: List[String] = Nil): Unit = {
+                               selectAlias: List[String] = Nil,
+                               isLowerCaseArgs:Boolean = false): Unit = {
 
     val sUseWith = if (useWith) "-with" else ""
     val sAlias = if (selectAlias.nonEmpty) "-alias" else ""
@@ -141,7 +147,7 @@ class SqlUtilsTest extends FunSpec {
     val stmt = CCJSqlParserUtil.parse(sqlExpected)
 
     val ndl = ReWriter.getDatalogRewriting(datalogFileRewriting)
-    val actual = SqlUtils.ndl2sql(ndl, goalPredicate, getEDBCatalog, useWith, selectAlias)
+    val actual = SqlUtils.ndl2sql(ndl, goalPredicate, getEDBCatalog(isLowerCaseArgs), useWith, selectAlias)
     val sqlActual = actual.toString
     println(ndl)
     println("----")
@@ -158,11 +164,13 @@ class SqlUtilsTest extends FunSpec {
     errors.isEmpty
   }
 
-  private def getEDBCatalog: EDBCatalog = {
+  private def getEDBCatalog(isLowerCase:Boolean= false): EDBCatalog = {
+    val checkWithLowerCase = (identifier: String) => if (isLowerCase) identifier.toLowerCase else identifier
+
     val tf: TermFactory = DefaultTermFactory.instance
 
-    val x: Term = tf.createVariable("X")
-    val y: Term = tf.createVariable("Y")
+    val x: Term = tf.createVariable(checkWithLowerCase("X"))
+    val y: Term = tf.createVariable(checkWithLowerCase("Y"))
 
     val r: Atom = new DefaultAtom(new Predicate("r", 2), List(x, y).asJava)
     val s: Atom = new DefaultAtom(new Predicate("s", 2), List(x, y).asJava)
