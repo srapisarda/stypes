@@ -23,7 +23,7 @@ package uk.ac.bbk.dcs.stypes
 import fr.lirmm.graphik.graal.api.core.{Atom, Predicate, Term}
 import fr.lirmm.graphik.graal.core.DefaultAtom
 
-import scala.collection.JavaConverters._ // Combinator syntax
+import scala.collection.JavaConverters._
 
 /**
   *
@@ -47,9 +47,17 @@ case class Fact(head: Atom) extends DatalogRule {
 }
 
 case class Clause(head: Atom, body: List[Atom]) extends DatalogRule {
-  override def toString: String = s"$head :- ${body.map(a => a).mkString(", ")}"
-}
+  override def toString: String = s"$head :- ${body.map(a => a).mkString(", ")}.".replaceAll("""\[\d+\]""", "")
 
+  override def equals(obj: Any): Boolean = {
+    if (obj == null || !obj.isInstanceOf[Clause])
+      false
+    else {
+      val that = obj.asInstanceOf[Clause]
+      that.head.equals(this.head) && that.body.equals(this.body)
+    }
+  }
+}
 
 
 trait BinaryOperator {

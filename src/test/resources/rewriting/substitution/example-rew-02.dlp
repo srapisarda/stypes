@@ -1,0 +1,3 @@
+p(X):-a(X),b(X).
+p(X):-s(X).
+q(X, Y) :- a(X), p(X), r(X, Y), p(Y), b(Y).

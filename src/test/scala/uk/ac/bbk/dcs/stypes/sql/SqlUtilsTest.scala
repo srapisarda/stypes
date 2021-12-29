@@ -4,11 +4,12 @@ import fr.lirmm.graphik.graal.api.core.{Atom, Predicate, Term}
 import fr.lirmm.graphik.graal.api.factory.TermFactory
 import fr.lirmm.graphik.graal.core.DefaultAtom
 import fr.lirmm.graphik.graal.core.term.DefaultTermFactory
-import net.sf.jsqlparser.parser.{CCJSqlParserUtil, JSqlParser}
+import net.sf.jsqlparser.parser.CCJSqlParserUtil
 import net.sf.jsqlparser.util.validation.feature.DatabaseType
 import net.sf.jsqlparser.util.validation.Validation
 import org.scalatest.FunSpec
 import uk.ac.bbk.dcs.stypes.ReWriter
+import uk.ac.bbk.dcs.stypes.utils.NdlUtils
 
 import scala.collection.JavaConverters._
 import scala.io.Source
@@ -40,7 +41,7 @@ class SqlUtilsTest extends FunSpec {
     it("should return the eDBs predicates the NDL contains") {
       val expected = Seq("a", "b", "s", "r")
       val ndl = ReWriter.getDatalogRewriting(s"src/test/resources/rewriting/q15-rew.dlp")
-      val eDbPredicates = SqlUtils.getEdbPredicates(ndl, None)
+      val eDbPredicates = NdlUtils.getEdbPredicates(ndl, None)
       val actual = eDbPredicates.map(_.getIdentifier)
       expected.foreach(exp => assert(actual.contains(exp)))
     }
@@ -124,12 +125,18 @@ class SqlUtilsTest extends FunSpec {
       commonAssertions("src/test/resources/rewriting/q45-rew_test.dlp",
         new Predicate("p1", 2), useWith = true, List("x", "y"))
     }
+
+    it("should return a statement for example-rew-q22-p3-res.dlp using with alias") {
+      commonAssertions("src/test/resources/rewriting/example-rew-q22-p3-res.dlp",
+        new Predicate("p1", 2), useWith = true, List("x", "y"), true)
+    }
   }
 
   private def commonAssertions(datalogFileRewriting: String,
                                goalPredicate: Predicate = new Predicate("p1", 2),
                                useWith: Boolean = false,
-                               selectAlias: List[String] = Nil): Unit = {
+                               selectAlias: List[String] = Nil,
+                               isLowerCaseArgs:Boolean = false): Unit = {
 
     val sUseWith = if (useWith) "-with" else ""
     val sAlias = if (selectAlias.nonEmpty) "-alias" else ""
@@ -140,7 +147,7 @@ class SqlUtilsTest extends FunSpec {
     val stmt = CCJSqlParserUtil.parse(sqlExpected)
 
     val ndl = ReWriter.getDatalogRewriting(datalogFileRewriting)
-    val actual = SqlUtils.ndl2sql(ndl, goalPredicate, getEDBCatalog, useWith, selectAlias)
+    val actual = SqlUtils.ndl2sql(ndl, goalPredicate, getEDBCatalog(isLowerCaseArgs), useWith, selectAlias)
     val sqlActual = actual.toString
     println(ndl)
     println("----")
@@ -157,11 +164,13 @@ class SqlUtilsTest extends FunSpec {
     errors.isEmpty
   }
 
-  private def getEDBCatalog: EDBCatalog = {
+  private def getEDBCatalog(isLowerCase:Boolean= false): EDBCatalog = {
+    val checkWithLowerCase = (identifier: String) => if (isLowerCase) identifier.toLowerCase else identifier
+
     val tf: TermFactory = DefaultTermFactory.instance
 
-    val x: Term = tf.createVariable("X")
-    val y: Term = tf.createVariable("Y")
+    val x: Term = tf.createVariable(checkWithLowerCase("X"))
+    val y: Term = tf.createVariable(checkWithLowerCase("Y"))
 
     val r: Atom = new DefaultAtom(new Predicate("r", 2), List(x, y).asJava)
     val s: Atom = new DefaultAtom(new Predicate("s", 2), List(x, y).asJava)

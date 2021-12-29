@@ -5,31 +5,26 @@ import net.sf.jsqlparser.expression.Alias
 import net.sf.jsqlparser.expression.operators.relational.EqualsTo
 import net.sf.jsqlparser.schema.{Column, Table}
 import net.sf.jsqlparser.statement.Statement
-import net.sf.jsqlparser.statement.select.{
-  FromItem, Join, PlainSelect, Select, SelectBody, SelectExpressionItem,
-  SelectItem, SetOperation, SetOperationList, SubSelect, UnionOp, WithItem
-}
-import uk.ac.bbk.dcs.stypes.Clause
+import net.sf.jsqlparser.statement.select.{FromItem, Join, PlainSelect, Select, SelectBody, SelectExpressionItem, SelectItem, SetOperation, SetOperationList, SubSelect, UnionOp, WithItem}
+import uk.ac.bbk.dcs.stypes.{Clause, ReWriter}
+import uk.ac.bbk.dcs.stypes.utils.NdlUtils
 
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 
 object SqlUtils {
-
   /**
-    * The EDBs are atoms present in the body but not in the head of a clause.
-    * The IDBs are atoms defined as the head of a clause.
-    *
-    * @return set of Predicate
+    * use
+    * @param args
     */
-  def getEdbPredicates(ndl: List[Clause], optIDbPredicates: Option[Set[Predicate]] = None): Set[Predicate] = {
-    val iDbPredicates = optIDbPredicates.getOrElse(getIdbPredicates(ndl))
-    ndl.flatten(_.body.map(_.getPredicate).distinct)
-      .filter(!iDbPredicates.contains(_)).toSet
-  }
-
-  def getIdbPredicates(ndl: List[Clause]): Set[Predicate] = {
-    ndl.map(p => p.head.getPredicate).toSet
+  def main(args: Array[String]): Unit = {
+    if (args.isEmpty || args.length < 2) println("Please provide di NDL and EDB catalog")
+    else {
+        val ndl = ReWriter.getDatalogRewriting(args(0))
+        val catalog = EDBCatalog.getEDBCatalogFromFile(args(1))
+        val statement = ndl2sql(ndl, new Predicate("p1", 2), catalog, useWith = true, List("x", "y"))
+        println(statement.toString)
+    }
   }
 
   @tailrec
@@ -49,7 +44,7 @@ object SqlUtils {
                                      ndl: List[Clause],
                                      optionIDBs: Option[Set[Predicate]] = None): List[Predicate] = {
 
-    val iDBs = optionIDBs.getOrElse(getIdbPredicates(ndl))
+    val iDBs = optionIDBs.getOrElse(NdlUtils.getIdbPredicates(ndl))
     val mapPredicateToIdbPredicateBody = ndl.groupBy(_.head)
       .map(group => group._1.getPredicate ->
         group._2.flatten(clause => clause.body.filter(atom => iDBs.contains(atom.getPredicate)).map(_.getPredicate)))
@@ -110,14 +105,14 @@ object SqlUtils {
   def ndl2sql(ndl: List[Clause], goalPredicate: Predicate,
               dbCatalog: EDBCatalog,
               useWith: Boolean = false,
-              selectAlias: List[String] = Nil ): Statement = {
+              selectAlias: List[String] = Nil): Statement = {
 
     val ndlOrdered = orderNdlByTerm(ndl)
     var clauseToMap = ndlOrdered.toSet
     var predicateMapToSelects: Map[Predicate, Select] = Map()
     var aliasIndex = 0
-    val iDbPredicates = getIdbPredicates(ndlOrdered)
-    val eDbPredicates = getEdbPredicates(ndlOrdered, Some(iDbPredicates))
+    val iDbPredicates = NdlUtils.getIdbPredicates(ndlOrdered)
+    val eDbPredicates = NdlUtils.getEdbPredicates(ndlOrdered, Some(iDbPredicates))
 
     def removeClauseToMap(clause: Clause): Unit = clauseToMap -= clause
 
@@ -362,11 +357,11 @@ object SqlUtils {
       val startClause = ndlOrdered.find(_.head.getPredicate == startPredicate)
         .getOrElse(throw new RuntimeException("Start predicate not found!"))
 
-      val selectAliasVector =  selectAlias.toVector
+      val selectAliasVector = selectAlias.toVector
       val selectAliasVectorSize = selectAlias.size
       val selectItems: List[SelectItem] = startClause.head.getTerms.asScala.zipWithIndex.map(termIndexed => {
         val selectExpressionItem = new SelectExpressionItem(new Column(fromItem, s"X${termIndexed._2}"))
-        if(selectAliasVector.nonEmpty && termIndexed._2 <= selectAliasVectorSize - 1 ) {
+        if (selectAliasVector.nonEmpty && termIndexed._2 <= selectAliasVectorSize - 1) {
           selectExpressionItem.setAlias(new Alias(selectAliasVector(termIndexed._2)))
         }
         selectExpressionItem
