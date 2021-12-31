@@ -19,7 +19,7 @@ done
 JOBS_ARGS=$(join_by " ${JOBS_DIR}/" $JOBS )
 echo "$JOBS_ARGS"
 CSV_STATS_FILE="${LOG_FILE}.csv"
-python3 get_job_statistic.py -o "$CSV_STATS_FILE" -j "${JOBS_DIR}/$JOBS_ARGS"
+python3 get_job_statistic.py -o "$CSV_STATS_FILE" -j ${JOBS_DIR}/$JOBS_ARGS
 
 
 
