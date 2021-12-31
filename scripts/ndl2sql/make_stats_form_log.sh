@@ -8,8 +8,8 @@ JOBS=$(more "$LOG_FILE.log"  | grep "submitted with JobID" | cut -d ' ' -f7)
 #echo $JOBS
 
 JOBS_DIR="${WORKING_DIR}/jobs"
-mkdir -p "$JOBS_DIR"
-rm -f "${JOBS_DIR}/*"
+rm -rf "$JOBS_DIR"
+mkdir "$JOBS_DIR"
 
 for j in $JOBS
 do
@@ -17,6 +17,7 @@ do
 done
 
 JOBS_ARGS=$(join_by " ${JOBS_DIR}/" $JOBS )
+echo "$JOBS_ARGS"
 CSV_STATS_FILE="${LOG_FILE}.csv"
 python3 get_job_statistic.py -o "$CSV_STATS_FILE" -j $JOBS_ARGS
 
