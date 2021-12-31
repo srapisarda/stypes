@@ -1,8 +1,9 @@
 #!/bin/bash
 
-SQL_FILE=$1
+WORKING_DIR=$1
+SQL_FILE="${WORKING_DIR}/${2}.sql"
 STYPES_FLINK_JAR=/home/hduser/development/stypes-flink/target/scala-2.12/stypes-flink_2.12-1.0.jar
-OPTIMISE=$2
+OPTIMISE=$3
 
 for PAR in 5 10 15 20
 do
