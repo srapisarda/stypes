@@ -21,9 +21,9 @@ def main():
     #        'state': 'FINISHED',
     #        'jid': 'a804c4e268645703270fc3a3b66ef870'}]}
     if args.output_file:
-    	output_file = args.output_file
+        output_file = args.output_file
     else:
-    	output_file = 'stats.csv'
+        output_file = 'stats.csv'
 
     with open(output_file, 'w') as csv:
         header_file = ['jid', 'name', 'duration', 'start-time', 'end-time', 'state', 'finished', 'failed', 'total', 'job-parallelism']
