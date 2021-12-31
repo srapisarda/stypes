@@ -35,7 +35,7 @@ def main():
     with open(output_file, 'w') as csv:
         header_file = ['jid', 'name', 'duration', 'start-time', 'end-time', 'state', 'finished', 'failed', 'total', 'job-parallelism', 'data-set']
         print(','.join(str(c) for c in header_file), file=csv)
-        for job_index, job_name in args.jobs:
+        for job_index, job_name in enumerate(args.jobs):
             with open(job_name, "r") as read_file:
                 json_data = json.load(read_file)
 
