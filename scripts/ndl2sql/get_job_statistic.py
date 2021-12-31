@@ -8,7 +8,10 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-j', '--jobs-files', dest='jobs', required=True, help='--job-files <job_file_1> <job_file2>',
                         nargs='+', type=str)
+    parser.add_argument('-d', '--ttl-data-sets', dest='ttl_data_sets', required=True, help='--ttl-data-sets <set1> <set2>',
+                        nargs='+', type=str)
     parser.add_argument('-o', '--otput-file', dest='output_file', required=True, help='--output-file <output_file>', type=str)
+
     args = parser.parse_args()
 
     # {'jobs': [
@@ -25,10 +28,14 @@ def main():
     else:
         output_file = 'stats.csv'
 
+    if len(args.jobs) != len(args.ttl_data_sets):
+        print("error: data TTLs arguments different length of jobs")
+        exit()
+
     with open(output_file, 'w') as csv:
-        header_file = ['jid', 'name', 'duration', 'start-time', 'end-time', 'state', 'finished', 'failed', 'total', 'job-parallelism']
+        header_file = ['jid', 'name', 'duration', 'start-time', 'end-time', 'state', 'finished', 'failed', 'total', 'job-parallelism', 'data-set']
         print(','.join(str(c) for c in header_file), file=csv)
-        for job_name in args.jobs:
+        for job_index, job_name in args.jobs:
             with open(job_name, "r") as read_file:
                 json_data = json.load(read_file)
 
@@ -40,7 +47,8 @@ def main():
             tasks_stats = list(map(lambda key: json_job['jobs'][0]['tasks'][key], tasks_keys))
             config_keys = header_file[9:10]
             config_stats = list(map(lambda key: json_config['execution-config'][key], config_keys))
-            stats = jobs_stats + tasks_stats + config_stats
+            stats = jobs_stats + tasks_stats + config_stats + [args.ttl_data_sets[job_index]]
+
             print(','.join(str(c) for c in stats), file=csv)
 
 if __name__ == '__main__':
