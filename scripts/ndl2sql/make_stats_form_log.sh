@@ -3,7 +3,7 @@
 function join_by { local d=${1-} f=${2-}; if shift 2; then printf %s "$f" "${@/#/$d}"; fi; }
 
 WORKING_DIR=$1
-LOG_FILE="${WORKING_DIR}/$1.log"
+LOG_FILE="${WORKING_DIR}/$2.log"
 JOBS=$(more $LOG_FILE  | grep "submitted with JobID" | cut -d ' ' -f7)
 #echo $JOBS
 
