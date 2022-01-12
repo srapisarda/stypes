@@ -4,7 +4,8 @@ WORKING_DIR=$1
 NDL_FILE="${WORKING_DIR}/${2}.dlp"
 SQL_FILE="${WORKING_DIR}/${2}.sql"
 EDB_CATALOG="$3"
-STYPES_JAR=/home/hduser/development/stypes/target/scala-2.12/stypes-assembly-1.1.1.jar
+# STYPES_JAR=/home/hduser/development/stypes/target/scala-2.12/stypes-assembly-1.1.1.jar
+STYPES_JAR=/Users/salvo.rapisarda/development/uni/stypes/target/scala-2.12/stypes-assembly-1.1.1.jar
 
 echo "$NDL_FILE to SQL"
 
