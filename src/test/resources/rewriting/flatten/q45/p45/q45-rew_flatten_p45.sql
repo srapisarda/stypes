@@ -130,4 +130,4 @@ WITH p41 AS (SELECT a_0.x AS X0, a_0.x AS X1
                       INNER JOIN a AS a_1 ON p36_0.X1 = a_1.x
                       INNER JOIN p37 AS p37_2 ON p36_0.X1 = p37_2.X0))
 SELECT p1.X0 AS x, p1.X1 AS y
-FROM p1;
+FROM p1
