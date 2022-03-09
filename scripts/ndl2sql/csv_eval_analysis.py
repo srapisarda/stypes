@@ -33,29 +33,43 @@ def __main(spark: SparkSession):
 
     df.show()
 
-    df_min_max = df.select(df['duration'], df['tasks'], df['job-parallelism'], df['data-set']) \
-        .groupBy('job-parallelism', 'data-set') \
-        .agg(max('duration').alias('max-duration'), min('duration').alias('min-duration'),
-             max('tasks').alias('max-tasks'), min('tasks').alias('min-tasks')) \
-        .orderBy('data-set', 'job-parallelism')
-    df_min_max.show()
+    df_not_flatten = df.select(df['evaluation'].alias('nf-evaluation'), df['duration'].alias('nf-duration'),
+                               df['tasks'].alias('nf-tasks'), df['job-parallelism'], df['data-set']) \
+        .filter(~df['evaluation'].contains('p'))
 
-    df_with_stats = df.join(df_min_max, ['job-parallelism', 'data-set']) \
-        .withColumn('duration-min-increase',
-                    round((df['duration'] - df_min_max['min-duration']) / df_min_max['min-duration'], 2)) \
-        .withColumn('duration-max-decrease',
-                    round((df_min_max['max-duration'] - df['duration']) / df_min_max['max-duration'], 2)) \
-        .withColumn('tasks-min-increase',
-                    round((df['tasks'] - df_min_max['min-tasks']) / df_min_max['min-tasks'], 2)) \
-        .withColumn('tasks-max-decrease',
-                    round((df_min_max['max-tasks'] - df['tasks']) / df_min_max['max-tasks'], 2)) \
-        .select('job-parallelism', 'data-set', 'evaluation', 'duration', 'tasks', 'duration-min-increase', 'tasks-min-increase') \:q!
-        .orderBy('data-set', 'job-parallelism')
+    df_not_flatten.show()
+
+    # df_min_max = df.select(df['duration'], df['tasks'], df['job-parallelism'], df['data-set']) \
+    #     .groupBy('job-parallelism', 'data-set') \
+    #     .agg(max('duration').alias('max-duration'), min('duration').alias('min-duration'),
+    #          max('tasks').alias('max-tasks'), min('tasks').alias('min-tasks')) \
+    #     .orderBy('data-set', 'job-parallelism')
+    # df_min_max.show()
+
+    # df_with_stats = df.join(df_min_max, ['job-parallelism', 'data-set']) \
+    #     .withColumn('duration-min-increase',
+    #                 round((df['duration'] - df_min_max['min-duration']) / df_min_max['min-duration'], 2)) \
+    #     .withColumn('duration-max-decrease',
+    #                 round((df_min_max['max-duration'] - df['duration']) / df_min_max['max-duration'], 2)) \
+    #     .withColumn('tasks-min-increase',
+    #                 round((df['tasks'] - df_min_max['min-tasks']) / df_min_max['min-tasks'], 2)) \
+    #     .withColumn('tasks-max-decrease',
+    #                 round((df_min_max['max-tasks'] - df['tasks']) / df_min_max['max-tasks'], 2)) \
+    #     .select('job-parallelism', 'data-set', 'evaluation', 'duration', 'tasks', 'duration-min-increase',
+    #             'tasks-min-increase') \
+    #     .orderBy('data-set', 'job-parallelism')
+
+    df_with_stats = df.join(df_not_flatten, ['job-parallelism', 'data-set']) \
+        .withColumn('dmi',
+                    round((df['duration'] - df_not_flatten['nf-duration']) / df_not_flatten['nf-duration'], 2)) \
+        .withColumn('tmi',
+                    round((df['tasks'] - df_not_flatten['nf-tasks']) / df_not_flatten['nf-tasks'], 2)) \
+        .select('job-parallelism', 'data-set', 'evaluation', df['duration'], df['tasks'], 'dmi',
+                'tmi') \
+        .orderBy('data-set', 'job-parallelism', 'evaluation')
 
     df_with_stats.show()
-
     df_with_stats.coalesce(1).write.csv(csv_file_path, header='true')
-
 
 if __name__ == '__main__':
     spark_session = (
