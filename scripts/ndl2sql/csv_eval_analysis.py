@@ -66,7 +66,7 @@ def __main(spark: SparkSession):
                     round((df['tasks'] - df_not_flatten['nf-tasks']) / df_not_flatten['nf-tasks'], 2)) \
         .select('job-parallelism', 'data-set', 'evaluation', df['duration'], df['tasks'], 'dmi',
                 'tmi') \
-        .orderBy('data-set', 'job-parallelism', 'evaluation')
+        .orderBy( 'data-set', 'evaluation', 'job-parallelism')
 
     df_with_stats.show()
     df_with_stats.coalesce(1).write.csv(csv_file_path, header='true')
