@@ -61,15 +61,16 @@ def __main(spark: SparkSession):
 
     df_with_stats = df.join(df_not_flatten, ['job-parallelism', 'data-set']) \
         .withColumn('dmi',
-                    round((df['duration'] - df_not_flatten['nf-duration']) / df_not_flatten['nf-duration'], 2)) \
+                    round((df['duration'] - df_not_flatten['nf-duration']) * 100 / df_not_flatten['nf-duration'], 2)) \
         .withColumn('tmi',
-                    round((df['tasks'] - df_not_flatten['nf-tasks']) / df_not_flatten['nf-tasks'], 2)) \
+                    round((df['tasks'] - df_not_flatten['nf-tasks']) * 100 / df_not_flatten['nf-tasks'], 2)) \
         .select('job-parallelism', 'data-set', 'evaluation', df['duration'], df['tasks'], 'dmi',
                 'tmi') \
         .orderBy( 'data-set', 'evaluation', 'job-parallelism')
 
     df_with_stats.show()
     df_with_stats.coalesce(1).write.csv(csv_file_path, header='true')
+
 
 if __name__ == '__main__':
     spark_session = (

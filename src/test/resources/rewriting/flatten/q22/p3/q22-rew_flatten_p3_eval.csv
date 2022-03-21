@@ -1,5 +1,5 @@
 jid,name,duration,start-time,end-time,state,finished,failed,total,job-parallelism,data-set
-b851292acf7d514d7730c184ab2b4d89,insert-into_S_CAT.default_database.sink_1_690da64e_a385_46f7_baed_1a6777e83844,15657,1646156550329,1646156565986,FINISHED,69,0,69,5,3
+b851292acf7d514d7730c184ab2b4d89,insert-into_S_CAT.default_database.sink_1_690da64e_a385_46f7_baed_1a6777e83844,4462,1646156550329,1646156565986,FINISHED,69,0,69,5,3
 b60fc9f60a5e3b572ae9ac5c751fffb4,insert-into_S_CAT.default_database.sink_1_8d19dfb9_a38b_408d_b400_c097683d636c,4878,1646156583570,1646156588448,FINISHED,69,0,69,5,3
 e3784ce137265651b826b7b7a13248bb,insert-into_S_CAT.default_database.sink_1_34ec1d44_5891_4be0_835f_ac1dcd7edece,4047,1646156599641,1646156603688,FINISHED,69,0,69,5,3
 7adca1c071d8d542516ec82535316961,insert-into_S_CAT.default_database.sink_1_2473b0c9_fefc_4ec1_a604_535aaca4eec9,9535,1646156616584,1646156626119,FINISHED,74,0,74,5,5
