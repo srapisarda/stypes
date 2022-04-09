@@ -49,6 +49,43 @@ object NdlUtils {
     bfs(List(goalPredicate), Set(), 0)
   }
 
+  def getIdbPredicatesDefCount(ndl: List[Clause]): Map[String, (Int, Int)] = {
+    val iDBs = getIdbPredicates(ndl)
+
+    def increment(map: scala.collection.mutable.Map[String, (Int, Int)], predicateId: String, value: Int, isHead: Boolean): Unit = {
+      if (map.contains(predicateId)) {
+        map(predicateId) =
+          if (isHead) (map(predicateId)._1 + value, map(predicateId)._2)
+          else (map(predicateId)._1, map(predicateId)._2 + value)
+      }
+      else if (isHead) map(predicateId) = (value, 0)
+      else map(predicateId) = (0, value)
+    }
+
+    def getIdbPredicatesDefCountH(ndl: List[Clause],
+                                  map: scala.collection.mutable.Map[String, (Int, Int)] = scala.collection.mutable.Map()):
+    scala.collection.mutable.Map[String, (Int, Int)] = ndl match {
+      case List() => map
+      case clause :: tail =>
+
+        if (iDBs.contains(clause.head.getPredicate)) {
+          val piHead = clause.head.getPredicate.getIdentifier.toString
+          increment(map, piHead, 1, isHead = true)
+        }
+
+        val pisBody = clause.body.map(_.getPredicate).groupBy(identity).mapValues(_.size)
+        pisBody.foreach {
+          case (predicate: Predicate, value: Int) =>
+            if (iDBs.contains(predicate)) {
+              increment(map, predicate.getIdentifier.toString, value = value, isHead = false)
+            }
+        }
+        getIdbPredicatesDefCountH(tail, map)
+    }
+
+    getIdbPredicatesDefCountH(ndl).toMap
+  }
+
   def main(args: Array[String]): Unit = {
     if (args.isEmpty || args.length < 2) println("Please provide the path to NDL file and option (depth|goal|edb|idb)")
     else {
@@ -58,6 +95,7 @@ object NdlUtils {
         case "goal" => println(getGoalPredicate(ndl))
         case "edb" => println(getEdbPredicates(ndl))
         case "idb" => println(getIdbPredicates(ndl))
+        case "idb-def-count" => println(getIdbPredicatesDefCount(ndl))
       }
     }
   }
