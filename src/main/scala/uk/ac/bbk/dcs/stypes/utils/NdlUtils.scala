@@ -3,6 +3,8 @@ package uk.ac.bbk.dcs.stypes.utils
 import fr.lirmm.graphik.graal.api.core.Predicate
 import uk.ac.bbk.dcs.stypes.{Clause, ReWriter}
 
+import scala.annotation.tailrec
+
 object NdlUtils {
   /**
     * The EDBs are atoms present in the body but not in the head of a clause.
@@ -37,6 +39,7 @@ object NdlUtils {
           predicate -> clauses.flatMap(_.body.map(_.getPredicate)).filterNot(eDBs).distinct
       }
 
+    @tailrec
     def bfs(toVisit: List[Predicate], visited: Set[Predicate], depth: Int): Int = toVisit match {
       case List() => depth
       case predicate :: tail =>
@@ -53,15 +56,15 @@ object NdlUtils {
     val iDBs = getIdbPredicates(ndl)
 
     def increment(map: scala.collection.mutable.Map[String, (Int, Int)], predicateId: String, value: Int, isHead: Boolean): Unit = {
-      if (map.contains(predicateId)) {
+      if (map.contains(predicateId))
         map(predicateId) =
           if (isHead) (map(predicateId)._1 + value, map(predicateId)._2)
           else (map(predicateId)._1, map(predicateId)._2 + value)
-      }
       else if (isHead) map(predicateId) = (value, 0)
       else map(predicateId) = (0, value)
     }
 
+    @tailrec
     def getIdbPredicatesDefCountH(ndl: List[Clause],
                                   map: scala.collection.mutable.Map[String, (Int, Int)] = scala.collection.mutable.Map()):
     scala.collection.mutable.Map[String, (Int, Int)] = ndl match {
@@ -95,7 +98,11 @@ object NdlUtils {
         case "goal" => println(getGoalPredicate(ndl))
         case "edb" => println(getEdbPredicates(ndl))
         case "idb" => println(getIdbPredicates(ndl))
-        case "idb-def-count" => println(getIdbPredicatesDefCount(ndl))
+        case "idb-def-count" =>
+          val filename = args(0).replaceAll("^.*[/]", "")
+          println(getIdbPredicatesDefCount(ndl)
+            .map(p=> s"$filename,${p._1},${p._2._1},${p._2._2}")
+            .mkString("\n"))
       }
     }
   }
