@@ -17,7 +17,7 @@ else
         FILE_PATH=${FILE_PATH::$PATH_LEN-1}
     fi
 
-    files=$(find ../. -name "*-rew_flatten_*.dlp") #Add () to convert output to array
+    files=$(find "${FILE_PATH}"/. -name "*-rew*.dlp") #Add () to convert output to array
     echo "rewriting,idb,head,body"
     for file in $files ; do
       java -cp ../target/scala-2.12/stypes-assembly-1.1.1.jar uk.ac.bbk.dcs.stypes.utils.NdlUtils $file idb-def-count
