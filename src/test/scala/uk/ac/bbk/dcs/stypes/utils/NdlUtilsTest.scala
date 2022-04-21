@@ -81,6 +81,33 @@ class NdlUtilsTest extends FunSpec {
 
   }
 
+  describe("NDL Util: getIdbPredicatesDefCount") {
+    it("should return correct number of idb declarations and the use of it in any clause body in q01-rew_test.dlp") {
+      assertGetIdbPredicatesDefCount(expected = Map("p1" -> (1, 0)), ndlFileName = "q01-rew_test.dlp")
+    }
+
+    it("should return correct number of idb declarations and the use of it in any clause body in q03-rew_test.dlp") {
+      assertGetIdbPredicatesDefCount(expected = Map("p2" -> (1, 1), "p1" -> (2, 0)), ndlFileName = "q03-rew_test.dlp")
+    }
+
+    it("should return correct number of idb declarations and the use of it in any clause body in q04-rew_test.dlp≈") {
+      assertGetIdbPredicatesDefCount(expected = Map("p2" -> (1, 1), "p1" -> (1, 0), "p3" -> (1, 1)), ndlFileName = "q04-rew_test.dlp")
+    }
+
+    it("should return correct number of idb declarations and the use of it in any clause body in q07-rew_test.dlp") {
+      assertGetIdbPredicatesDefCount(
+        expected = Map("p12" -> (2, 1), "p3" -> (3, 2), "p2" -> (2, 1), "p9" -> (2, 2), "p1" -> (2, 0), "p6" -> (2, 2)),
+        ndlFileName = "q07-rew_test.dlp")
+    }
+
+    it("should return correct number of idb declarations and the use of it in any clause body in q15-rew_test.dlp") {
+      assertGetIdbPredicatesDefCount(
+        expected = Map("p1" -> (3, 0), "p7" -> (2, 2), "p19" -> (2, 4), "p5" -> (2, 1), "p40" -> (2, 1), "p3" -> (3, 1), "p2" -> (2, 2),
+          "p14" -> (2, 2), "p28" -> (2, 2), "p43" -> (3, 2), "p35" -> (3, 2)),
+        ndlFileName = "q15-rew.dlp")
+    }
+  }
+
   private def executeDepthTest(fileTest: String, expected: Int): Unit = {
     val folderPathTest = "src/test/resources/rewriting/"
     val ndl = ReWriter.getDatalogRewriting(s"$folderPathTest$fileTest.dlp")
@@ -104,5 +131,11 @@ class NdlUtilsTest extends FunSpec {
     val ndl = ReWriter.getDatalogRewriting(s"$folderPathTest$ndlFileName")
     val actual = NdlUtils.getEdbPredicates(ndl)
     assert(actual -- expected isEmpty)
+  }
+
+  private def assertGetIdbPredicatesDefCount(expected: Map[String, (Int, Int)], ndlFileName: String) = {
+    val ndl = ReWriter.getDatalogRewriting(s"$folderPathTest$ndlFileName")
+    val actual = NdlUtils.getIdbPredicatesDefCount(ndl)
+    assert(actual == expected)
   }
 }
