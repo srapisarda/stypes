@@ -1,0 +1,7 @@
+vertex( ?x1 ).
+vertex( ?x0 ).
+vertex( ?x3 ).
+vertex( ?x2 ).
+edge( ?x0,?x1 ).
+edge( ?x1,?x2 ).
+edge( ?x2,?x3 ).
