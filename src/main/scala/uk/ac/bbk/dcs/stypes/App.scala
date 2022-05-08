@@ -21,5 +21,5 @@ object App {
   }
 
   private def printDatalog(datalog: List[Clause]): Unit =
-    println(s"${datalog.mkString(".\n")}.".replaceAll("""\[\d+\]""", ""))
+    println(s"${datalog.mkString("\n")}".replaceAll("""\[\d+\]""", ""))
 }
