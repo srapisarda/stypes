@@ -12,16 +12,16 @@ def __main(spark: SparkSession):
                         type=str)
     args = parser.parse_args()
     csv_file_path = re.search('([^\/]+$)', args.folder_path).group(0)
-    csv_file_path = f'{args.folder_path}/{csv_file_path}_analysis'
+    csv_file_path = f'{args.folder_path}/{csv_file_path}_analysis_2'
 
     if Path(csv_file_path).exists():
         rmtree(csv_file_path)
 
-    df = spark.read.option("pathGlobFilter", "*_eval.csv") \
+    df = spark.read.option("pathGlobFilter", "*_eval*.csv") \
         .option("recursiveFileLookup", "true") \
         .csv(args.folder_path, sep=',', inferSchema=True, header=True) \
         .withColumn("evaluation",
-                    regexp_replace(regexp_extract(input_file_name(), '([^\/]+$)', 0), '.csv|rew_|flatten_|-eval', ''))
+                    regexp_replace(regexp_extract(input_file_name(), '([^\/]+$)', 0), '.csv|rew_|flatten_|git pull -eval|_1', ''))
 
     # .join(df_total, ['job-parallelism', 'data-set', 'evaluation'])\
 

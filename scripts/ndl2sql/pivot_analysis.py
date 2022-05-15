@@ -7,7 +7,7 @@ import csv
 def __get_reordered_row(row) -> list:
     new_row = [row[0], row[1]]
     for i in range(2, 6):
-        for j in range(4):
+        for j in range(6):
             new_row.append(row[i + (j * 4)])
     return new_row
 
@@ -24,7 +24,7 @@ def __get_header_a(columns: list, parallelism: list):
 
 def __print_header(match_columns):
     columns = ['duration', 'tasks', 'dp', 'tp']
-    parallelism = [5, 10, 15, 20]
+    parallelism = [1, 3, 5, 10, 15, 20]
     if match_columns:
         header = __get_header_b(columns, parallelism)
     else:
