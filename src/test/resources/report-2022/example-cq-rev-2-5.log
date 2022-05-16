@@ -1,0 +1,1062 @@
+WITH p1 AS (SELECT r_0.x AS X0, r_0.y AS X1 FROM r AS r_0 INNER JOIN b AS b_1 ON r_0.y = b_1.x UNION (SELECT r_0.x AS X0, t_2.y AS X1 FROM r AS r_0 INNER JOIN s AS s_1 ON r_0.y = s_1.x INNER JOIN t AS t_2 ON s_1.y = t_2.x) UNION (SELECT a_0.x AS X0, t_1.y AS X1 FROM a AS a_0 INNER JOIN t AS t_1 ON a_0.x = t_1.x)) SELECT p1.X0 AS x, p1.X1 AS y FROM p1
+
+------------> using sink uuid: e9894e62_f3f9_4dfe_85a5_3f88139e6fba
+
+Adding statistics for table s number 3 
+Adding statistics for table a number 3 
+Adding statistics for table b number 3 
+Adding statistics for table r number 3 
+Adding statistics for table t number 3 
+sql argument: WITH p1 AS (SELECT r_0.x AS X0, r_0.y AS X1
+            FROM r AS r_0
+                     INNER JOIN b AS b_1 ON r_0.y = b_1.x
+            UNION
+            (SELECT r_0.x AS X0, t_2.y AS X1
+             FROM r AS r_0
+                      INNER JOIN s AS s_1 ON r_0.y = s_1.x
+                      INNER JOIN t AS t_2 ON s_1.y = t_2.x)
+            UNION
+            (SELECT a_0.x AS X0, t_1.y AS X1
+             FROM a AS a_0
+                      INNER JOIN t AS t_1 ON a_0.x = t_1.x))
+SELECT p1.X0 AS x, p1.X1 AS y
+FROM p1
+== Abstract Syntax Tree ==
+LogicalProject(x=[$0], y=[$1])
++- LogicalUnion(all=[false])
+   :- LogicalUnion(all=[false])
+   :  :- LogicalProject(X0=[$0], X1=[$1])
+   :  :  +- LogicalJoin(condition=[=($1, $2)], joinType=[inner])
+   :  :     :- LogicalTableScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]])
+   :  :     +- LogicalTableScan(table=[[S_CAT, default_database, b, source: [CsvTableSource(read fields: x)]]])
+   :  +- LogicalProject(X0=[$0], X1=[$5])
+   :     +- LogicalJoin(condition=[=($3, $4)], joinType=[inner])
+   :        :- LogicalJoin(condition=[=($1, $2)], joinType=[inner])
+   :        :  :- LogicalTableScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]])
+   :        :  +- LogicalTableScan(table=[[S_CAT, default_database, s, source: [CsvTableSource(read fields: x, y)]]])
+   :        +- LogicalTableScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]])
+   +- LogicalProject(X0=[$0], X1=[$2])
+      +- LogicalJoin(condition=[=($0, $1)], joinType=[inner])
+         :- LogicalTableScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]])
+         +- LogicalTableScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]])
+
+== Optimized Physical Plan ==
+HashAggregate(isMerge=[true], groupBy=[X0, X1], select=[X0, X1]): rowcount = 13962.372505716601, cumulative cost = {863537.81751715 rows, 6385952.621097587 cpu, 1.2322872E7 io, 335732.9401371984 network, 1788959.680731725 memory}
++- Exchange(distribution=[hash[X0, X1]]): rowcount = 13962.372505716601, cumulative cost = {849575.4450114333 rows, 6162554.661006121 cpu, 1.2322872E7 io, 335732.9401371984 network, 895367.8403658625 memory}
+   +- LocalHashAggregate(groupBy=[X0, X1], select=[X0, X1]): rowcount = 13962.372505716601, cumulative cost = {835613.0725057167 rows, 3705177.0999999996 cpu, 1.2322872E7 io, 636.0 network, 895367.8403658625 memory}
+      +- Union(all=[true], union=[X0, X1]): rowcount = 77025.59999999999, cumulative cost = {821650.7000000001 rows, 2472767.5 cpu, 1.2322872E7 io, 636.0 network, 1776.0 memory}
+         :- Union(all=[true], union=[X0, X1]): rowcount = 77016.9, cumulative cost = {744548.7000000001 rows, 2395524.9 cpu, 1.2322164E7 io, 612.0 network, 1748.0 memory}
+         :  :- Calc(select=[x AS X0, y AS X1]): rowcount = 38511.9, cumulative cost = {333816.80000000005 rows, 2061488.0 cpu, 6161340.0 io, 564.0 network, 1692.0 memory}
+         :  :  +- HashJoin(joinType=[InnerJoin], where=[=(y, x0)], select=[x, y, x0], isBroadcast=[true], build=[right]): rowcount = 38511.9, cumulative cost = {295304.9 rows, 2061488.0 cpu, 6161340.0 io, 564.0 network, 1692.0 memory}
+         :  :     :- LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 256699.0, cumulative cost = {256699.0 rows, 0.0 cpu, 6160776.0 io, 0.0 network, 0.0 memory}
+         :  :     +- Exchange(distribution=[broadcast]): rowcount = 47.0, cumulative cost = {94.0 rows, 7520.0 cpu, 564.0 io, 564.0 network, 0.0 memory}
+         :  :        +- LegacyTableSourceScan(table=[[S_CAT, default_database, b, source: [CsvTableSource(read fields: x)]]], fields=[x]): rowcount = 47.0, cumulative cost = {47.0 rows, 0.0 cpu, 564.0 io, 0.0 network, 0.0 memory}
+         :  +- Calc(select=[x AS X0, y0 AS X1]): rowcount = 38505.0, cumulative cost = {333715.0 rows, 257020.0 cpu, 6160824.0 io, 48.0 network, 56.0 memory}
+         :     +- NestedLoopJoin(joinType=[InnerJoin], where=[=(y, x0)], select=[x, y, x0, y0], build=[right]): rowcount = 38505.0, cumulative cost = {295210.0 rows, 257020.0 cpu, 6160824.0 io, 48.0 network, 56.0 memory}
+         :        :- LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 256699.0, cumulative cost = {256699.0 rows, 0.0 cpu, 6160776.0 io, 0.0 network, 0.0 memory}
+         :        +- Exchange(distribution=[broadcast]): rowcount = 1.0, cumulative cost = {6.0 rows, 321.0 cpu, 48.0 io, 48.0 network, 28.0 memory}
+         :           +- Calc(select=[x, y0]): rowcount = 1.0, cumulative cost = {5.0 rows, 161.0 cpu, 48.0 io, 24.0 network, 28.0 memory}
+         :              +- NestedLoopJoin(joinType=[InnerJoin], where=[=(y, x0)], select=[x, y, x0, y0], build=[left]): rowcount = 1.0, cumulative cost = {4.0 rows, 161.0 cpu, 48.0 io, 24.0 network, 28.0 memory}
+         :                 :- Exchange(distribution=[broadcast]): rowcount = 1.0, cumulative cost = {2.0 rows, 160.0 cpu, 24.0 io, 24.0 network, 0.0 memory}
+         :                 :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, s, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 1.0, cumulative cost = {1.0 rows, 0.0 cpu, 24.0 io, 0.0 network, 0.0 memory}
+         :                 +- LegacyTableSourceScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 1.0, cumulative cost = {1.0 rows, 0.0 cpu, 24.0 io, 0.0 network, 0.0 memory}
+         +- Calc(select=[x AS X0, y AS X1]): rowcount = 8.7, cumulative cost = {76.4 rows, 217.0 cpu, 708.0 io, 24.0 network, 28.0 memory}
+            +- NestedLoopJoin(joinType=[InnerJoin], where=[=(x, x0)], select=[x, x0, y], build=[right]): rowcount = 8.7, cumulative cost = {67.7 rows, 217.0 cpu, 708.0 io, 24.0 network, 28.0 memory}
+               :- LegacyTableSourceScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]], fields=[x]): rowcount = 57.0, cumulative cost = {57.0 rows, 0.0 cpu, 684.0 io, 0.0 network, 0.0 memory}
+               +- Exchange(distribution=[broadcast]): rowcount = 1.0, cumulative cost = {2.0 rows, 160.0 cpu, 24.0 io, 24.0 network, 0.0 memory}
+                  +- LegacyTableSourceScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 1.0, cumulative cost = {1.0 rows, 0.0 cpu, 24.0 io, 0.0 network, 0.0 memory}
+
+== Optimized Execution Plan ==
+HashAggregate(isMerge=[true], groupBy=[X0, X1], select=[X0, X1])
++- Exchange(distribution=[hash[X0, X1]])
+   +- LocalHashAggregate(groupBy=[X0, X1], select=[X0, X1])
+      +- MultipleInput(readOrder=[1,0,1,0,1,0], members=[\nUnion(all=[true], union=[X0, X1])\n:- Union(all=[true], union=[X0, X1])\n:  :- Calc(select=[x AS X0, y AS X1])\n:  :  +- HashJoin(joinType=[InnerJoin], where=[(y = x0)], select=[x, y, x0], isBroadcast=[true], build=[right])\n:  :     :- [#3] LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])\n:  :     +- [#4] Exchange(distribution=[broadcast])\n:  +- Calc(select=[x AS X0, y0 AS X1])\n:     +- NestedLoopJoin(joinType=[InnerJoin], where=[(y = x0)], select=[x, y, x0, y0], build=[right])\n:        :- [#3] LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])\n:        +- [#6] Exchange(distribution=[broadcast])\n+- Calc(select=[x AS X0, y AS X1])\n   +- NestedLoopJoin(joinType=[InnerJoin], where=[(x = x0)], select=[x, x0, y], build=[right])\n      :- [#1] LegacyTableSourceScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]], fields=[x])\n      +- [#2] Exchange(distribution=[broadcast])\n])
+         :- LegacyTableSourceScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]], fields=[x])
+         :- Exchange(distribution=[broadcast])
+         :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])(reuse_id=[2])
+         :- LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])(reuse_id=[1])
+         :- Exchange(distribution=[broadcast])
+         :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, b, source: [CsvTableSource(read fields: x)]]], fields=[x])
+         :- Reused(reference_id=[1])
+         +- Exchange(distribution=[broadcast])
+            +- Calc(select=[x, y0])
+               +- NestedLoopJoin(joinType=[InnerJoin], where=[(y = x0)], select=[x, y, x0, y0], build=[left])
+                  :- Exchange(distribution=[broadcast])
+                  :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, s, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])
+                  +- Reused(reference_id=[2])
+
+Job has been submitted with JobID d5259b5e7f08673429ac9560cc3611f7
+WITH p1 AS (SELECT r_0.x AS X0, r_0.y AS X1 FROM r AS r_0 INNER JOIN b AS b_1 ON r_0.y = b_1.x UNION (SELECT r_0.x AS X0, t_2.y AS X1 FROM r AS r_0 INNER JOIN s AS s_1 ON r_0.y = s_1.x INNER JOIN t AS t_2 ON s_1.y = t_2.x) UNION (SELECT a_0.x AS X0, t_1.y AS X1 FROM a AS a_0 INNER JOIN t AS t_1 ON a_0.x = t_1.x)) SELECT p1.X0 AS x, p1.X1 AS y FROM p1
+
+------------> using sink uuid: e3038400_858f_49dd_8dd1_27769894e21d
+
+Adding statistics for table s number 3 
+Adding statistics for table a number 3 
+Adding statistics for table b number 3 
+Adding statistics for table r number 3 
+Adding statistics for table t number 3 
+sql argument: WITH p1 AS (SELECT r_0.x AS X0, r_0.y AS X1
+            FROM r AS r_0
+                     INNER JOIN b AS b_1 ON r_0.y = b_1.x
+            UNION
+            (SELECT r_0.x AS X0, t_2.y AS X1
+             FROM r AS r_0
+                      INNER JOIN s AS s_1 ON r_0.y = s_1.x
+                      INNER JOIN t AS t_2 ON s_1.y = t_2.x)
+            UNION
+            (SELECT a_0.x AS X0, t_1.y AS X1
+             FROM a AS a_0
+                      INNER JOIN t AS t_1 ON a_0.x = t_1.x))
+SELECT p1.X0 AS x, p1.X1 AS y
+FROM p1
+== Abstract Syntax Tree ==
+LogicalProject(x=[$0], y=[$1])
++- LogicalUnion(all=[false])
+   :- LogicalUnion(all=[false])
+   :  :- LogicalProject(X0=[$0], X1=[$1])
+   :  :  +- LogicalJoin(condition=[=($1, $2)], joinType=[inner])
+   :  :     :- LogicalTableScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]])
+   :  :     +- LogicalTableScan(table=[[S_CAT, default_database, b, source: [CsvTableSource(read fields: x)]]])
+   :  +- LogicalProject(X0=[$0], X1=[$5])
+   :     +- LogicalJoin(condition=[=($3, $4)], joinType=[inner])
+   :        :- LogicalJoin(condition=[=($1, $2)], joinType=[inner])
+   :        :  :- LogicalTableScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]])
+   :        :  +- LogicalTableScan(table=[[S_CAT, default_database, s, source: [CsvTableSource(read fields: x, y)]]])
+   :        +- LogicalTableScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]])
+   +- LogicalProject(X0=[$0], X1=[$2])
+      +- LogicalJoin(condition=[=($0, $1)], joinType=[inner])
+         :- LogicalTableScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]])
+         +- LogicalTableScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]])
+
+== Optimized Physical Plan ==
+HashAggregate(isMerge=[true], groupBy=[X0, X1], select=[X0, X1]): rowcount = 13962.372505716601, cumulative cost = {863537.81751715 rows, 6385952.621097587 cpu, 1.2322872E7 io, 335732.9401371984 network, 1788959.680731725 memory}
++- Exchange(distribution=[hash[X0, X1]]): rowcount = 13962.372505716601, cumulative cost = {849575.4450114333 rows, 6162554.661006121 cpu, 1.2322872E7 io, 335732.9401371984 network, 895367.8403658625 memory}
+   +- LocalHashAggregate(groupBy=[X0, X1], select=[X0, X1]): rowcount = 13962.372505716601, cumulative cost = {835613.0725057167 rows, 3705177.0999999996 cpu, 1.2322872E7 io, 636.0 network, 895367.8403658625 memory}
+      +- Union(all=[true], union=[X0, X1]): rowcount = 77025.59999999999, cumulative cost = {821650.7000000001 rows, 2472767.5 cpu, 1.2322872E7 io, 636.0 network, 1776.0 memory}
+         :- Union(all=[true], union=[X0, X1]): rowcount = 77016.9, cumulative cost = {744548.7000000001 rows, 2395524.9 cpu, 1.2322164E7 io, 612.0 network, 1748.0 memory}
+         :  :- Calc(select=[x AS X0, y AS X1]): rowcount = 38511.9, cumulative cost = {333816.80000000005 rows, 2061488.0 cpu, 6161340.0 io, 564.0 network, 1692.0 memory}
+         :  :  +- HashJoin(joinType=[InnerJoin], where=[=(y, x0)], select=[x, y, x0], isBroadcast=[true], build=[right]): rowcount = 38511.9, cumulative cost = {295304.9 rows, 2061488.0 cpu, 6161340.0 io, 564.0 network, 1692.0 memory}
+         :  :     :- LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 256699.0, cumulative cost = {256699.0 rows, 0.0 cpu, 6160776.0 io, 0.0 network, 0.0 memory}
+         :  :     +- Exchange(distribution=[broadcast]): rowcount = 47.0, cumulative cost = {94.0 rows, 7520.0 cpu, 564.0 io, 564.0 network, 0.0 memory}
+         :  :        +- LegacyTableSourceScan(table=[[S_CAT, default_database, b, source: [CsvTableSource(read fields: x)]]], fields=[x]): rowcount = 47.0, cumulative cost = {47.0 rows, 0.0 cpu, 564.0 io, 0.0 network, 0.0 memory}
+         :  +- Calc(select=[x AS X0, y0 AS X1]): rowcount = 38505.0, cumulative cost = {333715.0 rows, 257020.0 cpu, 6160824.0 io, 48.0 network, 56.0 memory}
+         :     +- NestedLoopJoin(joinType=[InnerJoin], where=[=(y, x0)], select=[x, y, x0, y0], build=[right]): rowcount = 38505.0, cumulative cost = {295210.0 rows, 257020.0 cpu, 6160824.0 io, 48.0 network, 56.0 memory}
+         :        :- LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 256699.0, cumulative cost = {256699.0 rows, 0.0 cpu, 6160776.0 io, 0.0 network, 0.0 memory}
+         :        +- Exchange(distribution=[broadcast]): rowcount = 1.0, cumulative cost = {6.0 rows, 321.0 cpu, 48.0 io, 48.0 network, 28.0 memory}
+         :           +- Calc(select=[x, y0]): rowcount = 1.0, cumulative cost = {5.0 rows, 161.0 cpu, 48.0 io, 24.0 network, 28.0 memory}
+         :              +- NestedLoopJoin(joinType=[InnerJoin], where=[=(y, x0)], select=[x, y, x0, y0], build=[left]): rowcount = 1.0, cumulative cost = {4.0 rows, 161.0 cpu, 48.0 io, 24.0 network, 28.0 memory}
+         :                 :- Exchange(distribution=[broadcast]): rowcount = 1.0, cumulative cost = {2.0 rows, 160.0 cpu, 24.0 io, 24.0 network, 0.0 memory}
+         :                 :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, s, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 1.0, cumulative cost = {1.0 rows, 0.0 cpu, 24.0 io, 0.0 network, 0.0 memory}
+         :                 +- LegacyTableSourceScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 1.0, cumulative cost = {1.0 rows, 0.0 cpu, 24.0 io, 0.0 network, 0.0 memory}
+         +- Calc(select=[x AS X0, y AS X1]): rowcount = 8.7, cumulative cost = {76.4 rows, 217.0 cpu, 708.0 io, 24.0 network, 28.0 memory}
+            +- NestedLoopJoin(joinType=[InnerJoin], where=[=(x, x0)], select=[x, x0, y], build=[right]): rowcount = 8.7, cumulative cost = {67.7 rows, 217.0 cpu, 708.0 io, 24.0 network, 28.0 memory}
+               :- LegacyTableSourceScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]], fields=[x]): rowcount = 57.0, cumulative cost = {57.0 rows, 0.0 cpu, 684.0 io, 0.0 network, 0.0 memory}
+               +- Exchange(distribution=[broadcast]): rowcount = 1.0, cumulative cost = {2.0 rows, 160.0 cpu, 24.0 io, 24.0 network, 0.0 memory}
+                  +- LegacyTableSourceScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 1.0, cumulative cost = {1.0 rows, 0.0 cpu, 24.0 io, 0.0 network, 0.0 memory}
+
+== Optimized Execution Plan ==
+HashAggregate(isMerge=[true], groupBy=[X0, X1], select=[X0, X1])
++- Exchange(distribution=[hash[X0, X1]])
+   +- LocalHashAggregate(groupBy=[X0, X1], select=[X0, X1])
+      +- MultipleInput(readOrder=[1,0,1,0,1,0], members=[\nUnion(all=[true], union=[X0, X1])\n:- Union(all=[true], union=[X0, X1])\n:  :- Calc(select=[x AS X0, y AS X1])\n:  :  +- HashJoin(joinType=[InnerJoin], where=[(y = x0)], select=[x, y, x0], isBroadcast=[true], build=[right])\n:  :     :- [#3] LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])\n:  :     +- [#4] Exchange(distribution=[broadcast])\n:  +- Calc(select=[x AS X0, y0 AS X1])\n:     +- NestedLoopJoin(joinType=[InnerJoin], where=[(y = x0)], select=[x, y, x0, y0], build=[right])\n:        :- [#3] LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])\n:        +- [#6] Exchange(distribution=[broadcast])\n+- Calc(select=[x AS X0, y AS X1])\n   +- NestedLoopJoin(joinType=[InnerJoin], where=[(x = x0)], select=[x, x0, y], build=[right])\n      :- [#1] LegacyTableSourceScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]], fields=[x])\n      +- [#2] Exchange(distribution=[broadcast])\n])
+         :- LegacyTableSourceScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]], fields=[x])
+         :- Exchange(distribution=[broadcast])
+         :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])(reuse_id=[2])
+         :- LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])(reuse_id=[1])
+         :- Exchange(distribution=[broadcast])
+         :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, b, source: [CsvTableSource(read fields: x)]]], fields=[x])
+         :- Reused(reference_id=[1])
+         +- Exchange(distribution=[broadcast])
+            +- Calc(select=[x, y0])
+               +- NestedLoopJoin(joinType=[InnerJoin], where=[(y = x0)], select=[x, y, x0, y0], build=[left])
+                  :- Exchange(distribution=[broadcast])
+                  :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, s, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])
+                  +- Reused(reference_id=[2])
+
+Job has been submitted with JobID 03fdd49b9589c1a36d2a6d2492cfba63
+WITH p1 AS (SELECT r_0.x AS X0, r_0.y AS X1 FROM r AS r_0 INNER JOIN b AS b_1 ON r_0.y = b_1.x UNION (SELECT r_0.x AS X0, t_2.y AS X1 FROM r AS r_0 INNER JOIN s AS s_1 ON r_0.y = s_1.x INNER JOIN t AS t_2 ON s_1.y = t_2.x) UNION (SELECT a_0.x AS X0, t_1.y AS X1 FROM a AS a_0 INNER JOIN t AS t_1 ON a_0.x = t_1.x)) SELECT p1.X0 AS x, p1.X1 AS y FROM p1
+
+------------> using sink uuid: 34778d23_c3e8_4272_8e31_e3ef6959e63e
+
+Adding statistics for table s number 3 
+Adding statistics for table a number 3 
+Adding statistics for table b number 3 
+Adding statistics for table r number 3 
+Adding statistics for table t number 3 
+sql argument: WITH p1 AS (SELECT r_0.x AS X0, r_0.y AS X1
+            FROM r AS r_0
+                     INNER JOIN b AS b_1 ON r_0.y = b_1.x
+            UNION
+            (SELECT r_0.x AS X0, t_2.y AS X1
+             FROM r AS r_0
+                      INNER JOIN s AS s_1 ON r_0.y = s_1.x
+                      INNER JOIN t AS t_2 ON s_1.y = t_2.x)
+            UNION
+            (SELECT a_0.x AS X0, t_1.y AS X1
+             FROM a AS a_0
+                      INNER JOIN t AS t_1 ON a_0.x = t_1.x))
+SELECT p1.X0 AS x, p1.X1 AS y
+FROM p1
+== Abstract Syntax Tree ==
+LogicalProject(x=[$0], y=[$1])
++- LogicalUnion(all=[false])
+   :- LogicalUnion(all=[false])
+   :  :- LogicalProject(X0=[$0], X1=[$1])
+   :  :  +- LogicalJoin(condition=[=($1, $2)], joinType=[inner])
+   :  :     :- LogicalTableScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]])
+   :  :     +- LogicalTableScan(table=[[S_CAT, default_database, b, source: [CsvTableSource(read fields: x)]]])
+   :  +- LogicalProject(X0=[$0], X1=[$5])
+   :     +- LogicalJoin(condition=[=($3, $4)], joinType=[inner])
+   :        :- LogicalJoin(condition=[=($1, $2)], joinType=[inner])
+   :        :  :- LogicalTableScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]])
+   :        :  +- LogicalTableScan(table=[[S_CAT, default_database, s, source: [CsvTableSource(read fields: x, y)]]])
+   :        +- LogicalTableScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]])
+   +- LogicalProject(X0=[$0], X1=[$2])
+      +- LogicalJoin(condition=[=($0, $1)], joinType=[inner])
+         :- LogicalTableScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]])
+         +- LogicalTableScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]])
+
+== Optimized Physical Plan ==
+HashAggregate(isMerge=[true], groupBy=[X0, X1], select=[X0, X1]): rowcount = 13962.372505716601, cumulative cost = {863537.81751715 rows, 6385952.621097587 cpu, 1.2322872E7 io, 335732.9401371984 network, 1788959.680731725 memory}
++- Exchange(distribution=[hash[X0, X1]]): rowcount = 13962.372505716601, cumulative cost = {849575.4450114333 rows, 6162554.661006121 cpu, 1.2322872E7 io, 335732.9401371984 network, 895367.8403658625 memory}
+   +- LocalHashAggregate(groupBy=[X0, X1], select=[X0, X1]): rowcount = 13962.372505716601, cumulative cost = {835613.0725057167 rows, 3705177.0999999996 cpu, 1.2322872E7 io, 636.0 network, 895367.8403658625 memory}
+      +- Union(all=[true], union=[X0, X1]): rowcount = 77025.59999999999, cumulative cost = {821650.7000000001 rows, 2472767.5 cpu, 1.2322872E7 io, 636.0 network, 1776.0 memory}
+         :- Union(all=[true], union=[X0, X1]): rowcount = 77016.9, cumulative cost = {744548.7000000001 rows, 2395524.9 cpu, 1.2322164E7 io, 612.0 network, 1748.0 memory}
+         :  :- Calc(select=[x AS X0, y AS X1]): rowcount = 38511.9, cumulative cost = {333816.80000000005 rows, 2061488.0 cpu, 6161340.0 io, 564.0 network, 1692.0 memory}
+         :  :  +- HashJoin(joinType=[InnerJoin], where=[=(y, x0)], select=[x, y, x0], isBroadcast=[true], build=[right]): rowcount = 38511.9, cumulative cost = {295304.9 rows, 2061488.0 cpu, 6161340.0 io, 564.0 network, 1692.0 memory}
+         :  :     :- LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 256699.0, cumulative cost = {256699.0 rows, 0.0 cpu, 6160776.0 io, 0.0 network, 0.0 memory}
+         :  :     +- Exchange(distribution=[broadcast]): rowcount = 47.0, cumulative cost = {94.0 rows, 7520.0 cpu, 564.0 io, 564.0 network, 0.0 memory}
+         :  :        +- LegacyTableSourceScan(table=[[S_CAT, default_database, b, source: [CsvTableSource(read fields: x)]]], fields=[x]): rowcount = 47.0, cumulative cost = {47.0 rows, 0.0 cpu, 564.0 io, 0.0 network, 0.0 memory}
+         :  +- Calc(select=[x AS X0, y0 AS X1]): rowcount = 38505.0, cumulative cost = {333715.0 rows, 257020.0 cpu, 6160824.0 io, 48.0 network, 56.0 memory}
+         :     +- NestedLoopJoin(joinType=[InnerJoin], where=[=(y, x0)], select=[x, y, x0, y0], build=[right]): rowcount = 38505.0, cumulative cost = {295210.0 rows, 257020.0 cpu, 6160824.0 io, 48.0 network, 56.0 memory}
+         :        :- LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 256699.0, cumulative cost = {256699.0 rows, 0.0 cpu, 6160776.0 io, 0.0 network, 0.0 memory}
+         :        +- Exchange(distribution=[broadcast]): rowcount = 1.0, cumulative cost = {6.0 rows, 321.0 cpu, 48.0 io, 48.0 network, 28.0 memory}
+         :           +- Calc(select=[x, y0]): rowcount = 1.0, cumulative cost = {5.0 rows, 161.0 cpu, 48.0 io, 24.0 network, 28.0 memory}
+         :              +- NestedLoopJoin(joinType=[InnerJoin], where=[=(y, x0)], select=[x, y, x0, y0], build=[left]): rowcount = 1.0, cumulative cost = {4.0 rows, 161.0 cpu, 48.0 io, 24.0 network, 28.0 memory}
+         :                 :- Exchange(distribution=[broadcast]): rowcount = 1.0, cumulative cost = {2.0 rows, 160.0 cpu, 24.0 io, 24.0 network, 0.0 memory}
+         :                 :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, s, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 1.0, cumulative cost = {1.0 rows, 0.0 cpu, 24.0 io, 0.0 network, 0.0 memory}
+         :                 +- LegacyTableSourceScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 1.0, cumulative cost = {1.0 rows, 0.0 cpu, 24.0 io, 0.0 network, 0.0 memory}
+         +- Calc(select=[x AS X0, y AS X1]): rowcount = 8.7, cumulative cost = {76.4 rows, 217.0 cpu, 708.0 io, 24.0 network, 28.0 memory}
+            +- NestedLoopJoin(joinType=[InnerJoin], where=[=(x, x0)], select=[x, x0, y], build=[right]): rowcount = 8.7, cumulative cost = {67.7 rows, 217.0 cpu, 708.0 io, 24.0 network, 28.0 memory}
+               :- LegacyTableSourceScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]], fields=[x]): rowcount = 57.0, cumulative cost = {57.0 rows, 0.0 cpu, 684.0 io, 0.0 network, 0.0 memory}
+               +- Exchange(distribution=[broadcast]): rowcount = 1.0, cumulative cost = {2.0 rows, 160.0 cpu, 24.0 io, 24.0 network, 0.0 memory}
+                  +- LegacyTableSourceScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 1.0, cumulative cost = {1.0 rows, 0.0 cpu, 24.0 io, 0.0 network, 0.0 memory}
+
+== Optimized Execution Plan ==
+HashAggregate(isMerge=[true], groupBy=[X0, X1], select=[X0, X1])
++- Exchange(distribution=[hash[X0, X1]])
+   +- LocalHashAggregate(groupBy=[X0, X1], select=[X0, X1])
+      +- MultipleInput(readOrder=[1,0,1,0,1,0], members=[\nUnion(all=[true], union=[X0, X1])\n:- Union(all=[true], union=[X0, X1])\n:  :- Calc(select=[x AS X0, y AS X1])\n:  :  +- HashJoin(joinType=[InnerJoin], where=[(y = x0)], select=[x, y, x0], isBroadcast=[true], build=[right])\n:  :     :- [#3] LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])\n:  :     +- [#4] Exchange(distribution=[broadcast])\n:  +- Calc(select=[x AS X0, y0 AS X1])\n:     +- NestedLoopJoin(joinType=[InnerJoin], where=[(y = x0)], select=[x, y, x0, y0], build=[right])\n:        :- [#3] LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])\n:        +- [#6] Exchange(distribution=[broadcast])\n+- Calc(select=[x AS X0, y AS X1])\n   +- NestedLoopJoin(joinType=[InnerJoin], where=[(x = x0)], select=[x, x0, y], build=[right])\n      :- [#1] LegacyTableSourceScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]], fields=[x])\n      +- [#2] Exchange(distribution=[broadcast])\n])
+         :- LegacyTableSourceScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]], fields=[x])
+         :- Exchange(distribution=[broadcast])
+         :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])(reuse_id=[2])
+         :- LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])(reuse_id=[1])
+         :- Exchange(distribution=[broadcast])
+         :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, b, source: [CsvTableSource(read fields: x)]]], fields=[x])
+         :- Reused(reference_id=[1])
+         +- Exchange(distribution=[broadcast])
+            +- Calc(select=[x, y0])
+               +- NestedLoopJoin(joinType=[InnerJoin], where=[(y = x0)], select=[x, y, x0, y0], build=[left])
+                  :- Exchange(distribution=[broadcast])
+                  :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, s, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])
+                  +- Reused(reference_id=[2])
+
+Job has been submitted with JobID 541e8fa1ac25631f1e5963c44e118bfe
+WITH p1 AS (SELECT r_0.x AS X0, r_0.y AS X1 FROM r AS r_0 INNER JOIN b AS b_1 ON r_0.y = b_1.x UNION (SELECT r_0.x AS X0, t_2.y AS X1 FROM r AS r_0 INNER JOIN s AS s_1 ON r_0.y = s_1.x INNER JOIN t AS t_2 ON s_1.y = t_2.x) UNION (SELECT a_0.x AS X0, t_1.y AS X1 FROM a AS a_0 INNER JOIN t AS t_1 ON a_0.x = t_1.x)) SELECT p1.X0 AS x, p1.X1 AS y FROM p1
+
+------------> using sink uuid: fb8892cf_6bcd_4c33_86a2_dfae6a5164f0
+
+Adding statistics for table s number 5 
+Adding statistics for table a number 5 
+Adding statistics for table b number 5 
+Adding statistics for table r number 5 
+Adding statistics for table t number 5 
+sql argument: WITH p1 AS (SELECT r_0.x AS X0, r_0.y AS X1
+            FROM r AS r_0
+                     INNER JOIN b AS b_1 ON r_0.y = b_1.x
+            UNION
+            (SELECT r_0.x AS X0, t_2.y AS X1
+             FROM r AS r_0
+                      INNER JOIN s AS s_1 ON r_0.y = s_1.x
+                      INNER JOIN t AS t_2 ON s_1.y = t_2.x)
+            UNION
+            (SELECT a_0.x AS X0, t_1.y AS X1
+             FROM a AS a_0
+                      INNER JOIN t AS t_1 ON a_0.x = t_1.x))
+SELECT p1.X0 AS x, p1.X1 AS y
+FROM p1
+== Abstract Syntax Tree ==
+LogicalProject(x=[$0], y=[$1])
++- LogicalUnion(all=[false])
+   :- LogicalUnion(all=[false])
+   :  :- LogicalProject(X0=[$0], X1=[$1])
+   :  :  +- LogicalJoin(condition=[=($1, $2)], joinType=[inner])
+   :  :     :- LogicalTableScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]])
+   :  :     +- LogicalTableScan(table=[[S_CAT, default_database, b, source: [CsvTableSource(read fields: x)]]])
+   :  +- LogicalProject(X0=[$0], X1=[$5])
+   :     +- LogicalJoin(condition=[=($3, $4)], joinType=[inner])
+   :        :- LogicalJoin(condition=[=($1, $2)], joinType=[inner])
+   :        :  :- LogicalTableScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]])
+   :        :  +- LogicalTableScan(table=[[S_CAT, default_database, s, source: [CsvTableSource(read fields: x, y)]]])
+   :        +- LogicalTableScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]])
+   +- LogicalProject(X0=[$0], X1=[$2])
+      +- LogicalJoin(condition=[=($0, $1)], joinType=[inner])
+         :- LogicalTableScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]])
+         +- LogicalTableScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]])
+
+== Optimized Physical Plan ==
+HashAggregate(isMerge=[true], groupBy=[X0, X1], select=[X0, X1]): rowcount = 125478.27967552053, cumulative cost = {7760432.089026562 rows, 5.737602624769994E7 cpu, 1.1074698E8 io, 3015834.7122124927 network, 1.6074155798466628E7 memory}
++- Exchange(distribution=[hash[X0, X1]]): rowcount = 125478.27967552053, cumulative cost = {7634953.809351041 rows, 5.536837377289161E7 cpu, 1.1074698E8 io, 3015834.7122124927 network, 8043545.899233314 memory}
+   +- LocalHashAggregate(groupBy=[X0, X1], select=[X0, X1]): rowcount = 125478.27967552053, cumulative cost = {7509475.52967552 rows, 3.3284196549999997E7 cpu, 1.1074698E8 io, 4356.0 network, 8043545.899233314 memory}
+      +- Union(all=[true], union=[X0, X1]): rowcount = 692220.45, cumulative cost = {7383997.249999999 rows, 2.2208669349999998E7 cpu, 1.1074698E8 io, 4356.0 network, 12936.0 memory}
+         :- Union(all=[true], union=[X0, X1]): rowcount = 692169.8999999999, cumulative cost = {6691337.699999999 rows, 2.15159529E7 cpu, 1.10742924E8 io, 4332.0 network, 12908.0 memory}
+         :  :- Calc(select=[x AS X0, y AS X1]): rowcount = 346111.64999999997, cumulative cost = {2999991.3 rows, 1.8516408E7 cpu, 5.537358E7 io, 4284.0 network, 12852.0 memory}
+         :  :  +- HashJoin(joinType=[InnerJoin], where=[=(y, x0)], select=[x, y, x0], isBroadcast=[true], build=[right]): rowcount = 346111.64999999997, cumulative cost = {2653879.65 rows, 1.8516408E7 cpu, 5.537358E7 io, 4284.0 network, 12852.0 memory}
+         :  :     :- LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 2307054.0, cumulative cost = {2307054.0 rows, 0.0 cpu, 5.5369296E7 io, 0.0 network, 0.0 memory}
+         :  :     +- Exchange(distribution=[broadcast]): rowcount = 357.0, cumulative cost = {714.0 rows, 57120.0 cpu, 4284.0 io, 4284.0 network, 0.0 memory}
+         :  :        +- LegacyTableSourceScan(table=[[S_CAT, default_database, b, source: [CsvTableSource(read fields: x)]]], fields=[x]): rowcount = 357.0, cumulative cost = {357.0 rows, 0.0 cpu, 4284.0 io, 0.0 network, 0.0 memory}
+         :  +- Calc(select=[x AS X0, y0 AS X1]): rowcount = 346058.25, cumulative cost = {2999176.5 rows, 2307375.0 cpu, 5.5369344E7 io, 48.0 network, 56.0 memory}
+         :     +- NestedLoopJoin(joinType=[InnerJoin], where=[=(y, x0)], select=[x, y, x0, y0], build=[right]): rowcount = 346058.25, cumulative cost = {2653118.25 rows, 2307375.0 cpu, 5.5369344E7 io, 48.0 network, 56.0 memory}
+         :        :- LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 2307054.0, cumulative cost = {2307054.0 rows, 0.0 cpu, 5.5369296E7 io, 0.0 network, 0.0 memory}
+         :        +- Exchange(distribution=[broadcast]): rowcount = 1.0, cumulative cost = {6.0 rows, 321.0 cpu, 48.0 io, 48.0 network, 28.0 memory}
+         :           +- Calc(select=[x, y0]): rowcount = 1.0, cumulative cost = {5.0 rows, 161.0 cpu, 48.0 io, 24.0 network, 28.0 memory}
+         :              +- NestedLoopJoin(joinType=[InnerJoin], where=[=(y, x0)], select=[x, y, x0, y0], build=[left]): rowcount = 1.0, cumulative cost = {4.0 rows, 161.0 cpu, 48.0 io, 24.0 network, 28.0 memory}
+         :                 :- Exchange(distribution=[broadcast]): rowcount = 1.0, cumulative cost = {2.0 rows, 160.0 cpu, 24.0 io, 24.0 network, 0.0 memory}
+         :                 :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, s, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 1.0, cumulative cost = {1.0 rows, 0.0 cpu, 24.0 io, 0.0 network, 0.0 memory}
+         :                 +- LegacyTableSourceScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 1.0, cumulative cost = {1.0 rows, 0.0 cpu, 24.0 io, 0.0 network, 0.0 memory}
+         +- Calc(select=[x AS X0, y AS X1]): rowcount = 50.55, cumulative cost = {439.1 rows, 496.0 cpu, 4056.0 io, 24.0 network, 28.0 memory}
+            +- NestedLoopJoin(joinType=[InnerJoin], where=[=(x, x0)], select=[x, x0, y], build=[right]): rowcount = 50.55, cumulative cost = {388.55 rows, 496.0 cpu, 4056.0 io, 24.0 network, 28.0 memory}
+               :- LegacyTableSourceScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]], fields=[x]): rowcount = 336.0, cumulative cost = {336.0 rows, 0.0 cpu, 4032.0 io, 0.0 network, 0.0 memory}
+               +- Exchange(distribution=[broadcast]): rowcount = 1.0, cumulative cost = {2.0 rows, 160.0 cpu, 24.0 io, 24.0 network, 0.0 memory}
+                  +- LegacyTableSourceScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 1.0, cumulative cost = {1.0 rows, 0.0 cpu, 24.0 io, 0.0 network, 0.0 memory}
+
+== Optimized Execution Plan ==
+HashAggregate(isMerge=[true], groupBy=[X0, X1], select=[X0, X1])
++- Exchange(distribution=[hash[X0, X1]])
+   +- LocalHashAggregate(groupBy=[X0, X1], select=[X0, X1])
+      +- MultipleInput(readOrder=[1,0,1,0,1,0], members=[\nUnion(all=[true], union=[X0, X1])\n:- Union(all=[true], union=[X0, X1])\n:  :- Calc(select=[x AS X0, y AS X1])\n:  :  +- HashJoin(joinType=[InnerJoin], where=[(y = x0)], select=[x, y, x0], isBroadcast=[true], build=[right])\n:  :     :- [#3] LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])\n:  :     +- [#4] Exchange(distribution=[broadcast])\n:  +- Calc(select=[x AS X0, y0 AS X1])\n:     +- NestedLoopJoin(joinType=[InnerJoin], where=[(y = x0)], select=[x, y, x0, y0], build=[right])\n:        :- [#3] LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])\n:        +- [#6] Exchange(distribution=[broadcast])\n+- Calc(select=[x AS X0, y AS X1])\n   +- NestedLoopJoin(joinType=[InnerJoin], where=[(x = x0)], select=[x, x0, y], build=[right])\n      :- [#1] LegacyTableSourceScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]], fields=[x])\n      +- [#2] Exchange(distribution=[broadcast])\n])
+         :- LegacyTableSourceScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]], fields=[x])
+         :- Exchange(distribution=[broadcast])
+         :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])(reuse_id=[2])
+         :- LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])(reuse_id=[1])
+         :- Exchange(distribution=[broadcast])
+         :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, b, source: [CsvTableSource(read fields: x)]]], fields=[x])
+         :- Reused(reference_id=[1])
+         +- Exchange(distribution=[broadcast])
+            +- Calc(select=[x, y0])
+               +- NestedLoopJoin(joinType=[InnerJoin], where=[(y = x0)], select=[x, y, x0, y0], build=[left])
+                  :- Exchange(distribution=[broadcast])
+                  :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, s, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])
+                  +- Reused(reference_id=[2])
+
+Job has been submitted with JobID b88150da5c9e46ffbe0a6c00865ef4ef
+WITH p1 AS (SELECT r_0.x AS X0, r_0.y AS X1 FROM r AS r_0 INNER JOIN b AS b_1 ON r_0.y = b_1.x UNION (SELECT r_0.x AS X0, t_2.y AS X1 FROM r AS r_0 INNER JOIN s AS s_1 ON r_0.y = s_1.x INNER JOIN t AS t_2 ON s_1.y = t_2.x) UNION (SELECT a_0.x AS X0, t_1.y AS X1 FROM a AS a_0 INNER JOIN t AS t_1 ON a_0.x = t_1.x)) SELECT p1.X0 AS x, p1.X1 AS y FROM p1
+
+------------> using sink uuid: dfcc5c9d_d807_4111_a37a_1ee2a5721017
+
+Adding statistics for table s number 5 
+Adding statistics for table a number 5 
+Adding statistics for table b number 5 
+Adding statistics for table r number 5 
+Adding statistics for table t number 5 
+sql argument: WITH p1 AS (SELECT r_0.x AS X0, r_0.y AS X1
+            FROM r AS r_0
+                     INNER JOIN b AS b_1 ON r_0.y = b_1.x
+            UNION
+            (SELECT r_0.x AS X0, t_2.y AS X1
+             FROM r AS r_0
+                      INNER JOIN s AS s_1 ON r_0.y = s_1.x
+                      INNER JOIN t AS t_2 ON s_1.y = t_2.x)
+            UNION
+            (SELECT a_0.x AS X0, t_1.y AS X1
+             FROM a AS a_0
+                      INNER JOIN t AS t_1 ON a_0.x = t_1.x))
+SELECT p1.X0 AS x, p1.X1 AS y
+FROM p1
+== Abstract Syntax Tree ==
+LogicalProject(x=[$0], y=[$1])
++- LogicalUnion(all=[false])
+   :- LogicalUnion(all=[false])
+   :  :- LogicalProject(X0=[$0], X1=[$1])
+   :  :  +- LogicalJoin(condition=[=($1, $2)], joinType=[inner])
+   :  :     :- LogicalTableScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]])
+   :  :     +- LogicalTableScan(table=[[S_CAT, default_database, b, source: [CsvTableSource(read fields: x)]]])
+   :  +- LogicalProject(X0=[$0], X1=[$5])
+   :     +- LogicalJoin(condition=[=($3, $4)], joinType=[inner])
+   :        :- LogicalJoin(condition=[=($1, $2)], joinType=[inner])
+   :        :  :- LogicalTableScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]])
+   :        :  +- LogicalTableScan(table=[[S_CAT, default_database, s, source: [CsvTableSource(read fields: x, y)]]])
+   :        +- LogicalTableScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]])
+   +- LogicalProject(X0=[$0], X1=[$2])
+      +- LogicalJoin(condition=[=($0, $1)], joinType=[inner])
+         :- LogicalTableScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]])
+         +- LogicalTableScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]])
+
+== Optimized Physical Plan ==
+HashAggregate(isMerge=[true], groupBy=[X0, X1], select=[X0, X1]): rowcount = 125478.27967552053, cumulative cost = {7760432.089026562 rows, 5.737602624769994E7 cpu, 1.1074698E8 io, 3015834.7122124927 network, 1.6074155798466628E7 memory}
++- Exchange(distribution=[hash[X0, X1]]): rowcount = 125478.27967552053, cumulative cost = {7634953.809351041 rows, 5.536837377289161E7 cpu, 1.1074698E8 io, 3015834.7122124927 network, 8043545.899233314 memory}
+   +- LocalHashAggregate(groupBy=[X0, X1], select=[X0, X1]): rowcount = 125478.27967552053, cumulative cost = {7509475.52967552 rows, 3.3284196549999997E7 cpu, 1.1074698E8 io, 4356.0 network, 8043545.899233314 memory}
+      +- Union(all=[true], union=[X0, X1]): rowcount = 692220.45, cumulative cost = {7383997.249999999 rows, 2.2208669349999998E7 cpu, 1.1074698E8 io, 4356.0 network, 12936.0 memory}
+         :- Union(all=[true], union=[X0, X1]): rowcount = 692169.8999999999, cumulative cost = {6691337.699999999 rows, 2.15159529E7 cpu, 1.10742924E8 io, 4332.0 network, 12908.0 memory}
+         :  :- Calc(select=[x AS X0, y AS X1]): rowcount = 346111.64999999997, cumulative cost = {2999991.3 rows, 1.8516408E7 cpu, 5.537358E7 io, 4284.0 network, 12852.0 memory}
+         :  :  +- HashJoin(joinType=[InnerJoin], where=[=(y, x0)], select=[x, y, x0], isBroadcast=[true], build=[right]): rowcount = 346111.64999999997, cumulative cost = {2653879.65 rows, 1.8516408E7 cpu, 5.537358E7 io, 4284.0 network, 12852.0 memory}
+         :  :     :- LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 2307054.0, cumulative cost = {2307054.0 rows, 0.0 cpu, 5.5369296E7 io, 0.0 network, 0.0 memory}
+         :  :     +- Exchange(distribution=[broadcast]): rowcount = 357.0, cumulative cost = {714.0 rows, 57120.0 cpu, 4284.0 io, 4284.0 network, 0.0 memory}
+         :  :        +- LegacyTableSourceScan(table=[[S_CAT, default_database, b, source: [CsvTableSource(read fields: x)]]], fields=[x]): rowcount = 357.0, cumulative cost = {357.0 rows, 0.0 cpu, 4284.0 io, 0.0 network, 0.0 memory}
+         :  +- Calc(select=[x AS X0, y0 AS X1]): rowcount = 346058.25, cumulative cost = {2999176.5 rows, 2307375.0 cpu, 5.5369344E7 io, 48.0 network, 56.0 memory}
+         :     +- NestedLoopJoin(joinType=[InnerJoin], where=[=(y, x0)], select=[x, y, x0, y0], build=[right]): rowcount = 346058.25, cumulative cost = {2653118.25 rows, 2307375.0 cpu, 5.5369344E7 io, 48.0 network, 56.0 memory}
+         :        :- LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 2307054.0, cumulative cost = {2307054.0 rows, 0.0 cpu, 5.5369296E7 io, 0.0 network, 0.0 memory}
+         :        +- Exchange(distribution=[broadcast]): rowcount = 1.0, cumulative cost = {6.0 rows, 321.0 cpu, 48.0 io, 48.0 network, 28.0 memory}
+         :           +- Calc(select=[x, y0]): rowcount = 1.0, cumulative cost = {5.0 rows, 161.0 cpu, 48.0 io, 24.0 network, 28.0 memory}
+         :              +- NestedLoopJoin(joinType=[InnerJoin], where=[=(y, x0)], select=[x, y, x0, y0], build=[left]): rowcount = 1.0, cumulative cost = {4.0 rows, 161.0 cpu, 48.0 io, 24.0 network, 28.0 memory}
+         :                 :- Exchange(distribution=[broadcast]): rowcount = 1.0, cumulative cost = {2.0 rows, 160.0 cpu, 24.0 io, 24.0 network, 0.0 memory}
+         :                 :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, s, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 1.0, cumulative cost = {1.0 rows, 0.0 cpu, 24.0 io, 0.0 network, 0.0 memory}
+         :                 +- LegacyTableSourceScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 1.0, cumulative cost = {1.0 rows, 0.0 cpu, 24.0 io, 0.0 network, 0.0 memory}
+         +- Calc(select=[x AS X0, y AS X1]): rowcount = 50.55, cumulative cost = {439.1 rows, 496.0 cpu, 4056.0 io, 24.0 network, 28.0 memory}
+            +- NestedLoopJoin(joinType=[InnerJoin], where=[=(x, x0)], select=[x, x0, y], build=[right]): rowcount = 50.55, cumulative cost = {388.55 rows, 496.0 cpu, 4056.0 io, 24.0 network, 28.0 memory}
+               :- LegacyTableSourceScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]], fields=[x]): rowcount = 336.0, cumulative cost = {336.0 rows, 0.0 cpu, 4032.0 io, 0.0 network, 0.0 memory}
+               +- Exchange(distribution=[broadcast]): rowcount = 1.0, cumulative cost = {2.0 rows, 160.0 cpu, 24.0 io, 24.0 network, 0.0 memory}
+                  +- LegacyTableSourceScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 1.0, cumulative cost = {1.0 rows, 0.0 cpu, 24.0 io, 0.0 network, 0.0 memory}
+
+== Optimized Execution Plan ==
+HashAggregate(isMerge=[true], groupBy=[X0, X1], select=[X0, X1])
++- Exchange(distribution=[hash[X0, X1]])
+   +- LocalHashAggregate(groupBy=[X0, X1], select=[X0, X1])
+      +- MultipleInput(readOrder=[1,0,1,0,1,0], members=[\nUnion(all=[true], union=[X0, X1])\n:- Union(all=[true], union=[X0, X1])\n:  :- Calc(select=[x AS X0, y AS X1])\n:  :  +- HashJoin(joinType=[InnerJoin], where=[(y = x0)], select=[x, y, x0], isBroadcast=[true], build=[right])\n:  :     :- [#3] LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])\n:  :     +- [#4] Exchange(distribution=[broadcast])\n:  +- Calc(select=[x AS X0, y0 AS X1])\n:     +- NestedLoopJoin(joinType=[InnerJoin], where=[(y = x0)], select=[x, y, x0, y0], build=[right])\n:        :- [#3] LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])\n:        +- [#6] Exchange(distribution=[broadcast])\n+- Calc(select=[x AS X0, y AS X1])\n   +- NestedLoopJoin(joinType=[InnerJoin], where=[(x = x0)], select=[x, x0, y], build=[right])\n      :- [#1] LegacyTableSourceScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]], fields=[x])\n      +- [#2] Exchange(distribution=[broadcast])\n])
+         :- LegacyTableSourceScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]], fields=[x])
+         :- Exchange(distribution=[broadcast])
+         :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])(reuse_id=[2])
+         :- LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])(reuse_id=[1])
+         :- Exchange(distribution=[broadcast])
+         :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, b, source: [CsvTableSource(read fields: x)]]], fields=[x])
+         :- Reused(reference_id=[1])
+         +- Exchange(distribution=[broadcast])
+            +- Calc(select=[x, y0])
+               +- NestedLoopJoin(joinType=[InnerJoin], where=[(y = x0)], select=[x, y, x0, y0], build=[left])
+                  :- Exchange(distribution=[broadcast])
+                  :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, s, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])
+                  +- Reused(reference_id=[2])
+
+Job has been submitted with JobID 5aad9fb8e1a30e06b9c1cb1feb0ace70
+WITH p1 AS (SELECT r_0.x AS X0, r_0.y AS X1 FROM r AS r_0 INNER JOIN b AS b_1 ON r_0.y = b_1.x UNION (SELECT r_0.x AS X0, t_2.y AS X1 FROM r AS r_0 INNER JOIN s AS s_1 ON r_0.y = s_1.x INNER JOIN t AS t_2 ON s_1.y = t_2.x) UNION (SELECT a_0.x AS X0, t_1.y AS X1 FROM a AS a_0 INNER JOIN t AS t_1 ON a_0.x = t_1.x)) SELECT p1.X0 AS x, p1.X1 AS y FROM p1
+
+------------> using sink uuid: f6893977_5115_4d48_9f9b_0a44f8a386ab
+
+Adding statistics for table s number 5 
+Adding statistics for table a number 5 
+Adding statistics for table b number 5 
+Adding statistics for table r number 5 
+Adding statistics for table t number 5 
+sql argument: WITH p1 AS (SELECT r_0.x AS X0, r_0.y AS X1
+            FROM r AS r_0
+                     INNER JOIN b AS b_1 ON r_0.y = b_1.x
+            UNION
+            (SELECT r_0.x AS X0, t_2.y AS X1
+             FROM r AS r_0
+                      INNER JOIN s AS s_1 ON r_0.y = s_1.x
+                      INNER JOIN t AS t_2 ON s_1.y = t_2.x)
+            UNION
+            (SELECT a_0.x AS X0, t_1.y AS X1
+             FROM a AS a_0
+                      INNER JOIN t AS t_1 ON a_0.x = t_1.x))
+SELECT p1.X0 AS x, p1.X1 AS y
+FROM p1
+== Abstract Syntax Tree ==
+LogicalProject(x=[$0], y=[$1])
++- LogicalUnion(all=[false])
+   :- LogicalUnion(all=[false])
+   :  :- LogicalProject(X0=[$0], X1=[$1])
+   :  :  +- LogicalJoin(condition=[=($1, $2)], joinType=[inner])
+   :  :     :- LogicalTableScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]])
+   :  :     +- LogicalTableScan(table=[[S_CAT, default_database, b, source: [CsvTableSource(read fields: x)]]])
+   :  +- LogicalProject(X0=[$0], X1=[$5])
+   :     +- LogicalJoin(condition=[=($3, $4)], joinType=[inner])
+   :        :- LogicalJoin(condition=[=($1, $2)], joinType=[inner])
+   :        :  :- LogicalTableScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]])
+   :        :  +- LogicalTableScan(table=[[S_CAT, default_database, s, source: [CsvTableSource(read fields: x, y)]]])
+   :        +- LogicalTableScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]])
+   +- LogicalProject(X0=[$0], X1=[$2])
+      +- LogicalJoin(condition=[=($0, $1)], joinType=[inner])
+         :- LogicalTableScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]])
+         +- LogicalTableScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]])
+
+== Optimized Physical Plan ==
+HashAggregate(isMerge=[true], groupBy=[X0, X1], select=[X0, X1]): rowcount = 125478.27967552053, cumulative cost = {7760432.089026562 rows, 5.737602624769994E7 cpu, 1.1074698E8 io, 3015834.7122124927 network, 1.6074155798466628E7 memory}
++- Exchange(distribution=[hash[X0, X1]]): rowcount = 125478.27967552053, cumulative cost = {7634953.809351041 rows, 5.536837377289161E7 cpu, 1.1074698E8 io, 3015834.7122124927 network, 8043545.899233314 memory}
+   +- LocalHashAggregate(groupBy=[X0, X1], select=[X0, X1]): rowcount = 125478.27967552053, cumulative cost = {7509475.52967552 rows, 3.3284196549999997E7 cpu, 1.1074698E8 io, 4356.0 network, 8043545.899233314 memory}
+      +- Union(all=[true], union=[X0, X1]): rowcount = 692220.45, cumulative cost = {7383997.249999999 rows, 2.2208669349999998E7 cpu, 1.1074698E8 io, 4356.0 network, 12936.0 memory}
+         :- Union(all=[true], union=[X0, X1]): rowcount = 692169.8999999999, cumulative cost = {6691337.699999999 rows, 2.15159529E7 cpu, 1.10742924E8 io, 4332.0 network, 12908.0 memory}
+         :  :- Calc(select=[x AS X0, y AS X1]): rowcount = 346111.64999999997, cumulative cost = {2999991.3 rows, 1.8516408E7 cpu, 5.537358E7 io, 4284.0 network, 12852.0 memory}
+         :  :  +- HashJoin(joinType=[InnerJoin], where=[=(y, x0)], select=[x, y, x0], isBroadcast=[true], build=[right]): rowcount = 346111.64999999997, cumulative cost = {2653879.65 rows, 1.8516408E7 cpu, 5.537358E7 io, 4284.0 network, 12852.0 memory}
+         :  :     :- LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 2307054.0, cumulative cost = {2307054.0 rows, 0.0 cpu, 5.5369296E7 io, 0.0 network, 0.0 memory}
+         :  :     +- Exchange(distribution=[broadcast]): rowcount = 357.0, cumulative cost = {714.0 rows, 57120.0 cpu, 4284.0 io, 4284.0 network, 0.0 memory}
+         :  :        +- LegacyTableSourceScan(table=[[S_CAT, default_database, b, source: [CsvTableSource(read fields: x)]]], fields=[x]): rowcount = 357.0, cumulative cost = {357.0 rows, 0.0 cpu, 4284.0 io, 0.0 network, 0.0 memory}
+         :  +- Calc(select=[x AS X0, y0 AS X1]): rowcount = 346058.25, cumulative cost = {2999176.5 rows, 2307375.0 cpu, 5.5369344E7 io, 48.0 network, 56.0 memory}
+         :     +- NestedLoopJoin(joinType=[InnerJoin], where=[=(y, x0)], select=[x, y, x0, y0], build=[right]): rowcount = 346058.25, cumulative cost = {2653118.25 rows, 2307375.0 cpu, 5.5369344E7 io, 48.0 network, 56.0 memory}
+         :        :- LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 2307054.0, cumulative cost = {2307054.0 rows, 0.0 cpu, 5.5369296E7 io, 0.0 network, 0.0 memory}
+         :        +- Exchange(distribution=[broadcast]): rowcount = 1.0, cumulative cost = {6.0 rows, 321.0 cpu, 48.0 io, 48.0 network, 28.0 memory}
+         :           +- Calc(select=[x, y0]): rowcount = 1.0, cumulative cost = {5.0 rows, 161.0 cpu, 48.0 io, 24.0 network, 28.0 memory}
+         :              +- NestedLoopJoin(joinType=[InnerJoin], where=[=(y, x0)], select=[x, y, x0, y0], build=[left]): rowcount = 1.0, cumulative cost = {4.0 rows, 161.0 cpu, 48.0 io, 24.0 network, 28.0 memory}
+         :                 :- Exchange(distribution=[broadcast]): rowcount = 1.0, cumulative cost = {2.0 rows, 160.0 cpu, 24.0 io, 24.0 network, 0.0 memory}
+         :                 :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, s, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 1.0, cumulative cost = {1.0 rows, 0.0 cpu, 24.0 io, 0.0 network, 0.0 memory}
+         :                 +- LegacyTableSourceScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 1.0, cumulative cost = {1.0 rows, 0.0 cpu, 24.0 io, 0.0 network, 0.0 memory}
+         +- Calc(select=[x AS X0, y AS X1]): rowcount = 50.55, cumulative cost = {439.1 rows, 496.0 cpu, 4056.0 io, 24.0 network, 28.0 memory}
+            +- NestedLoopJoin(joinType=[InnerJoin], where=[=(x, x0)], select=[x, x0, y], build=[right]): rowcount = 50.55, cumulative cost = {388.55 rows, 496.0 cpu, 4056.0 io, 24.0 network, 28.0 memory}
+               :- LegacyTableSourceScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]], fields=[x]): rowcount = 336.0, cumulative cost = {336.0 rows, 0.0 cpu, 4032.0 io, 0.0 network, 0.0 memory}
+               +- Exchange(distribution=[broadcast]): rowcount = 1.0, cumulative cost = {2.0 rows, 160.0 cpu, 24.0 io, 24.0 network, 0.0 memory}
+                  +- LegacyTableSourceScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 1.0, cumulative cost = {1.0 rows, 0.0 cpu, 24.0 io, 0.0 network, 0.0 memory}
+
+== Optimized Execution Plan ==
+HashAggregate(isMerge=[true], groupBy=[X0, X1], select=[X0, X1])
++- Exchange(distribution=[hash[X0, X1]])
+   +- LocalHashAggregate(groupBy=[X0, X1], select=[X0, X1])
+      +- MultipleInput(readOrder=[1,0,1,0,1,0], members=[\nUnion(all=[true], union=[X0, X1])\n:- Union(all=[true], union=[X0, X1])\n:  :- Calc(select=[x AS X0, y AS X1])\n:  :  +- HashJoin(joinType=[InnerJoin], where=[(y = x0)], select=[x, y, x0], isBroadcast=[true], build=[right])\n:  :     :- [#3] LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])\n:  :     +- [#4] Exchange(distribution=[broadcast])\n:  +- Calc(select=[x AS X0, y0 AS X1])\n:     +- NestedLoopJoin(joinType=[InnerJoin], where=[(y = x0)], select=[x, y, x0, y0], build=[right])\n:        :- [#3] LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])\n:        +- [#6] Exchange(distribution=[broadcast])\n+- Calc(select=[x AS X0, y AS X1])\n   +- NestedLoopJoin(joinType=[InnerJoin], where=[(x = x0)], select=[x, x0, y], build=[right])\n      :- [#1] LegacyTableSourceScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]], fields=[x])\n      +- [#2] Exchange(distribution=[broadcast])\n])
+         :- LegacyTableSourceScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]], fields=[x])
+         :- Exchange(distribution=[broadcast])
+         :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])(reuse_id=[2])
+         :- LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])(reuse_id=[1])
+         :- Exchange(distribution=[broadcast])
+         :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, b, source: [CsvTableSource(read fields: x)]]], fields=[x])
+         :- Reused(reference_id=[1])
+         +- Exchange(distribution=[broadcast])
+            +- Calc(select=[x, y0])
+               +- NestedLoopJoin(joinType=[InnerJoin], where=[(y = x0)], select=[x, y, x0, y0], build=[left])
+                  :- Exchange(distribution=[broadcast])
+                  :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, s, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])
+                  +- Reused(reference_id=[2])
+
+Job has been submitted with JobID 868b6c07b77dbcfc35a6e93e354420c6
+WITH p1 AS (SELECT r_0.x AS X0, r_0.y AS X1 FROM r AS r_0 INNER JOIN b AS b_1 ON r_0.y = b_1.x UNION (SELECT r_0.x AS X0, t_2.y AS X1 FROM r AS r_0 INNER JOIN s AS s_1 ON r_0.y = s_1.x INNER JOIN t AS t_2 ON s_1.y = t_2.x) UNION (SELECT a_0.x AS X0, t_1.y AS X1 FROM a AS a_0 INNER JOIN t AS t_1 ON a_0.x = t_1.x)) SELECT p1.X0 AS x, p1.X1 AS y FROM p1
+
+------------> using sink uuid: 2fd7e92a_7434_40e0_a056_95025184d323
+
+Adding statistics for table s number 7 
+Adding statistics for table a number 7 
+Adding statistics for table b number 7 
+Adding statistics for table r number 7 
+Adding statistics for table t number 7 
+sql argument: WITH p1 AS (SELECT r_0.x AS X0, r_0.y AS X1
+            FROM r AS r_0
+                     INNER JOIN b AS b_1 ON r_0.y = b_1.x
+            UNION
+            (SELECT r_0.x AS X0, t_2.y AS X1
+             FROM r AS r_0
+                      INNER JOIN s AS s_1 ON r_0.y = s_1.x
+                      INNER JOIN t AS t_2 ON s_1.y = t_2.x)
+            UNION
+            (SELECT a_0.x AS X0, t_1.y AS X1
+             FROM a AS a_0
+                      INNER JOIN t AS t_1 ON a_0.x = t_1.x))
+SELECT p1.X0 AS x, p1.X1 AS y
+FROM p1
+== Abstract Syntax Tree ==
+LogicalProject(x=[$0], y=[$1])
++- LogicalUnion(all=[false])
+   :- LogicalUnion(all=[false])
+   :  :- LogicalProject(X0=[$0], X1=[$1])
+   :  :  +- LogicalJoin(condition=[=($1, $2)], joinType=[inner])
+   :  :     :- LogicalTableScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]])
+   :  :     +- LogicalTableScan(table=[[S_CAT, default_database, b, source: [CsvTableSource(read fields: x)]]])
+   :  +- LogicalProject(X0=[$0], X1=[$5])
+   :     +- LogicalJoin(condition=[=($3, $4)], joinType=[inner])
+   :        :- LogicalJoin(condition=[=($1, $2)], joinType=[inner])
+   :        :  :- LogicalTableScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]])
+   :        :  +- LogicalTableScan(table=[[S_CAT, default_database, s, source: [CsvTableSource(read fields: x, y)]]])
+   :        +- LogicalTableScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]])
+   +- LogicalProject(X0=[$0], X1=[$2])
+      +- LogicalJoin(condition=[=($0, $1)], joinType=[inner])
+         :- LogicalTableScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]])
+         +- LogicalTableScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]])
+
+== Optimized Physical Plan ==
+HashAggregate(isMerge=[true], groupBy=[X0, X1], select=[X0, X1]): rowcount = 348617.6591862519, cumulative cost = {2.156050502755876E7 rows, 1.5933902031376037E8 cpu, 3.07698612E8 io, 8373675.820470046 network, 4.464348437584025E7 memory}
++- Exchange(distribution=[hash[X0, X1]]): rowcount = 348617.6591862519, cumulative cost = {2.1211887368372507E7 rows, 1.5376113776678035E8 cpu, 3.07698612E8 io, 8373675.820470046 network, 2.2331954187920123E7 memory}
+   +- LocalHashAggregate(groupBy=[X0, X1], select=[X0, X1]): rowcount = 348617.6591862519, cumulative cost = {2.0863269709186256E7 rows, 9.240442975E7 cpu, 3.07698612E8 io, 6852.0 network, 2.2331954187920123E7 memory}
+      +- Union(all=[true], union=[X0, X1]): rowcount = 1923203.5499999998, cumulative cost = {2.0514652050000004E7 rows, 6.1633172949999996E7 cpu, 3.07698612E8 io, 6852.0 network, 20424.0 memory}
+         :- Union(all=[true], union=[X0, X1]): rowcount = 1923113.4, cumulative cost = {1.8590666200000003E7 rows, 5.97092094E7 cpu, 3.07691388E8 io, 6828.0 network, 20396.0 memory}
+         :  :- Calc(select=[x AS X0, y AS X1]): rowcount = 961599.0, cumulative cost = {8334423.0 rows, 5.137568E7 cpu, 1.5384906E8 io, 6780.0 network, 20340.0 memory}
+         :  :  +- HashJoin(joinType=[InnerJoin], where=[=(y, x0)], select=[x, y, x0], isBroadcast=[true], build=[right]): rowcount = 961599.0, cumulative cost = {7372824.0 rows, 5.137568E7 cpu, 1.5384906E8 io, 6780.0 network, 20340.0 memory}
+         :  :     :- LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 6410095.0, cumulative cost = {6410095.0 rows, 0.0 cpu, 1.5384228E8 io, 0.0 network, 0.0 memory}
+         :  :     +- Exchange(distribution=[broadcast]): rowcount = 565.0, cumulative cost = {1130.0 rows, 90400.0 cpu, 6780.0 io, 6780.0 network, 0.0 memory}
+         :  :        +- LegacyTableSourceScan(table=[[S_CAT, default_database, b, source: [CsvTableSource(read fields: x)]]], fields=[x]): rowcount = 565.0, cumulative cost = {565.0 rows, 0.0 cpu, 6780.0 io, 0.0 network, 0.0 memory}
+         :  +- Calc(select=[x AS X0, y0 AS X1]): rowcount = 961514.3999999999, cumulative cost = {8333129.800000001 rows, 6410416.0 cpu, 1.53842328E8 io, 48.0 network, 56.0 memory}
+         :     +- NestedLoopJoin(joinType=[InnerJoin], where=[=(y, x0)], select=[x, y, x0, y0], build=[right]): rowcount = 961514.3999999999, cumulative cost = {7371615.4 rows, 6410416.0 cpu, 1.53842328E8 io, 48.0 network, 56.0 memory}
+         :        :- LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 6410095.0, cumulative cost = {6410095.0 rows, 0.0 cpu, 1.5384228E8 io, 0.0 network, 0.0 memory}
+         :        +- Exchange(distribution=[broadcast]): rowcount = 1.0, cumulative cost = {6.0 rows, 321.0 cpu, 48.0 io, 48.0 network, 28.0 memory}
+         :           +- Calc(select=[x, y0]): rowcount = 1.0, cumulative cost = {5.0 rows, 161.0 cpu, 48.0 io, 24.0 network, 28.0 memory}
+         :              +- NestedLoopJoin(joinType=[InnerJoin], where=[=(y, x0)], select=[x, y, x0, y0], build=[left]): rowcount = 1.0, cumulative cost = {4.0 rows, 161.0 cpu, 48.0 io, 24.0 network, 28.0 memory}
+         :                 :- Exchange(distribution=[broadcast]): rowcount = 1.0, cumulative cost = {2.0 rows, 160.0 cpu, 24.0 io, 24.0 network, 0.0 memory}
+         :                 :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, s, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 1.0, cumulative cost = {1.0 rows, 0.0 cpu, 24.0 io, 0.0 network, 0.0 memory}
+         :                 +- LegacyTableSourceScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 1.0, cumulative cost = {1.0 rows, 0.0 cpu, 24.0 io, 0.0 network, 0.0 memory}
+         +- Calc(select=[x AS X0, y AS X1]): rowcount = 90.14999999999999, cumulative cost = {782.3 rows, 760.0 cpu, 7224.0 io, 24.0 network, 28.0 memory}
+            +- NestedLoopJoin(joinType=[InnerJoin], where=[=(x, x0)], select=[x, x0, y], build=[right]): rowcount = 90.14999999999999, cumulative cost = {692.15 rows, 760.0 cpu, 7224.0 io, 24.0 network, 28.0 memory}
+               :- LegacyTableSourceScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]], fields=[x]): rowcount = 600.0, cumulative cost = {600.0 rows, 0.0 cpu, 7200.0 io, 0.0 network, 0.0 memory}
+               +- Exchange(distribution=[broadcast]): rowcount = 1.0, cumulative cost = {2.0 rows, 160.0 cpu, 24.0 io, 24.0 network, 0.0 memory}
+                  +- LegacyTableSourceScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 1.0, cumulative cost = {1.0 rows, 0.0 cpu, 24.0 io, 0.0 network, 0.0 memory}
+
+== Optimized Execution Plan ==
+HashAggregate(isMerge=[true], groupBy=[X0, X1], select=[X0, X1])
++- Exchange(distribution=[hash[X0, X1]])
+   +- LocalHashAggregate(groupBy=[X0, X1], select=[X0, X1])
+      +- MultipleInput(readOrder=[1,0,1,0,1,0], members=[\nUnion(all=[true], union=[X0, X1])\n:- Union(all=[true], union=[X0, X1])\n:  :- Calc(select=[x AS X0, y AS X1])\n:  :  +- HashJoin(joinType=[InnerJoin], where=[(y = x0)], select=[x, y, x0], isBroadcast=[true], build=[right])\n:  :     :- [#3] LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])\n:  :     +- [#4] Exchange(distribution=[broadcast])\n:  +- Calc(select=[x AS X0, y0 AS X1])\n:     +- NestedLoopJoin(joinType=[InnerJoin], where=[(y = x0)], select=[x, y, x0, y0], build=[right])\n:        :- [#3] LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])\n:        +- [#6] Exchange(distribution=[broadcast])\n+- Calc(select=[x AS X0, y AS X1])\n   +- NestedLoopJoin(joinType=[InnerJoin], where=[(x = x0)], select=[x, x0, y], build=[right])\n      :- [#1] LegacyTableSourceScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]], fields=[x])\n      +- [#2] Exchange(distribution=[broadcast])\n])
+         :- LegacyTableSourceScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]], fields=[x])
+         :- Exchange(distribution=[broadcast])
+         :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])(reuse_id=[2])
+         :- LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])(reuse_id=[1])
+         :- Exchange(distribution=[broadcast])
+         :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, b, source: [CsvTableSource(read fields: x)]]], fields=[x])
+         :- Reused(reference_id=[1])
+         +- Exchange(distribution=[broadcast])
+            +- Calc(select=[x, y0])
+               +- NestedLoopJoin(joinType=[InnerJoin], where=[(y = x0)], select=[x, y, x0, y0], build=[left])
+                  :- Exchange(distribution=[broadcast])
+                  :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, s, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])
+                  +- Reused(reference_id=[2])
+
+Job has been submitted with JobID 61651f6304a203c090ae7b4638d79de2
+WITH p1 AS (SELECT r_0.x AS X0, r_0.y AS X1 FROM r AS r_0 INNER JOIN b AS b_1 ON r_0.y = b_1.x UNION (SELECT r_0.x AS X0, t_2.y AS X1 FROM r AS r_0 INNER JOIN s AS s_1 ON r_0.y = s_1.x INNER JOIN t AS t_2 ON s_1.y = t_2.x) UNION (SELECT a_0.x AS X0, t_1.y AS X1 FROM a AS a_0 INNER JOIN t AS t_1 ON a_0.x = t_1.x)) SELECT p1.X0 AS x, p1.X1 AS y FROM p1
+waiting...
+
+------------> using sink uuid: 53fbd1fc_b891_4ca2_bae3_6e5d37ba9d3d
+
+Adding statistics for table s number 7 
+Adding statistics for table a number 7 
+Adding statistics for table b number 7 
+Adding statistics for table r number 7 
+Adding statistics for table t number 7 
+sql argument: WITH p1 AS (SELECT r_0.x AS X0, r_0.y AS X1
+            FROM r AS r_0
+                     INNER JOIN b AS b_1 ON r_0.y = b_1.x
+            UNION
+            (SELECT r_0.x AS X0, t_2.y AS X1
+             FROM r AS r_0
+                      INNER JOIN s AS s_1 ON r_0.y = s_1.x
+                      INNER JOIN t AS t_2 ON s_1.y = t_2.x)
+            UNION
+            (SELECT a_0.x AS X0, t_1.y AS X1
+             FROM a AS a_0
+                      INNER JOIN t AS t_1 ON a_0.x = t_1.x))
+SELECT p1.X0 AS x, p1.X1 AS y
+FROM p1
+== Abstract Syntax Tree ==
+LogicalProject(x=[$0], y=[$1])
++- LogicalUnion(all=[false])
+   :- LogicalUnion(all=[false])
+   :  :- LogicalProject(X0=[$0], X1=[$1])
+   :  :  +- LogicalJoin(condition=[=($1, $2)], joinType=[inner])
+   :  :     :- LogicalTableScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]])
+   :  :     +- LogicalTableScan(table=[[S_CAT, default_database, b, source: [CsvTableSource(read fields: x)]]])
+   :  +- LogicalProject(X0=[$0], X1=[$5])
+   :     +- LogicalJoin(condition=[=($3, $4)], joinType=[inner])
+   :        :- LogicalJoin(condition=[=($1, $2)], joinType=[inner])
+   :        :  :- LogicalTableScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]])
+   :        :  +- LogicalTableScan(table=[[S_CAT, default_database, s, source: [CsvTableSource(read fields: x, y)]]])
+   :        +- LogicalTableScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]])
+   +- LogicalProject(X0=[$0], X1=[$2])
+      +- LogicalJoin(condition=[=($0, $1)], joinType=[inner])
+         :- LogicalTableScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]])
+         +- LogicalTableScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]])
+
+== Optimized Physical Plan ==
+HashAggregate(isMerge=[true], groupBy=[X0, X1], select=[X0, X1]): rowcount = 348617.6591862519, cumulative cost = {2.156050502755876E7 rows, 1.5933902031376037E8 cpu, 3.07698612E8 io, 8373675.820470046 network, 4.464348437584025E7 memory}
++- Exchange(distribution=[hash[X0, X1]]): rowcount = 348617.6591862519, cumulative cost = {2.1211887368372507E7 rows, 1.5376113776678035E8 cpu, 3.07698612E8 io, 8373675.820470046 network, 2.2331954187920123E7 memory}
+   +- LocalHashAggregate(groupBy=[X0, X1], select=[X0, X1]): rowcount = 348617.6591862519, cumulative cost = {2.0863269709186256E7 rows, 9.240442975E7 cpu, 3.07698612E8 io, 6852.0 network, 2.2331954187920123E7 memory}
+      +- Union(all=[true], union=[X0, X1]): rowcount = 1923203.5499999998, cumulative cost = {2.0514652050000004E7 rows, 6.1633172949999996E7 cpu, 3.07698612E8 io, 6852.0 network, 20424.0 memory}
+         :- Union(all=[true], union=[X0, X1]): rowcount = 1923113.4, cumulative cost = {1.8590666200000003E7 rows, 5.97092094E7 cpu, 3.07691388E8 io, 6828.0 network, 20396.0 memory}
+         :  :- Calc(select=[x AS X0, y AS X1]): rowcount = 961599.0, cumulative cost = {8334423.0 rows, 5.137568E7 cpu, 1.5384906E8 io, 6780.0 network, 20340.0 memory}
+         :  :  +- HashJoin(joinType=[InnerJoin], where=[=(y, x0)], select=[x, y, x0], isBroadcast=[true], build=[right]): rowcount = 961599.0, cumulative cost = {7372824.0 rows, 5.137568E7 cpu, 1.5384906E8 io, 6780.0 network, 20340.0 memory}
+         :  :     :- LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 6410095.0, cumulative cost = {6410095.0 rows, 0.0 cpu, 1.5384228E8 io, 0.0 network, 0.0 memory}
+         :  :     +- Exchange(distribution=[broadcast]): rowcount = 565.0, cumulative cost = {1130.0 rows, 90400.0 cpu, 6780.0 io, 6780.0 network, 0.0 memory}
+         :  :        +- LegacyTableSourceScan(table=[[S_CAT, default_database, b, source: [CsvTableSource(read fields: x)]]], fields=[x]): rowcount = 565.0, cumulative cost = {565.0 rows, 0.0 cpu, 6780.0 io, 0.0 network, 0.0 memory}
+         :  +- Calc(select=[x AS X0, y0 AS X1]): rowcount = 961514.3999999999, cumulative cost = {8333129.800000001 rows, 6410416.0 cpu, 1.53842328E8 io, 48.0 network, 56.0 memory}
+         :     +- NestedLoopJoin(joinType=[InnerJoin], where=[=(y, x0)], select=[x, y, x0, y0], build=[right]): rowcount = 961514.3999999999, cumulative cost = {7371615.4 rows, 6410416.0 cpu, 1.53842328E8 io, 48.0 network, 56.0 memory}
+         :        :- LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 6410095.0, cumulative cost = {6410095.0 rows, 0.0 cpu, 1.5384228E8 io, 0.0 network, 0.0 memory}
+         :        +- Exchange(distribution=[broadcast]): rowcount = 1.0, cumulative cost = {6.0 rows, 321.0 cpu, 48.0 io, 48.0 network, 28.0 memory}
+         :           +- Calc(select=[x, y0]): rowcount = 1.0, cumulative cost = {5.0 rows, 161.0 cpu, 48.0 io, 24.0 network, 28.0 memory}
+         :              +- NestedLoopJoin(joinType=[InnerJoin], where=[=(y, x0)], select=[x, y, x0, y0], build=[left]): rowcount = 1.0, cumulative cost = {4.0 rows, 161.0 cpu, 48.0 io, 24.0 network, 28.0 memory}
+         :                 :- Exchange(distribution=[broadcast]): rowcount = 1.0, cumulative cost = {2.0 rows, 160.0 cpu, 24.0 io, 24.0 network, 0.0 memory}
+         :                 :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, s, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 1.0, cumulative cost = {1.0 rows, 0.0 cpu, 24.0 io, 0.0 network, 0.0 memory}
+         :                 +- LegacyTableSourceScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 1.0, cumulative cost = {1.0 rows, 0.0 cpu, 24.0 io, 0.0 network, 0.0 memory}
+         +- Calc(select=[x AS X0, y AS X1]): rowcount = 90.14999999999999, cumulative cost = {782.3 rows, 760.0 cpu, 7224.0 io, 24.0 network, 28.0 memory}
+            +- NestedLoopJoin(joinType=[InnerJoin], where=[=(x, x0)], select=[x, x0, y], build=[right]): rowcount = 90.14999999999999, cumulative cost = {692.15 rows, 760.0 cpu, 7224.0 io, 24.0 network, 28.0 memory}
+               :- LegacyTableSourceScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]], fields=[x]): rowcount = 600.0, cumulative cost = {600.0 rows, 0.0 cpu, 7200.0 io, 0.0 network, 0.0 memory}
+               +- Exchange(distribution=[broadcast]): rowcount = 1.0, cumulative cost = {2.0 rows, 160.0 cpu, 24.0 io, 24.0 network, 0.0 memory}
+                  +- LegacyTableSourceScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 1.0, cumulative cost = {1.0 rows, 0.0 cpu, 24.0 io, 0.0 network, 0.0 memory}
+
+== Optimized Execution Plan ==
+HashAggregate(isMerge=[true], groupBy=[X0, X1], select=[X0, X1])
++- Exchange(distribution=[hash[X0, X1]])
+   +- LocalHashAggregate(groupBy=[X0, X1], select=[X0, X1])
+      +- MultipleInput(readOrder=[1,0,1,0,1,0], members=[\nUnion(all=[true], union=[X0, X1])\n:- Union(all=[true], union=[X0, X1])\n:  :- Calc(select=[x AS X0, y AS X1])\n:  :  +- HashJoin(joinType=[InnerJoin], where=[(y = x0)], select=[x, y, x0], isBroadcast=[true], build=[right])\n:  :     :- [#3] LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])\n:  :     +- [#4] Exchange(distribution=[broadcast])\n:  +- Calc(select=[x AS X0, y0 AS X1])\n:     +- NestedLoopJoin(joinType=[InnerJoin], where=[(y = x0)], select=[x, y, x0, y0], build=[right])\n:        :- [#3] LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])\n:        +- [#6] Exchange(distribution=[broadcast])\n+- Calc(select=[x AS X0, y AS X1])\n   +- NestedLoopJoin(joinType=[InnerJoin], where=[(x = x0)], select=[x, x0, y], build=[right])\n      :- [#1] LegacyTableSourceScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]], fields=[x])\n      +- [#2] Exchange(distribution=[broadcast])\n])
+         :- LegacyTableSourceScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]], fields=[x])
+         :- Exchange(distribution=[broadcast])
+         :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])(reuse_id=[2])
+         :- LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])(reuse_id=[1])
+         :- Exchange(distribution=[broadcast])
+         :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, b, source: [CsvTableSource(read fields: x)]]], fields=[x])
+         :- Reused(reference_id=[1])
+         +- Exchange(distribution=[broadcast])
+            +- Calc(select=[x, y0])
+               +- NestedLoopJoin(joinType=[InnerJoin], where=[(y = x0)], select=[x, y, x0, y0], build=[left])
+                  :- Exchange(distribution=[broadcast])
+                  :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, s, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])
+                  +- Reused(reference_id=[2])
+
+Job has been submitted with JobID 274b02f4d891ab5eabf073a2eb096e97
+WITH p1 AS (SELECT r_0.x AS X0, r_0.y AS X1 FROM r AS r_0 INNER JOIN b AS b_1 ON r_0.y = b_1.x UNION (SELECT r_0.x AS X0, t_2.y AS X1 FROM r AS r_0 INNER JOIN s AS s_1 ON r_0.y = s_1.x INNER JOIN t AS t_2 ON s_1.y = t_2.x) UNION (SELECT a_0.x AS X0, t_1.y AS X1 FROM a AS a_0 INNER JOIN t AS t_1 ON a_0.x = t_1.x)) SELECT p1.X0 AS x, p1.X1 AS y FROM p1
+waiting...
+
+------------> using sink uuid: 72ed8608_a426_43b5_b375_d6c817b3a504
+
+Adding statistics for table s number 7 
+Adding statistics for table a number 7 
+Adding statistics for table b number 7 
+Adding statistics for table r number 7 
+Adding statistics for table t number 7 
+sql argument: WITH p1 AS (SELECT r_0.x AS X0, r_0.y AS X1
+            FROM r AS r_0
+                     INNER JOIN b AS b_1 ON r_0.y = b_1.x
+            UNION
+            (SELECT r_0.x AS X0, t_2.y AS X1
+             FROM r AS r_0
+                      INNER JOIN s AS s_1 ON r_0.y = s_1.x
+                      INNER JOIN t AS t_2 ON s_1.y = t_2.x)
+            UNION
+            (SELECT a_0.x AS X0, t_1.y AS X1
+             FROM a AS a_0
+                      INNER JOIN t AS t_1 ON a_0.x = t_1.x))
+SELECT p1.X0 AS x, p1.X1 AS y
+FROM p1
+== Abstract Syntax Tree ==
+LogicalProject(x=[$0], y=[$1])
++- LogicalUnion(all=[false])
+   :- LogicalUnion(all=[false])
+   :  :- LogicalProject(X0=[$0], X1=[$1])
+   :  :  +- LogicalJoin(condition=[=($1, $2)], joinType=[inner])
+   :  :     :- LogicalTableScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]])
+   :  :     +- LogicalTableScan(table=[[S_CAT, default_database, b, source: [CsvTableSource(read fields: x)]]])
+   :  +- LogicalProject(X0=[$0], X1=[$5])
+   :     +- LogicalJoin(condition=[=($3, $4)], joinType=[inner])
+   :        :- LogicalJoin(condition=[=($1, $2)], joinType=[inner])
+   :        :  :- LogicalTableScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]])
+   :        :  +- LogicalTableScan(table=[[S_CAT, default_database, s, source: [CsvTableSource(read fields: x, y)]]])
+   :        +- LogicalTableScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]])
+   +- LogicalProject(X0=[$0], X1=[$2])
+      +- LogicalJoin(condition=[=($0, $1)], joinType=[inner])
+         :- LogicalTableScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]])
+         +- LogicalTableScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]])
+
+== Optimized Physical Plan ==
+HashAggregate(isMerge=[true], groupBy=[X0, X1], select=[X0, X1]): rowcount = 348617.6591862519, cumulative cost = {2.156050502755876E7 rows, 1.5933902031376037E8 cpu, 3.07698612E8 io, 8373675.820470046 network, 4.464348437584025E7 memory}
++- Exchange(distribution=[hash[X0, X1]]): rowcount = 348617.6591862519, cumulative cost = {2.1211887368372507E7 rows, 1.5376113776678035E8 cpu, 3.07698612E8 io, 8373675.820470046 network, 2.2331954187920123E7 memory}
+   +- LocalHashAggregate(groupBy=[X0, X1], select=[X0, X1]): rowcount = 348617.6591862519, cumulative cost = {2.0863269709186256E7 rows, 9.240442975E7 cpu, 3.07698612E8 io, 6852.0 network, 2.2331954187920123E7 memory}
+      +- Union(all=[true], union=[X0, X1]): rowcount = 1923203.5499999998, cumulative cost = {2.0514652050000004E7 rows, 6.1633172949999996E7 cpu, 3.07698612E8 io, 6852.0 network, 20424.0 memory}
+         :- Union(all=[true], union=[X0, X1]): rowcount = 1923113.4, cumulative cost = {1.8590666200000003E7 rows, 5.97092094E7 cpu, 3.07691388E8 io, 6828.0 network, 20396.0 memory}
+         :  :- Calc(select=[x AS X0, y AS X1]): rowcount = 961599.0, cumulative cost = {8334423.0 rows, 5.137568E7 cpu, 1.5384906E8 io, 6780.0 network, 20340.0 memory}
+         :  :  +- HashJoin(joinType=[InnerJoin], where=[=(y, x0)], select=[x, y, x0], isBroadcast=[true], build=[right]): rowcount = 961599.0, cumulative cost = {7372824.0 rows, 5.137568E7 cpu, 1.5384906E8 io, 6780.0 network, 20340.0 memory}
+         :  :     :- LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 6410095.0, cumulative cost = {6410095.0 rows, 0.0 cpu, 1.5384228E8 io, 0.0 network, 0.0 memory}
+         :  :     +- Exchange(distribution=[broadcast]): rowcount = 565.0, cumulative cost = {1130.0 rows, 90400.0 cpu, 6780.0 io, 6780.0 network, 0.0 memory}
+         :  :        +- LegacyTableSourceScan(table=[[S_CAT, default_database, b, source: [CsvTableSource(read fields: x)]]], fields=[x]): rowcount = 565.0, cumulative cost = {565.0 rows, 0.0 cpu, 6780.0 io, 0.0 network, 0.0 memory}
+         :  +- Calc(select=[x AS X0, y0 AS X1]): rowcount = 961514.3999999999, cumulative cost = {8333129.800000001 rows, 6410416.0 cpu, 1.53842328E8 io, 48.0 network, 56.0 memory}
+         :     +- NestedLoopJoin(joinType=[InnerJoin], where=[=(y, x0)], select=[x, y, x0, y0], build=[right]): rowcount = 961514.3999999999, cumulative cost = {7371615.4 rows, 6410416.0 cpu, 1.53842328E8 io, 48.0 network, 56.0 memory}
+         :        :- LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 6410095.0, cumulative cost = {6410095.0 rows, 0.0 cpu, 1.5384228E8 io, 0.0 network, 0.0 memory}
+         :        +- Exchange(distribution=[broadcast]): rowcount = 1.0, cumulative cost = {6.0 rows, 321.0 cpu, 48.0 io, 48.0 network, 28.0 memory}
+         :           +- Calc(select=[x, y0]): rowcount = 1.0, cumulative cost = {5.0 rows, 161.0 cpu, 48.0 io, 24.0 network, 28.0 memory}
+         :              +- NestedLoopJoin(joinType=[InnerJoin], where=[=(y, x0)], select=[x, y, x0, y0], build=[left]): rowcount = 1.0, cumulative cost = {4.0 rows, 161.0 cpu, 48.0 io, 24.0 network, 28.0 memory}
+         :                 :- Exchange(distribution=[broadcast]): rowcount = 1.0, cumulative cost = {2.0 rows, 160.0 cpu, 24.0 io, 24.0 network, 0.0 memory}
+         :                 :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, s, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 1.0, cumulative cost = {1.0 rows, 0.0 cpu, 24.0 io, 0.0 network, 0.0 memory}
+         :                 +- LegacyTableSourceScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 1.0, cumulative cost = {1.0 rows, 0.0 cpu, 24.0 io, 0.0 network, 0.0 memory}
+         +- Calc(select=[x AS X0, y AS X1]): rowcount = 90.14999999999999, cumulative cost = {782.3 rows, 760.0 cpu, 7224.0 io, 24.0 network, 28.0 memory}
+            +- NestedLoopJoin(joinType=[InnerJoin], where=[=(x, x0)], select=[x, x0, y], build=[right]): rowcount = 90.14999999999999, cumulative cost = {692.15 rows, 760.0 cpu, 7224.0 io, 24.0 network, 28.0 memory}
+               :- LegacyTableSourceScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]], fields=[x]): rowcount = 600.0, cumulative cost = {600.0 rows, 0.0 cpu, 7200.0 io, 0.0 network, 0.0 memory}
+               +- Exchange(distribution=[broadcast]): rowcount = 1.0, cumulative cost = {2.0 rows, 160.0 cpu, 24.0 io, 24.0 network, 0.0 memory}
+                  +- LegacyTableSourceScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 1.0, cumulative cost = {1.0 rows, 0.0 cpu, 24.0 io, 0.0 network, 0.0 memory}
+
+== Optimized Execution Plan ==
+HashAggregate(isMerge=[true], groupBy=[X0, X1], select=[X0, X1])
++- Exchange(distribution=[hash[X0, X1]])
+   +- LocalHashAggregate(groupBy=[X0, X1], select=[X0, X1])
+      +- MultipleInput(readOrder=[1,0,1,0,1,0], members=[\nUnion(all=[true], union=[X0, X1])\n:- Union(all=[true], union=[X0, X1])\n:  :- Calc(select=[x AS X0, y AS X1])\n:  :  +- HashJoin(joinType=[InnerJoin], where=[(y = x0)], select=[x, y, x0], isBroadcast=[true], build=[right])\n:  :     :- [#3] LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])\n:  :     +- [#4] Exchange(distribution=[broadcast])\n:  +- Calc(select=[x AS X0, y0 AS X1])\n:     +- NestedLoopJoin(joinType=[InnerJoin], where=[(y = x0)], select=[x, y, x0, y0], build=[right])\n:        :- [#3] LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])\n:        +- [#6] Exchange(distribution=[broadcast])\n+- Calc(select=[x AS X0, y AS X1])\n   +- NestedLoopJoin(joinType=[InnerJoin], where=[(x = x0)], select=[x, x0, y], build=[right])\n      :- [#1] LegacyTableSourceScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]], fields=[x])\n      +- [#2] Exchange(distribution=[broadcast])\n])
+         :- LegacyTableSourceScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]], fields=[x])
+         :- Exchange(distribution=[broadcast])
+         :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])(reuse_id=[2])
+         :- LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])(reuse_id=[1])
+         :- Exchange(distribution=[broadcast])
+         :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, b, source: [CsvTableSource(read fields: x)]]], fields=[x])
+         :- Reused(reference_id=[1])
+         +- Exchange(distribution=[broadcast])
+            +- Calc(select=[x, y0])
+               +- NestedLoopJoin(joinType=[InnerJoin], where=[(y = x0)], select=[x, y, x0, y0], build=[left])
+                  :- Exchange(distribution=[broadcast])
+                  :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, s, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])
+                  +- Reused(reference_id=[2])
+
+Job has been submitted with JobID 96bc8350f0bdfb3f73025bfd7902f866
+WITH p1 AS (SELECT r_0.x AS X0, r_0.y AS X1 FROM r AS r_0 INNER JOIN b AS b_1 ON r_0.y = b_1.x UNION (SELECT r_0.x AS X0, t_2.y AS X1 FROM r AS r_0 INNER JOIN s AS s_1 ON r_0.y = s_1.x INNER JOIN t AS t_2 ON s_1.y = t_2.x) UNION (SELECT a_0.x AS X0, t_1.y AS X1 FROM a AS a_0 INNER JOIN t AS t_1 ON a_0.x = t_1.x)) SELECT p1.X0 AS x, p1.X1 AS y FROM p1
+waiting...
+
+------------> using sink uuid: 1fe8ca13_3e71_4334_968f_b2e60278c855
+
+Adding statistics for table s number 9 
+Adding statistics for table a number 9 
+Adding statistics for table b number 9 
+Adding statistics for table r number 9 
+Adding statistics for table t number 9 
+sql argument: WITH p1 AS (SELECT r_0.x AS X0, r_0.y AS X1
+            FROM r AS r_0
+                     INNER JOIN b AS b_1 ON r_0.y = b_1.x
+            UNION
+            (SELECT r_0.x AS X0, t_2.y AS X1
+             FROM r AS r_0
+                      INNER JOIN s AS s_1 ON r_0.y = s_1.x
+                      INNER JOIN t AS t_2 ON s_1.y = t_2.x)
+            UNION
+            (SELECT a_0.x AS X0, t_1.y AS X1
+             FROM a AS a_0
+                      INNER JOIN t AS t_1 ON a_0.x = t_1.x))
+SELECT p1.X0 AS x, p1.X1 AS y
+FROM p1
+== Abstract Syntax Tree ==
+LogicalProject(x=[$0], y=[$1])
++- LogicalUnion(all=[false])
+   :- LogicalUnion(all=[false])
+   :  :- LogicalProject(X0=[$0], X1=[$1])
+   :  :  +- LogicalJoin(condition=[=($1, $2)], joinType=[inner])
+   :  :     :- LogicalTableScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]])
+   :  :     +- LogicalTableScan(table=[[S_CAT, default_database, b, source: [CsvTableSource(read fields: x)]]])
+   :  +- LogicalProject(X0=[$0], X1=[$5])
+   :     +- LogicalJoin(condition=[=($3, $4)], joinType=[inner])
+   :        :- LogicalJoin(condition=[=($1, $2)], joinType=[inner])
+   :        :  :- LogicalTableScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]])
+   :        :  +- LogicalTableScan(table=[[S_CAT, default_database, s, source: [CsvTableSource(read fields: x, y)]]])
+   :        +- LogicalTableScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]])
+   +- LogicalProject(X0=[$0], X1=[$2])
+      +- LogicalJoin(condition=[=($0, $1)], joinType=[inner])
+         :- LogicalTableScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]])
+         +- LogicalTableScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]])
+
+== Optimized Physical Plan ==
+HashAggregate(isMerge=[true], groupBy=[X0, X1], select=[X0, X1]): rowcount = 223076.48814551177, cumulative cost = {1.3796410114436537E7 rows, 1.0197559747393826E8 cpu, 1.96890348E8 io, 5359463.715492282 network, 2.8570542482625507E7 memory}
++- Exchange(distribution=[hash[X0, X1]]): rowcount = 223076.48814551177, cumulative cost = {1.3573333626291025E7 rows, 9.840637366361007E7 cpu, 1.96890348E8 io, 5359463.715492282 network, 1.4293647241312753E7 memory}
+   +- LocalHashAggregate(groupBy=[X0, X1], select=[X0, X1]): rowcount = 223076.48814551177, cumulative cost = {1.3350257138145514E7 rows, 5.914491175E7 cpu, 1.96890348E8 io, 5628.0 network, 1.4293647241312753E7 memory}
+      +- Union(all=[true], union=[X0, X1]): rowcount = 1230636.15, cumulative cost = {1.3127180650000002E7 rows, 3.945473335E7 cpu, 1.96890348E8 io, 5628.0 network, 16752.0 memory}
+         :- Union(all=[true], union=[X0, X1]): rowcount = 1230562.2, cumulative cost = {1.1895902600000001E7 rows, 3.82234452E7 cpu, 1.9688442E8 io, 5604.0 network, 16724.0 memory}
+         :  :- Calc(select=[x AS X0, y AS X1]): rowcount = 615315.75, cumulative cost = {5333199.5 rows, 3.289092E7 cpu, 9.8444964E7 io, 5556.0 network, 16668.0 memory}
+         :  :  +- HashJoin(joinType=[InnerJoin], where=[=(y, x0)], select=[x, y, x0], isBroadcast=[true], build=[right]): rowcount = 615315.75, cumulative cost = {4717883.75 rows, 3.289092E7 cpu, 9.8444964E7 io, 5556.0 network, 16668.0 memory}
+         :  :     :- LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 4101642.0, cumulative cost = {4101642.0 rows, 0.0 cpu, 9.8439408E7 io, 0.0 network, 0.0 memory}
+         :  :     +- Exchange(distribution=[broadcast]): rowcount = 463.0, cumulative cost = {926.0 rows, 74080.0 cpu, 5556.0 io, 5556.0 network, 0.0 memory}
+         :  :        +- LegacyTableSourceScan(table=[[S_CAT, default_database, b, source: [CsvTableSource(read fields: x)]]], fields=[x]): rowcount = 463.0, cumulative cost = {463.0 rows, 0.0 cpu, 5556.0 io, 0.0 network, 0.0 memory}
+         :  +- Calc(select=[x AS X0, y0 AS X1]): rowcount = 615246.45, cumulative cost = {5332140.9 rows, 4101963.0 cpu, 9.8439456E7 io, 48.0 network, 56.0 memory}
+         :     +- NestedLoopJoin(joinType=[InnerJoin], where=[=(y, x0)], select=[x, y, x0, y0], build=[right]): rowcount = 615246.45, cumulative cost = {4716894.45 rows, 4101963.0 cpu, 9.8439456E7 io, 48.0 network, 56.0 memory}
+         :        :- LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 4101642.0, cumulative cost = {4101642.0 rows, 0.0 cpu, 9.8439408E7 io, 0.0 network, 0.0 memory}
+         :        +- Exchange(distribution=[broadcast]): rowcount = 1.0, cumulative cost = {6.0 rows, 321.0 cpu, 48.0 io, 48.0 network, 28.0 memory}
+         :           +- Calc(select=[x, y0]): rowcount = 1.0, cumulative cost = {5.0 rows, 161.0 cpu, 48.0 io, 24.0 network, 28.0 memory}
+         :              +- NestedLoopJoin(joinType=[InnerJoin], where=[=(y, x0)], select=[x, y, x0, y0], build=[left]): rowcount = 1.0, cumulative cost = {4.0 rows, 161.0 cpu, 48.0 io, 24.0 network, 28.0 memory}
+         :                 :- Exchange(distribution=[broadcast]): rowcount = 1.0, cumulative cost = {2.0 rows, 160.0 cpu, 24.0 io, 24.0 network, 0.0 memory}
+         :                 :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, s, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 1.0, cumulative cost = {1.0 rows, 0.0 cpu, 24.0 io, 0.0 network, 0.0 memory}
+         :                 +- LegacyTableSourceScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 1.0, cumulative cost = {1.0 rows, 0.0 cpu, 24.0 io, 0.0 network, 0.0 memory}
+         +- Calc(select=[x AS X0, y AS X1]): rowcount = 73.95, cumulative cost = {641.9000000000001 rows, 652.0 cpu, 5928.0 io, 24.0 network, 28.0 memory}
+            +- NestedLoopJoin(joinType=[InnerJoin], where=[=(x, x0)], select=[x, x0, y], build=[right]): rowcount = 73.95, cumulative cost = {567.95 rows, 652.0 cpu, 5928.0 io, 24.0 network, 28.0 memory}
+               :- LegacyTableSourceScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]], fields=[x]): rowcount = 492.0, cumulative cost = {492.0 rows, 0.0 cpu, 5904.0 io, 0.0 network, 0.0 memory}
+               +- Exchange(distribution=[broadcast]): rowcount = 1.0, cumulative cost = {2.0 rows, 160.0 cpu, 24.0 io, 24.0 network, 0.0 memory}
+                  +- LegacyTableSourceScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 1.0, cumulative cost = {1.0 rows, 0.0 cpu, 24.0 io, 0.0 network, 0.0 memory}
+
+== Optimized Execution Plan ==
+HashAggregate(isMerge=[true], groupBy=[X0, X1], select=[X0, X1])
++- Exchange(distribution=[hash[X0, X1]])
+   +- LocalHashAggregate(groupBy=[X0, X1], select=[X0, X1])
+      +- MultipleInput(readOrder=[1,0,1,0,1,0], members=[\nUnion(all=[true], union=[X0, X1])\n:- Union(all=[true], union=[X0, X1])\n:  :- Calc(select=[x AS X0, y AS X1])\n:  :  +- HashJoin(joinType=[InnerJoin], where=[(y = x0)], select=[x, y, x0], isBroadcast=[true], build=[right])\n:  :     :- [#3] LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])\n:  :     +- [#4] Exchange(distribution=[broadcast])\n:  +- Calc(select=[x AS X0, y0 AS X1])\n:     +- NestedLoopJoin(joinType=[InnerJoin], where=[(y = x0)], select=[x, y, x0, y0], build=[right])\n:        :- [#3] LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])\n:        +- [#6] Exchange(distribution=[broadcast])\n+- Calc(select=[x AS X0, y AS X1])\n   +- NestedLoopJoin(joinType=[InnerJoin], where=[(x = x0)], select=[x, x0, y], build=[right])\n      :- [#1] LegacyTableSourceScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]], fields=[x])\n      +- [#2] Exchange(distribution=[broadcast])\n])
+         :- LegacyTableSourceScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]], fields=[x])
+         :- Exchange(distribution=[broadcast])
+         :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])(reuse_id=[2])
+         :- LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])(reuse_id=[1])
+         :- Exchange(distribution=[broadcast])
+         :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, b, source: [CsvTableSource(read fields: x)]]], fields=[x])
+         :- Reused(reference_id=[1])
+         +- Exchange(distribution=[broadcast])
+            +- Calc(select=[x, y0])
+               +- NestedLoopJoin(joinType=[InnerJoin], where=[(y = x0)], select=[x, y, x0, y0], build=[left])
+                  :- Exchange(distribution=[broadcast])
+                  :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, s, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])
+                  +- Reused(reference_id=[2])
+
+Job has been submitted with JobID 3ac639c307d97c5e950b034ceac7c97a
+WITH p1 AS (SELECT r_0.x AS X0, r_0.y AS X1 FROM r AS r_0 INNER JOIN b AS b_1 ON r_0.y = b_1.x UNION (SELECT r_0.x AS X0, t_2.y AS X1 FROM r AS r_0 INNER JOIN s AS s_1 ON r_0.y = s_1.x INNER JOIN t AS t_2 ON s_1.y = t_2.x) UNION (SELECT a_0.x AS X0, t_1.y AS X1 FROM a AS a_0 INNER JOIN t AS t_1 ON a_0.x = t_1.x)) SELECT p1.X0 AS x, p1.X1 AS y FROM p1
+waiting...
+
+------------> using sink uuid: 2c0bf318_0601_4d34_be7e_842aeece244a
+
+Adding statistics for table s number 9 
+Adding statistics for table a number 9 
+Adding statistics for table b number 9 
+Adding statistics for table r number 9 
+Adding statistics for table t number 9 
+sql argument: WITH p1 AS (SELECT r_0.x AS X0, r_0.y AS X1
+            FROM r AS r_0
+                     INNER JOIN b AS b_1 ON r_0.y = b_1.x
+            UNION
+            (SELECT r_0.x AS X0, t_2.y AS X1
+             FROM r AS r_0
+                      INNER JOIN s AS s_1 ON r_0.y = s_1.x
+                      INNER JOIN t AS t_2 ON s_1.y = t_2.x)
+            UNION
+            (SELECT a_0.x AS X0, t_1.y AS X1
+             FROM a AS a_0
+                      INNER JOIN t AS t_1 ON a_0.x = t_1.x))
+SELECT p1.X0 AS x, p1.X1 AS y
+FROM p1
+== Abstract Syntax Tree ==
+LogicalProject(x=[$0], y=[$1])
++- LogicalUnion(all=[false])
+   :- LogicalUnion(all=[false])
+   :  :- LogicalProject(X0=[$0], X1=[$1])
+   :  :  +- LogicalJoin(condition=[=($1, $2)], joinType=[inner])
+   :  :     :- LogicalTableScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]])
+   :  :     +- LogicalTableScan(table=[[S_CAT, default_database, b, source: [CsvTableSource(read fields: x)]]])
+   :  +- LogicalProject(X0=[$0], X1=[$5])
+   :     +- LogicalJoin(condition=[=($3, $4)], joinType=[inner])
+   :        :- LogicalJoin(condition=[=($1, $2)], joinType=[inner])
+   :        :  :- LogicalTableScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]])
+   :        :  +- LogicalTableScan(table=[[S_CAT, default_database, s, source: [CsvTableSource(read fields: x, y)]]])
+   :        +- LogicalTableScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]])
+   +- LogicalProject(X0=[$0], X1=[$2])
+      +- LogicalJoin(condition=[=($0, $1)], joinType=[inner])
+         :- LogicalTableScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]])
+         +- LogicalTableScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]])
+
+== Optimized Physical Plan ==
+HashAggregate(isMerge=[true], groupBy=[X0, X1], select=[X0, X1]): rowcount = 223076.48814551177, cumulative cost = {1.3796410114436537E7 rows, 1.0197559747393826E8 cpu, 1.96890348E8 io, 5359463.715492282 network, 2.8570542482625507E7 memory}
++- Exchange(distribution=[hash[X0, X1]]): rowcount = 223076.48814551177, cumulative cost = {1.3573333626291025E7 rows, 9.840637366361007E7 cpu, 1.96890348E8 io, 5359463.715492282 network, 1.4293647241312753E7 memory}
+   +- LocalHashAggregate(groupBy=[X0, X1], select=[X0, X1]): rowcount = 223076.48814551177, cumulative cost = {1.3350257138145514E7 rows, 5.914491175E7 cpu, 1.96890348E8 io, 5628.0 network, 1.4293647241312753E7 memory}
+      +- Union(all=[true], union=[X0, X1]): rowcount = 1230636.15, cumulative cost = {1.3127180650000002E7 rows, 3.945473335E7 cpu, 1.96890348E8 io, 5628.0 network, 16752.0 memory}
+         :- Union(all=[true], union=[X0, X1]): rowcount = 1230562.2, cumulative cost = {1.1895902600000001E7 rows, 3.82234452E7 cpu, 1.9688442E8 io, 5604.0 network, 16724.0 memory}
+         :  :- Calc(select=[x AS X0, y AS X1]): rowcount = 615315.75, cumulative cost = {5333199.5 rows, 3.289092E7 cpu, 9.8444964E7 io, 5556.0 network, 16668.0 memory}
+         :  :  +- HashJoin(joinType=[InnerJoin], where=[=(y, x0)], select=[x, y, x0], isBroadcast=[true], build=[right]): rowcount = 615315.75, cumulative cost = {4717883.75 rows, 3.289092E7 cpu, 9.8444964E7 io, 5556.0 network, 16668.0 memory}
+         :  :     :- LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 4101642.0, cumulative cost = {4101642.0 rows, 0.0 cpu, 9.8439408E7 io, 0.0 network, 0.0 memory}
+         :  :     +- Exchange(distribution=[broadcast]): rowcount = 463.0, cumulative cost = {926.0 rows, 74080.0 cpu, 5556.0 io, 5556.0 network, 0.0 memory}
+         :  :        +- LegacyTableSourceScan(table=[[S_CAT, default_database, b, source: [CsvTableSource(read fields: x)]]], fields=[x]): rowcount = 463.0, cumulative cost = {463.0 rows, 0.0 cpu, 5556.0 io, 0.0 network, 0.0 memory}
+         :  +- Calc(select=[x AS X0, y0 AS X1]): rowcount = 615246.45, cumulative cost = {5332140.9 rows, 4101963.0 cpu, 9.8439456E7 io, 48.0 network, 56.0 memory}
+         :     +- NestedLoopJoin(joinType=[InnerJoin], where=[=(y, x0)], select=[x, y, x0, y0], build=[right]): rowcount = 615246.45, cumulative cost = {4716894.45 rows, 4101963.0 cpu, 9.8439456E7 io, 48.0 network, 56.0 memory}
+         :        :- LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 4101642.0, cumulative cost = {4101642.0 rows, 0.0 cpu, 9.8439408E7 io, 0.0 network, 0.0 memory}
+         :        +- Exchange(distribution=[broadcast]): rowcount = 1.0, cumulative cost = {6.0 rows, 321.0 cpu, 48.0 io, 48.0 network, 28.0 memory}
+         :           +- Calc(select=[x, y0]): rowcount = 1.0, cumulative cost = {5.0 rows, 161.0 cpu, 48.0 io, 24.0 network, 28.0 memory}
+         :              +- NestedLoopJoin(joinType=[InnerJoin], where=[=(y, x0)], select=[x, y, x0, y0], build=[left]): rowcount = 1.0, cumulative cost = {4.0 rows, 161.0 cpu, 48.0 io, 24.0 network, 28.0 memory}
+         :                 :- Exchange(distribution=[broadcast]): rowcount = 1.0, cumulative cost = {2.0 rows, 160.0 cpu, 24.0 io, 24.0 network, 0.0 memory}
+         :                 :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, s, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 1.0, cumulative cost = {1.0 rows, 0.0 cpu, 24.0 io, 0.0 network, 0.0 memory}
+         :                 +- LegacyTableSourceScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 1.0, cumulative cost = {1.0 rows, 0.0 cpu, 24.0 io, 0.0 network, 0.0 memory}
+         +- Calc(select=[x AS X0, y AS X1]): rowcount = 73.95, cumulative cost = {641.9000000000001 rows, 652.0 cpu, 5928.0 io, 24.0 network, 28.0 memory}
+            +- NestedLoopJoin(joinType=[InnerJoin], where=[=(x, x0)], select=[x, x0, y], build=[right]): rowcount = 73.95, cumulative cost = {567.95 rows, 652.0 cpu, 5928.0 io, 24.0 network, 28.0 memory}
+               :- LegacyTableSourceScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]], fields=[x]): rowcount = 492.0, cumulative cost = {492.0 rows, 0.0 cpu, 5904.0 io, 0.0 network, 0.0 memory}
+               +- Exchange(distribution=[broadcast]): rowcount = 1.0, cumulative cost = {2.0 rows, 160.0 cpu, 24.0 io, 24.0 network, 0.0 memory}
+                  +- LegacyTableSourceScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 1.0, cumulative cost = {1.0 rows, 0.0 cpu, 24.0 io, 0.0 network, 0.0 memory}
+
+== Optimized Execution Plan ==
+HashAggregate(isMerge=[true], groupBy=[X0, X1], select=[X0, X1])
++- Exchange(distribution=[hash[X0, X1]])
+   +- LocalHashAggregate(groupBy=[X0, X1], select=[X0, X1])
+      +- MultipleInput(readOrder=[1,0,1,0,1,0], members=[\nUnion(all=[true], union=[X0, X1])\n:- Union(all=[true], union=[X0, X1])\n:  :- Calc(select=[x AS X0, y AS X1])\n:  :  +- HashJoin(joinType=[InnerJoin], where=[(y = x0)], select=[x, y, x0], isBroadcast=[true], build=[right])\n:  :     :- [#3] LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])\n:  :     +- [#4] Exchange(distribution=[broadcast])\n:  +- Calc(select=[x AS X0, y0 AS X1])\n:     +- NestedLoopJoin(joinType=[InnerJoin], where=[(y = x0)], select=[x, y, x0, y0], build=[right])\n:        :- [#3] LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])\n:        +- [#6] Exchange(distribution=[broadcast])\n+- Calc(select=[x AS X0, y AS X1])\n   +- NestedLoopJoin(joinType=[InnerJoin], where=[(x = x0)], select=[x, x0, y], build=[right])\n      :- [#1] LegacyTableSourceScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]], fields=[x])\n      +- [#2] Exchange(distribution=[broadcast])\n])
+         :- LegacyTableSourceScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]], fields=[x])
+         :- Exchange(distribution=[broadcast])
+         :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])(reuse_id=[2])
+         :- LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])(reuse_id=[1])
+         :- Exchange(distribution=[broadcast])
+         :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, b, source: [CsvTableSource(read fields: x)]]], fields=[x])
+         :- Reused(reference_id=[1])
+         +- Exchange(distribution=[broadcast])
+            +- Calc(select=[x, y0])
+               +- NestedLoopJoin(joinType=[InnerJoin], where=[(y = x0)], select=[x, y, x0, y0], build=[left])
+                  :- Exchange(distribution=[broadcast])
+                  :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, s, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])
+                  +- Reused(reference_id=[2])
+
+Job has been submitted with JobID 12b6d6343a384a506dcfaec3e16b2ccf
+WITH p1 AS (SELECT r_0.x AS X0, r_0.y AS X1 FROM r AS r_0 INNER JOIN b AS b_1 ON r_0.y = b_1.x UNION (SELECT r_0.x AS X0, t_2.y AS X1 FROM r AS r_0 INNER JOIN s AS s_1 ON r_0.y = s_1.x INNER JOIN t AS t_2 ON s_1.y = t_2.x) UNION (SELECT a_0.x AS X0, t_1.y AS X1 FROM a AS a_0 INNER JOIN t AS t_1 ON a_0.x = t_1.x)) SELECT p1.X0 AS x, p1.X1 AS y FROM p1
+waiting...
+
+------------> using sink uuid: 65d7b40c_c0f3_4998_a175_293db17f327c
+
+Adding statistics for table s number 9 
+Adding statistics for table a number 9 
+Adding statistics for table b number 9 
+Adding statistics for table r number 9 
+Adding statistics for table t number 9 
+sql argument: WITH p1 AS (SELECT r_0.x AS X0, r_0.y AS X1
+            FROM r AS r_0
+                     INNER JOIN b AS b_1 ON r_0.y = b_1.x
+            UNION
+            (SELECT r_0.x AS X0, t_2.y AS X1
+             FROM r AS r_0
+                      INNER JOIN s AS s_1 ON r_0.y = s_1.x
+                      INNER JOIN t AS t_2 ON s_1.y = t_2.x)
+            UNION
+            (SELECT a_0.x AS X0, t_1.y AS X1
+             FROM a AS a_0
+                      INNER JOIN t AS t_1 ON a_0.x = t_1.x))
+SELECT p1.X0 AS x, p1.X1 AS y
+FROM p1
+== Abstract Syntax Tree ==
+LogicalProject(x=[$0], y=[$1])
++- LogicalUnion(all=[false])
+   :- LogicalUnion(all=[false])
+   :  :- LogicalProject(X0=[$0], X1=[$1])
+   :  :  +- LogicalJoin(condition=[=($1, $2)], joinType=[inner])
+   :  :     :- LogicalTableScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]])
+   :  :     +- LogicalTableScan(table=[[S_CAT, default_database, b, source: [CsvTableSource(read fields: x)]]])
+   :  +- LogicalProject(X0=[$0], X1=[$5])
+   :     +- LogicalJoin(condition=[=($3, $4)], joinType=[inner])
+   :        :- LogicalJoin(condition=[=($1, $2)], joinType=[inner])
+   :        :  :- LogicalTableScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]])
+   :        :  +- LogicalTableScan(table=[[S_CAT, default_database, s, source: [CsvTableSource(read fields: x, y)]]])
+   :        +- LogicalTableScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]])
+   +- LogicalProject(X0=[$0], X1=[$2])
+      +- LogicalJoin(condition=[=($0, $1)], joinType=[inner])
+         :- LogicalTableScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]])
+         +- LogicalTableScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]])
+
+== Optimized Physical Plan ==
+HashAggregate(isMerge=[true], groupBy=[X0, X1], select=[X0, X1]): rowcount = 223076.48814551177, cumulative cost = {1.3796410114436537E7 rows, 1.0197559747393826E8 cpu, 1.96890348E8 io, 5359463.715492282 network, 2.8570542482625507E7 memory}
++- Exchange(distribution=[hash[X0, X1]]): rowcount = 223076.48814551177, cumulative cost = {1.3573333626291025E7 rows, 9.840637366361007E7 cpu, 1.96890348E8 io, 5359463.715492282 network, 1.4293647241312753E7 memory}
+   +- LocalHashAggregate(groupBy=[X0, X1], select=[X0, X1]): rowcount = 223076.48814551177, cumulative cost = {1.3350257138145514E7 rows, 5.914491175E7 cpu, 1.96890348E8 io, 5628.0 network, 1.4293647241312753E7 memory}
+      +- Union(all=[true], union=[X0, X1]): rowcount = 1230636.15, cumulative cost = {1.3127180650000002E7 rows, 3.945473335E7 cpu, 1.96890348E8 io, 5628.0 network, 16752.0 memory}
+         :- Union(all=[true], union=[X0, X1]): rowcount = 1230562.2, cumulative cost = {1.1895902600000001E7 rows, 3.82234452E7 cpu, 1.9688442E8 io, 5604.0 network, 16724.0 memory}
+         :  :- Calc(select=[x AS X0, y AS X1]): rowcount = 615315.75, cumulative cost = {5333199.5 rows, 3.289092E7 cpu, 9.8444964E7 io, 5556.0 network, 16668.0 memory}
+         :  :  +- HashJoin(joinType=[InnerJoin], where=[=(y, x0)], select=[x, y, x0], isBroadcast=[true], build=[right]): rowcount = 615315.75, cumulative cost = {4717883.75 rows, 3.289092E7 cpu, 9.8444964E7 io, 5556.0 network, 16668.0 memory}
+         :  :     :- LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 4101642.0, cumulative cost = {4101642.0 rows, 0.0 cpu, 9.8439408E7 io, 0.0 network, 0.0 memory}
+         :  :     +- Exchange(distribution=[broadcast]): rowcount = 463.0, cumulative cost = {926.0 rows, 74080.0 cpu, 5556.0 io, 5556.0 network, 0.0 memory}
+         :  :        +- LegacyTableSourceScan(table=[[S_CAT, default_database, b, source: [CsvTableSource(read fields: x)]]], fields=[x]): rowcount = 463.0, cumulative cost = {463.0 rows, 0.0 cpu, 5556.0 io, 0.0 network, 0.0 memory}
+         :  +- Calc(select=[x AS X0, y0 AS X1]): rowcount = 615246.45, cumulative cost = {5332140.9 rows, 4101963.0 cpu, 9.8439456E7 io, 48.0 network, 56.0 memory}
+         :     +- NestedLoopJoin(joinType=[InnerJoin], where=[=(y, x0)], select=[x, y, x0, y0], build=[right]): rowcount = 615246.45, cumulative cost = {4716894.45 rows, 4101963.0 cpu, 9.8439456E7 io, 48.0 network, 56.0 memory}
+         :        :- LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 4101642.0, cumulative cost = {4101642.0 rows, 0.0 cpu, 9.8439408E7 io, 0.0 network, 0.0 memory}
+         :        +- Exchange(distribution=[broadcast]): rowcount = 1.0, cumulative cost = {6.0 rows, 321.0 cpu, 48.0 io, 48.0 network, 28.0 memory}
+         :           +- Calc(select=[x, y0]): rowcount = 1.0, cumulative cost = {5.0 rows, 161.0 cpu, 48.0 io, 24.0 network, 28.0 memory}
+         :              +- NestedLoopJoin(joinType=[InnerJoin], where=[=(y, x0)], select=[x, y, x0, y0], build=[left]): rowcount = 1.0, cumulative cost = {4.0 rows, 161.0 cpu, 48.0 io, 24.0 network, 28.0 memory}
+         :                 :- Exchange(distribution=[broadcast]): rowcount = 1.0, cumulative cost = {2.0 rows, 160.0 cpu, 24.0 io, 24.0 network, 0.0 memory}
+         :                 :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, s, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 1.0, cumulative cost = {1.0 rows, 0.0 cpu, 24.0 io, 0.0 network, 0.0 memory}
+         :                 +- LegacyTableSourceScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 1.0, cumulative cost = {1.0 rows, 0.0 cpu, 24.0 io, 0.0 network, 0.0 memory}
+         +- Calc(select=[x AS X0, y AS X1]): rowcount = 73.95, cumulative cost = {641.9000000000001 rows, 652.0 cpu, 5928.0 io, 24.0 network, 28.0 memory}
+            +- NestedLoopJoin(joinType=[InnerJoin], where=[=(x, x0)], select=[x, x0, y], build=[right]): rowcount = 73.95, cumulative cost = {567.95 rows, 652.0 cpu, 5928.0 io, 24.0 network, 28.0 memory}
+               :- LegacyTableSourceScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]], fields=[x]): rowcount = 492.0, cumulative cost = {492.0 rows, 0.0 cpu, 5904.0 io, 0.0 network, 0.0 memory}
+               +- Exchange(distribution=[broadcast]): rowcount = 1.0, cumulative cost = {2.0 rows, 160.0 cpu, 24.0 io, 24.0 network, 0.0 memory}
+                  +- LegacyTableSourceScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y]): rowcount = 1.0, cumulative cost = {1.0 rows, 0.0 cpu, 24.0 io, 0.0 network, 0.0 memory}
+
+== Optimized Execution Plan ==
+HashAggregate(isMerge=[true], groupBy=[X0, X1], select=[X0, X1])
++- Exchange(distribution=[hash[X0, X1]])
+   +- LocalHashAggregate(groupBy=[X0, X1], select=[X0, X1])
+      +- MultipleInput(readOrder=[1,0,1,0,1,0], members=[\nUnion(all=[true], union=[X0, X1])\n:- Union(all=[true], union=[X0, X1])\n:  :- Calc(select=[x AS X0, y AS X1])\n:  :  +- HashJoin(joinType=[InnerJoin], where=[(y = x0)], select=[x, y, x0], isBroadcast=[true], build=[right])\n:  :     :- [#3] LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])\n:  :     +- [#4] Exchange(distribution=[broadcast])\n:  +- Calc(select=[x AS X0, y0 AS X1])\n:     +- NestedLoopJoin(joinType=[InnerJoin], where=[(y = x0)], select=[x, y, x0, y0], build=[right])\n:        :- [#3] LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])\n:        +- [#6] Exchange(distribution=[broadcast])\n+- Calc(select=[x AS X0, y AS X1])\n   +- NestedLoopJoin(joinType=[InnerJoin], where=[(x = x0)], select=[x, x0, y], build=[right])\n      :- [#1] LegacyTableSourceScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]], fields=[x])\n      +- [#2] Exchange(distribution=[broadcast])\n])
+         :- LegacyTableSourceScan(table=[[S_CAT, default_database, a, source: [CsvTableSource(read fields: x)]]], fields=[x])
+         :- Exchange(distribution=[broadcast])
+         :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, t, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])(reuse_id=[2])
+         :- LegacyTableSourceScan(table=[[S_CAT, default_database, r, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])(reuse_id=[1])
+         :- Exchange(distribution=[broadcast])
+         :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, b, source: [CsvTableSource(read fields: x)]]], fields=[x])
+         :- Reused(reference_id=[1])
+         +- Exchange(distribution=[broadcast])
+            +- Calc(select=[x, y0])
+               +- NestedLoopJoin(joinType=[InnerJoin], where=[(y = x0)], select=[x, y, x0, y0], build=[left])
+                  :- Exchange(distribution=[broadcast])
+                  :  +- LegacyTableSourceScan(table=[[S_CAT, default_database, s, source: [CsvTableSource(read fields: x, y)]]], fields=[x, y])
+                  +- Reused(reference_id=[2])
+
+Job has been submitted with JobID 8294efebe7ef19c453370af7b4e75992
+waiting...
