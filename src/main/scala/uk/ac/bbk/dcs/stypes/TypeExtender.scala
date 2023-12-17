@@ -46,7 +46,7 @@ case class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Vector[Ato
 
 
 
-  private val typesExtended =  buidTypesExtension
+  private val typesExtended =  buildTypesExtension
   val children: List[TypeExtender] = typesExtended._2
   val isValid:Boolean = typesExtended._1 && (children.nonEmpty || variableToBeMapped.isEmpty)
   val types: List[Type] = collectTypes
@@ -70,7 +70,7 @@ case class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Vector[Ato
       val term: Option[Term] = intersection.find(p => !hom.createImageOf(p).equals(ConstantType.EPSILON))
       if (term.isDefined) {
         val canonicalModelIndex = hom.createImageOf(term.get).asInstanceOf[ConstantType].getIdentifier._1
-        val cm: AtomSet = canonicalModels(hom.createImageOf(term.get).asInstanceOf[ConstantType].getIdentifier._1)
+        val cm: AtomSet = canonicalModels(canonicalModelIndex)
         Some(cm, canonicalModelIndex)
       } else None
     } else None
@@ -158,7 +158,7 @@ case class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Vector[Ato
 
   }
 
-  private def buidTypesExtension: (Boolean, List[TypeExtender]) =   {
+  private def buildTypesExtension: (Boolean, List[TypeExtender]) =   {
 
     @tailrec
     def getPossibleConnectedTypesExtensions(atoms: List[Atom], acc: (Boolean,  List[TypeExtender] ) = (false, List()) ) :

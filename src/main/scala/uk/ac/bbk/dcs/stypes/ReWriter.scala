@@ -390,16 +390,23 @@ object ReWriter {
       datalog
     }
     else {
-      ReWriter.logger.debug(s"datalog 1 : $datalog")
+      ReWriter.logger.debug(s"datalog rewrite not optimised: $datalog")
 
-      val removalResult: List[Clause] = removeEmptyClauses(removeDuplicate(datalog))
+      val removeDuplicateResult  =  removeDuplicate(datalog)
+      ReWriter.logger.debug(s"datalog remove duplicate result: $removeDuplicateResult")
 
-      ReWriter.logger.debug(s"datalog removal result : $removalResult")
-      val predicateSubstitutionRes: List[Clause] = predicateSubstitution(removalResult)
+      val removeEmptyClausesResult: List[Clause] = removeEmptyClauses(removeDuplicateResult)
 
-      ReWriter.logger.debug(s"datalog predicateSubstitutionRes : $predicateSubstitutionRes")
+      ReWriter.logger.debug(s"datalog remove empty clauses result: $removeEmptyClausesResult")
+      val predicateSubstitutionRes: List[Clause] = predicateSubstitution(removeEmptyClausesResult)
 
-      equalitySubstitution(predicateSubstitutionRes) ::: additionalRules
+      ReWriter.logger.debug(s"datalog predicate substitution result: $predicateSubstitutionRes")
+
+      var equalitySubstitutionRes = equalitySubstitution(predicateSubstitutionRes) ::: additionalRules
+
+      ReWriter.logger.debug(s"datalog equality substitution result: $equalitySubstitutionRes")
+
+      equalitySubstitutionRes
     }
   }
 
@@ -744,8 +751,13 @@ class ReWriter(ontology: List[Rule]) {
     val types = typeExtender.collectTypes
     //val body = new LinkedListAtomSet
     //val rule :Rule = new DefaultRule()
-    types.map(s => new RuleTemplate(splitter, borderType, s, generatingAtoms, this))
-      .flatMap(ruleTemplate => ruleTemplate :: ruleTemplate.GetAllSubordinateRules)
+    types
+      .map(s =>
+        new RuleTemplate(splitter, borderType, s, generatingAtoms, this)
+      )
+      .flatMap(
+        ruleTemplate => ruleTemplate :: ruleTemplate.GetAllSubordinateRules
+      )
   }
 
   def generateDatalog(rewriting: Seq[RuleTemplate], addAdditionalRules: Boolean = false): List[Clause] =
@@ -758,9 +770,8 @@ class ReWriter(ontology: List[Rule]) {
   def rewrite(decomposedQuery: (TreeDecomposition, List[Variable]), addAdditionalRules: Boolean = false): List[Clause] = {
     val treeDecomposition = decomposedQuery._1
     val answerVariables = decomposedQuery._2
-    val rewriter = new ReWriter(ontology)
-    val rewriting: Seq[RuleTemplate] = rewriter.generateRewriting(Type.getInstance(answerVariables), Splitter(treeDecomposition))
-    val datalog = rewriter.generateDatalog(rewriting, addAdditionalRules)
+    val rewriting: Seq[RuleTemplate] = generateRewriting(Type.getInstance(answerVariables), Splitter(treeDecomposition))
+    val datalog = generateDatalog(rewriting, addAdditionalRules)
     datalog
   }
 }

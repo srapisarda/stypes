@@ -21,10 +21,11 @@ package uk.ac.bbk.dcs.stypes
  */
 
 import java.io.{BufferedWriter, File, FileWriter, PrintWriter}
-
-import fr.lirmm.graphik.graal.api.core.{Predicate, Rule, Term, Variable}
+import fr.lirmm.graphik.graal.api.core.{AtomSet, Predicate, Rule, Term, Variable}
+import fr.lirmm.graphik.graal.core.atomset.graph.DefaultInMemoryGraphAtomSet
 import fr.lirmm.graphik.graal.core.term.DefaultTermFactory
 import fr.lirmm.graphik.graal.core.{DefaultAtom, TreeMapSubstitution}
+import fr.lirmm.graphik.graal.forward_chaining.DefaultChase
 import fr.lirmm.graphik.graal.io.dlp.DlgpParser
 import fr.lirmm.graphik.util.DefaultURI
 import org.scalatest.FunSpec
@@ -122,6 +123,28 @@ class ReWriterTest extends FunSpec {
       //      println(canonicalModels)
     }
 
+    it ("should chase the ontology") {
+      val ontology = ReWriter.getOntology("src/test/resources/thesis/thesis-example-02.dlp")
+      val store: AtomSet = new DefaultInMemoryGraphAtomSet
+      val dataList = List(("S", List("a", "b")), ("S", List("b", "c")), ("R", List("c", "d")))
+
+      val facts = dataList.map(p => {
+        val atom = new DefaultAtom(new Predicate(p, 2))
+        p._2.zipWithIndex.foreach(p => atom.setTerm(p._2, DefaultTermFactory.instance().createConstant(p._1)))
+        atom
+      })
+      val data = new DefaultInMemoryGraphAtomSet
+      facts.foreach(fact => data.add(fact))
+      val chase = new DefaultChase(ontology.asJava, data)
+      chase.execute()
+
+      while (chase.hasNext){
+        val el = chase.next()
+        println(el)
+      }
+      assert(chase != Nil)
+
+    }
 
     it("should get the epsilon ") {
       val t: TreeDecomposition = TreeDecomposition.getHyperTreeDecomposition("src/test/resources/Q7.gml", "src/test/resources/Q7.cq")
@@ -578,6 +601,10 @@ class ReWriterTest extends FunSpec {
       //      val datalog=  ReWriter.generateDatalog(result )
       //     printDatalog(datalog)
       //      assert(datalog.size== 11)
+
+    }
+
+    it("should chase the the ontology") {
 
     }
 
