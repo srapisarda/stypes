@@ -10,7 +10,8 @@ import scala.collection.JavaConverters._
 import scala.language.postfixOps
 
 object NdlFlatten {
-  val logger = Logger(this.getClass)
+  private val logger = Logger(this.getClass)
+
   private def clauseSubstitution(substitutionClauses: List[Clause], clause: Clause) = {
 
     def clauseSubstitutionH(substitutionClause: Clause) = {
@@ -32,37 +33,33 @@ object NdlFlatten {
           newAtom
         })
 
-//
-//        substitutionList.groupBy(_._1).filter(_._2.length > 1).flatten(g => g._2.map( p =>  Equality(p._1, p._2))).toList
-      def getEqualitySubstitution(substitutionList: List[(Term, Term)]) =
+      def getEqualitySubstitutionMap(substitutionList: List[(Term, Term)]) =
         substitutionList
           .groupBy(_._1)
-          .filter(_._2.length > 1)
-          .flatten(g => {
-            g._2.sliding(2)
-              .toList
-              .map(list =>
-                Equality(list.tail.head._2, list.head._2))
-          }).toList
+          .filter(_._2.size > 1)
+          .flatten{case (_, value ) => {
+            val last =value.last._2
+            value
+              .filterNot( _._2 == last)
+              .map( v => (  v._2, last ))
+          }}.toMap
 
-      def applyEqualitySubstitution(equalities: List[Equality], atom: Atom, clause: Clause) = {
-        equalities.foreach(
-          equality => {
-            clause.body.filter(_.contains(equality.t2))
-              .foreach(atom => atom.setTerm(atom.indexOf(equality.t2), equality.t1))
-            if (clause.head.contains(equality.t2)) {
-              clause.head.setTerm(atom.indexOf(equality.t2), equality.t1)
+      def applySubstitution(sigma: Map[Term, Term], atom: Atom, clause: Clause) = {
+        sigma.foreach { case (t1, t2) =>
+            clause.body.filter(_.contains(t1))
+              .foreach(atom => atom.setTerm(atom.indexOf(t1), t2))
+            if (clause.head.contains(t1)) {
+              clause.head.setTerm(atom.indexOf(t1), t2)
             }
-          })
+          }
         clause
       }
 
-      def applyEqualitySubstitutionToBody(equalities: List[Equality], atom: Atom, body: List[Atom]) = {
-        equalities.foreach(
-          equality => {
-            body.filter(_.contains(equality.t2))
-              .foreach(atom => atom.setTerm(atom.indexOf(equality.t2), equality.t1))
-          })
+      def applySubstitutionToList(sigma: Map[Term, Term], atom: Atom, body: List[Atom]) = {
+        sigma.foreach{ case (t2, t1) =>
+            body.filter(_.contains(t2))
+              .foreach(atom => atom.setTerm(atom.indexOf(t2), t1))
+        }
         body
       }
 
@@ -81,11 +78,11 @@ object NdlFlatten {
             logger.debug(s"   substitutionCloseBody: $substitutionCloseBody")
             val newClause = Clause(clauseResult.head, clauseResult.body ::: substitutionCloseBody)
             logger.debug(s"   newClause: $newClause")
-            val equalitySubstitution = getEqualitySubstitution(substitutionList)
-            logger.debug(s"   equalitySubstitution: $equalitySubstitution")
-            val equalitySubstitutionTail = applyEqualitySubstitutionToBody(equalitySubstitution, atom, tail)
+            val sigma = getEqualitySubstitutionMap(substitutionList)
+            logger.debug(s"   sigma: $sigma")
+            val equalitySubstitutionTail = applySubstitutionToList(sigma, atom, tail)
             logger.debug(s"   tail: $equalitySubstitutionTail")
-            val equalitySubstitutionResult = applyEqualitySubstitution(equalitySubstitution, atom, newClause)
+            val equalitySubstitutionResult = applySubstitution(sigma, atom, newClause)
             logger.debug(s"   newResult: $equalitySubstitutionResult")
             traverseClause(equalitySubstitutionTail, equalitySubstitutionResult)
           } else {
