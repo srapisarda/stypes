@@ -1,5 +1,6 @@
 package uk.ac.bbk.dcs.stypes.utils
 
+import com.typesafe.scalalogging.Logger
 import fr.lirmm.graphik.graal.api.core.{Atom, Term}
 import fr.lirmm.graphik.graal.core.DefaultAtom
 import uk.ac.bbk.dcs.stypes.{Clause, Equality, ReWriter}
@@ -9,6 +10,7 @@ import scala.collection.JavaConverters._
 import scala.language.postfixOps
 
 object NdlFlatten {
+  val logger = Logger(this.getClass)
   private def clauseSubstitution(substitutionClauses: List[Clause], clause: Clause) = {
 
     def clauseSubstitutionH(substitutionClause: Clause) = {
@@ -30,6 +32,8 @@ object NdlFlatten {
           newAtom
         })
 
+//
+//        substitutionList.groupBy(_._1).filter(_._2.length > 1).flatten(g => g._2.map( p =>  Equality(p._1, p._2))).toList
       def getEqualitySubstitution(substitutionList: List[(Term, Term)]) =
         substitutionList
           .groupBy(_._1)
@@ -37,7 +41,8 @@ object NdlFlatten {
           .flatten(g => {
             g._2.sliding(2)
               .toList
-              .map(list => Equality(list.tail.head._2, list.head._2))
+              .map(list =>
+                Equality(list.tail.head._2, list.head._2))
           }).toList
 
       def applyEqualitySubstitution(equalities: List[Equality], atom: Atom, clause: Clause) = {
@@ -68,14 +73,27 @@ object NdlFlatten {
 
         case atom :: tail =>
           if (atom.getPredicate == substitutionClause.head.getPredicate) {
+            logger.debug(s"   substitution ")
+            logger.debug(s"   atom: $atom")
             val substitutionList = getSubstitutionList(atom)
+            logger.debug(s"   substitutionList: $substitutionList")
             val substitutionCloseBody = getSubstitutionCloseBody(substitutionList.toMap)
+            logger.debug(s"   substitutionCloseBody: $substitutionCloseBody")
             val newClause = Clause(clauseResult.head, clauseResult.body ::: substitutionCloseBody)
+            logger.debug(s"   newClause: $newClause")
             val equalitySubstitution = getEqualitySubstitution(substitutionList)
-            traverseClause(applyEqualitySubstitutionToBody(equalitySubstitution, atom, tail),
-              applyEqualitySubstitution(equalitySubstitution, atom, newClause))
+            logger.debug(s"   equalitySubstitution: $equalitySubstitution")
+            val equalitySubstitutionTail = applyEqualitySubstitutionToBody(equalitySubstitution, atom, tail)
+            logger.debug(s"   tail: $equalitySubstitutionTail")
+            val equalitySubstitutionResult = applyEqualitySubstitution(equalitySubstitution, atom, newClause)
+            logger.debug(s"   newResult: $equalitySubstitutionResult")
+            traverseClause(equalitySubstitutionTail, equalitySubstitutionResult)
           } else {
-            traverseClause(tail, Clause(clauseResult.head, clauseResult.body :+ new DefaultAtom(atom)))
+            logger.debug(s"   no-substitution ")
+            logger.debug(s"   tail: $tail")
+            val newClauseResult = Clause(clauseResult.head, clauseResult.body :+ new DefaultAtom(atom))
+            logger.debug(s"   newClauseResult: $newClauseResult")
+            traverseClause(tail, newClauseResult )
           }
       }
 
@@ -89,8 +107,10 @@ object NdlFlatten {
   def idbPredicateFlatten(ndl: List[Clause], predicateIdentifier: String): List[Clause] = {
     val iDbPredicates = ndl.groupBy(_.head.getPredicate)
     val idbSubstitutionOption = iDbPredicates.find(_._1.getIdentifier.toString == predicateIdentifier)
+    logger.debug(s"idbSubstitutionOption: $idbSubstitutionOption")
     if (idbSubstitutionOption.nonEmpty) {
       val substitutionClauses = idbSubstitutionOption.get._2
+      logger.debug(s"substitutionClauses: $substitutionClauses")
       ndl.filterNot(_.head.getPredicate.getIdentifier.toString == predicateIdentifier)
         .flatten(clause => {
           if (clause.body.exists(_.getPredicate.getIdentifier.toString == predicateIdentifier)) {

@@ -108,6 +108,27 @@ class NdlUtilsTest extends FunSpec {
     }
   }
 
+  describe("NDL thesis omq stats") {
+    it("should count all the row and IDBs and EDBs") {
+      val files = List("src/test/resources/rewriting/q15-rew.dlp",
+        "src/test/resources/rewriting/q22-rew_test.dlp",
+        "src/test/resources/rewriting/q45-rew_test.dlp")
+
+      val ndlInfos = files.map(filename => {
+        val ndl = ReWriter.getDatalogRewriting(filename = filename)
+        val ndlInfo = NdlUtils.getNldInfo(ndl)
+        assert(ndlInfo.edbSet.size == 4)
+        (filename.split("/").last, ndlInfo)
+      })
+
+      println("omq,numCloses,numIdb,numEdb,avgClauseBodyLength,avgNumIDB,avgNumEDB")
+      ndlInfos.foreach {
+        case (filename, ndlInfo) =>
+          println(s"$filename,${ndlInfo.numCloses},${ndlInfo.numIdb},${ndlInfo.numEdb},${ndlInfo.avgClauseBodyLength},${ndlInfo.avgNumIDB},${ndlInfo.avgNumEDB}")
+      }
+    }
+  }
+
   private def executeDepthTest(fileTest: String, expected: Int): Unit = {
     val folderPathTest = "src/test/resources/rewriting/"
     val ndl = ReWriter.getDatalogRewriting(s"$folderPathTest$fileTest.dlp")
@@ -138,4 +159,6 @@ class NdlUtilsTest extends FunSpec {
     val actual = NdlUtils.getIdbPredicatesDefCount(ndl)
     assert(actual == expected)
   }
+
+
 }
