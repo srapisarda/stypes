@@ -33,12 +33,12 @@ object NdlFlatten {
           newAtom
         })
 
-      def getEqualitySubstitutionMap(substitutionList: List[(Term, Term)]) =
+      def getMGU(substitutionList: List[(Term, Term)]) =
         substitutionList
           .groupBy(_._1)
           .filter(_._2.size > 1)
           .flatten{case (_, value ) => {
-            val last =value.last._2
+            val last = value.last._2
             value
               .filterNot( _._2 == last)
               .map( v => (  v._2, last ))
@@ -73,12 +73,12 @@ object NdlFlatten {
             logger.debug(s"   substitution ")
             logger.debug(s"   atom: $atom")
             val substitutionList = getSubstitutionList(atom)
+            val sigma =  getMGU(substitutionList)
             logger.debug(s"   substitutionList: $substitutionList")
             val substitutionCloseBody = getSubstitutionCloseBody(substitutionList.toMap)
             logger.debug(s"   substitutionCloseBody: $substitutionCloseBody")
             val newClause = Clause(clauseResult.head, clauseResult.body ::: substitutionCloseBody)
             logger.debug(s"   newClause: $newClause")
-            val sigma = getEqualitySubstitutionMap(substitutionList)
             logger.debug(s"   sigma: $sigma")
             val equalitySubstitutionTail = applySubstitutionToList(sigma, atom, tail)
             logger.debug(s"   tail: $equalitySubstitutionTail")
