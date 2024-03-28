@@ -19,21 +19,21 @@ class SqlUtilsTest extends FunSpec {
 
     it("should return a correct list of IDB predicate dependencies for qw01-rew_test.dlp") {
       val ndl = ReWriter.getDatalogRewriting(s"src/test/resources/rewriting/qw01-rew_test.dlp")
-      val spanningTree = SqlUtils.getIdbDependenciesSpanningTree(new Predicate("p1", 2), ndl)
+      val spanningTree = SqlUtils.getIdbTopologicalSorting(new Predicate("p1", 2), ndl)
       val expected = List("p2", "p3", "p1").map(new Predicate(_, 2))
       assert(spanningTree === expected)
     }
 
     it("should return a correct list of IDB predicate dependencies for q15-rew.dlp") {
       val ndl = ReWriter.getDatalogRewriting(s"src/test/resources/rewriting/q15-rew.dlp")
-      val spanningTree = SqlUtils.getIdbDependenciesSpanningTree(new Predicate("p1", 2), ndl)
+      val spanningTree = SqlUtils.getIdbTopologicalSorting(new Predicate("p1", 2), ndl)
       val expected = List("p28", "p43", "p40", "p19", "p3", "p35", "p5", "p7", "p14", "p2", "p1").map(new Predicate(_, 2))
       assert(expected == spanningTree)
     }
 
     it("should return a correct list of IDB predicate dependencies for q22-rew_test.dlp") {
       val ndl = ReWriter.getDatalogRewriting(s"src/test/resources/rewriting/q22-rew_test.dlp")
-      val spanningTree = SqlUtils.getIdbDependenciesSpanningTree(new Predicate("p1", 2), ndl)
+      val spanningTree = SqlUtils.getIdbTopologicalSorting(new Predicate("p1", 2), ndl)
       val expected = List("p12", "p3", "p1").map(new Predicate(_, 2))
       assert(expected == spanningTree)
     }
@@ -132,11 +132,51 @@ class SqlUtilsTest extends FunSpec {
     }
   }
 
+  describe("sql thesis tests") {
+
+    it("should return a statement for thesis q01-rew_test.dlp") {
+      commonAssertions("src/test/resources/rewriting/thesis/q01-rew_test.dlp",
+        new Predicate("p1", 1), useWith = false, List("x"), true, isForThesis = true)
+    }
+
+    it("should return a statement for thesis q01-rew_test.dlp with alias") {
+      commonAssertions("src/test/resources/rewriting/thesis/q01-rew_test.dlp",
+        new Predicate("p1", 1), useWith = true, List("x"), false, isForThesis = true)
+    }
+
+    it("should return a statement for thesis q02-rew_test.dlp") {
+      commonAssertions("src/test/resources/rewriting/thesis/q02-rew_test.dlp",
+        new Predicate("p1", 2), useWith = false, List("x, y"), true, isForThesis = true)
+    }
+
+    //todo fix test
+    ignore("should return a statement for thesis q02-rew_test.dlp with alias") {
+      commonAssertions("src/test/resources/rewriting/thesis/q02-rew_test.dlp",
+        new Predicate("p1", 2), useWith = true, List("x, y"), true, isForThesis = true)
+    }
+
+    it("should return a correct list of IDB predicate dependencies for q15-rew.dlp") {
+      val ndl = ReWriter.getDatalogRewriting(s"src/test/resources/thesis/q15-rew.dlp")
+      val topologicalSorting = SqlUtils.getIdbTopologicalSorting(new Predicate("p1", 2), ndl)
+      val expected = List("p28", "p43", "p40", "p19", "p3", "p35", "p5", "p7", "p14", "p2", "p1").map(new Predicate(_, 2))
+      assert(expected == topologicalSorting)
+    }
+
+    it("should return a correct list of IDB predicate dependencies for q-complexity-test.dlp") {
+      val ndl = ReWriter.getDatalogRewriting(s"src/test/resources/thesis/q-complexity-test.dlp")
+      val topologicalSorting = SqlUtils.getIdbTopologicalSorting(new Predicate("p1", 2), ndl)
+      val expected = List("p10", "p9", "p8", "p7", "p6", "p5",  "p4", "p3", "p2", "p1").map(new Predicate(_, 2))
+      assert(expected == topologicalSorting)
+    }
+
+
+  }
   private def commonAssertions(datalogFileRewriting: String,
                                goalPredicate: Predicate = new Predicate("p1", 2),
                                useWith: Boolean = false,
                                selectAlias: List[String] = Nil,
-                               isLowerCaseArgs:Boolean = false): Unit = {
+                               isLowerCaseArgs:Boolean = false,
+                               isForThesis:Boolean=false): Unit = {
 
     val sUseWith = if (useWith) "-with" else ""
     val sAlias = if (selectAlias.nonEmpty) "-alias" else ""
@@ -147,7 +187,7 @@ class SqlUtilsTest extends FunSpec {
     val stmt = CCJSqlParserUtil.parse(sqlExpected)
 
     val ndl = ReWriter.getDatalogRewriting(datalogFileRewriting)
-    val actual = SqlUtils.ndl2sql(ndl, goalPredicate, getEDBCatalog(isLowerCaseArgs), useWith, selectAlias)
+    val actual = SqlUtils.ndl2sql(ndl, goalPredicate, getEDBCatalog(isLowerCaseArgs, isForThesis), useWith, selectAlias)
     val sqlActual = actual.toString
     println(ndl)
     println("----")
@@ -164,20 +204,23 @@ class SqlUtilsTest extends FunSpec {
     errors.isEmpty
   }
 
-  private def getEDBCatalog(isLowerCase:Boolean= false): EDBCatalog = {
+  private def getEDBCatalog(isLowerCase:Boolean= false, isForThesis:Boolean=false): EDBCatalog = {
     val checkWithLowerCase = (identifier: String) => if (isLowerCase) identifier.toLowerCase else identifier
 
     val tf: TermFactory = DefaultTermFactory.instance
+    val term1 = if (!isForThesis) "X" else "A1"
+    val term2 = if (!isForThesis) "Y" else "A2"
 
-    val x: Term = tf.createVariable(checkWithLowerCase("X"))
-    val y: Term = tf.createVariable(checkWithLowerCase("Y"))
+    val x: Term = tf.createVariable(checkWithLowerCase(term1))
+    val y: Term = tf.createVariable(checkWithLowerCase(term2))
 
     val r: Atom = new DefaultAtom(new Predicate("r", 2), List(x, y).asJava)
     val s: Atom = new DefaultAtom(new Predicate("s", 2), List(x, y).asJava)
+    val t: Atom = new DefaultAtom(new Predicate("t", 2), List(x, y).asJava)
     val a: Atom = new DefaultAtom(new Predicate("a", 1), List(x).asJava)
     val b: Atom = new DefaultAtom(new Predicate("b", 1), List(x).asJava)
 
-    EDBCatalog(Set(a, b, r, s))
+    EDBCatalog(Set(a, b, r, s, t))
   }
 
 }

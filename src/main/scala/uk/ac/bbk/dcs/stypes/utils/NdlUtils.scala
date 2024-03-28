@@ -89,6 +89,33 @@ object NdlUtils {
     getIdbPredicatesDefCountH(ndl).toMap
   }
 
+  case class NdlInfo(idbSet: Set[Predicate], edbSet: Set[Predicate],  numCloses: Int, numIdb: Int,
+                     numEdb: Int, avgClauseBodyLength: Float, avgNumEDB: Float, avgNumIDB: Float){}
+
+  def getNldInfo(ndl: List[Clause]) = {
+
+    def getAvgPredicateOccur(predicates: Set[Predicate]):Float = {
+      val mapCount= ndl.map(clause =>
+        clause.body.count(atom =>
+          predicates.contains(atom.getPredicate)))
+      mapCount.sum / ndl.size.toFloat
+    }
+
+    val numCloses = ndl.size
+    val idbSet = NdlUtils.getIdbPredicates(ndl)
+    val edbSet = NdlUtils.getEdbPredicates(ndl)
+    val numIdb = idbSet.size
+    val numEdb = edbSet.size
+
+    val avgClauseBodyLength = ndl.map(clause => clause.body.size).sum / ndl.size.toFloat
+
+    val avgNumEDB = getAvgPredicateOccur(edbSet)
+    val avgNumIDB = getAvgPredicateOccur(idbSet)
+
+    NdlInfo(idbSet, edbSet, numCloses, numIdb, numEdb, avgClauseBodyLength, avgNumIDB, avgNumEDB)
+
+  }
+
   def main(args: Array[String]): Unit = {
     if (args.isEmpty || args.length < 2) println("Please provide the path to NDL file and option (depth|goal|edb|idb)")
     else {
@@ -98,6 +125,7 @@ object NdlUtils {
         case "goal" => println(getGoalPredicate(ndl))
         case "edb" => println(getEdbPredicates(ndl))
         case "idb" => println(getIdbPredicates(ndl))
+        case "info" => println(getNldInfo(ndl))
         case "idb-def-count" =>
           val filename = args(0).replaceAll("^.*[/]", "")
           println(getIdbPredicatesDefCount(ndl)

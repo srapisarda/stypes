@@ -20,7 +20,7 @@ else
     fi
 
 
-    FILE_TXT=$FILE_PATH"/"$FILE_NAME".txt"
+    FILE_TXT=$FILE_PATH"/"$FILE_NAME".cq"
     FILE_HG=$FILE_PATH"/"$FILE_NAME".hg"
     FILE_HTD=$FILE_PATH"/"$FILE_NAME".htd"
     FILE_GML=$FILE_PATH"/"$FILE_NAME".gml"

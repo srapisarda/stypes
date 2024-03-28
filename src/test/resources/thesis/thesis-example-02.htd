@@ -1,0 +1,3 @@
+NODE 1: [ ?z, ?v ]
+   NODE 2: [ ?z, ?y ]
+      NODE 3: [ ?x, ?y ]

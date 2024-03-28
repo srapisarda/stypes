@@ -1,5 +1,6 @@
 package uk.ac.bbk.dcs.stypes.sql
 
+import com.typesafe.scalalogging.Logger
 import fr.lirmm.graphik.graal.api.core.{Atom, Predicate, Term}
 import net.sf.jsqlparser.expression.Alias
 import net.sf.jsqlparser.expression.operators.relational.EqualsTo
@@ -13,6 +14,7 @@ import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 
 object SqlUtils {
+  val logger = Logger(this.getClass)
   /**
     * use
     * @param args
@@ -40,56 +42,68 @@ object SqlUtils {
     ndl.map(c => Clause(c.head, orderBodyClauseByTerm(minInFront(c.body))))
   }
 
-  def getIdbDependenciesSpanningTree(statPredicate: Predicate,
-                                     ndl: List[Clause],
-                                     optionIDBs: Option[Set[Predicate]] = None): List[Predicate] = {
+  def getIdbTopologicalSorting(statPredicate: Predicate,
+                               ndl: List[Clause],
+                               optionIDBs: Option[Set[Predicate]] = None): List[Predicate] = {
 
     val iDBs = optionIDBs.getOrElse(NdlUtils.getIdbPredicates(ndl))
-    val mapPredicateToIdbPredicateBody = ndl.groupBy(_.head)
+      val mapPredicateToIdbPredicateBody = ndl.groupBy(_.head)
       .map(group => group._1.getPredicate ->
-        group._2.flatten(clause => clause.body.filter(atom => iDBs.contains(atom.getPredicate)).map(_.getPredicate)))
+        group._2.flatten(clause => clause.body.filter(atom => iDBs.contains(atom.getPredicate)).map(_.getPredicate)).distinct)
+
+    logger.debug( mapPredicateToIdbPredicateBody.mkString("\n").replace("[2]", ""))
 
     @tailrec
-    def getIdbDependenciesSpanningTreeH(toVisit: List[Predicate],
+    def getIdbTopologicalSortingH(toVisit: List[Predicate],
                                         visited: Set[Predicate],
                                         acc: List[Predicate]): List[Predicate] =
       toVisit match {
-        case List() => acc
-        case predicate :: tail =>
+        case List() =>
+          logger.debug(s"acc = ${acc.mkString(", ").replace("[2]","")}, toVisit = ${toVisit.mkString(",").replace("[2]","")}, visited = ${visited.mkString(",").replace("[2]","")}")
+          acc
+        case  predicate :: tail =>
+          logger.debug(s"acc = ${acc.mkString(", ").replace("[2]","")}, toVisit = ${toVisit.mkString(",").replace("[2]","")}, visited = ${visited.mkString(",").replace("[2]","")}")
           if (!visited.contains(predicate)) {
             val dependenciesVisited = mapPredicateToIdbPredicateBody(predicate).filter(visited(_))
             val accumulator =
               if (dependenciesVisited.isEmpty) predicate :: acc
               else placePredicateAfterDependencies(acc, predicate, dependenciesVisited.toSet)
-
-            getIdbDependenciesSpanningTreeH(
+            getIdbTopologicalSortingH(
               mapPredicateToIdbPredicateBody(predicate).filterNot(visited(_)) ::: tail,
               visited + predicate,
               accumulator
             )
           } else {
-            getIdbDependenciesSpanningTreeH(tail, visited, acc)
+//            logger.debug(s"acc = ${acc.mkString(", ").replace("[2]","")}, toVisit = ${toVisit.mkString(",").replace("[2]","")}, visited = ${visited.mkString(",").replace("[2]","")}")
+            getIdbTopologicalSortingH(tail, visited, acc)
           }
       }
 
     @tailrec
-    def placePredicateAfterDependencies(visited: List[Predicate],
+    def placePredicateAfterDependencies(topologicalSortedList: List[Predicate],
                                         predicate: Predicate,
                                         dependencies: Set[Predicate],
                                         acc: List[Predicate] = Nil): List[Predicate] =
-      visited match {
-        case Nil => acc.reverse
+      topologicalSortedList match {
+        case Nil =>
+          val ret = acc.reverse
+          logger.debug(s"ppad: predicate: ${predicate}, dependencies: ${dependencies.mkString(",")}, acc: ${ret.mkString(",")}")
+          ret
         case x :: xs =>
+          logger.debug(s"ppad: predicate: ${predicate}, dependencies: ${dependencies.mkString(",")}, acc: ${acc.mkString(",")}")
           if (dependencies.isEmpty) {
+            logger.debug("dependencies.isEmpty")
             placePredicateAfterDependencies(Nil, predicate, dependencies, xs.reverse ::: x :: predicate :: acc)
           } else if (dependencies.contains(x)) {
+            logger.debug(s"dependencies.contains($x)")
             placePredicateAfterDependencies(xs, predicate, dependencies - x, x :: acc)
           } else {
+            logger.debug(s"$x visited")
             placePredicateAfterDependencies(xs, predicate, dependencies, x :: acc)
           }
       }
 
-    getIdbDependenciesSpanningTreeH(mapPredicateToIdbPredicateBody(statPredicate), Set(statPredicate), List(statPredicate))
+    getIdbTopologicalSortingH(mapPredicateToIdbPredicateBody(statPredicate), Set(statPredicate), List(statPredicate))
   }
 
   def minInFront(body: List[Atom]): List[Atom] = {
@@ -340,7 +354,7 @@ object SqlUtils {
     }
 
     def getSelectWith(startPredicate: Predicate, selectAlias: List[String]): Select = {
-      val idbDependencySpanningTreeList = getIdbDependenciesSpanningTree(startPredicate, ndlOrdered)
+      val idbDependencySpanningTreeList = getIdbTopologicalSorting(startPredicate, ndlOrdered)
 
       val withItems: List[WithItem] = idbDependencySpanningTreeList.map(predicate => {
         val withItem = new WithItem()

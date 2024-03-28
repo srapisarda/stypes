@@ -32,17 +32,17 @@ import fr.lirmm.graphik.graal.api.core.Term
   * on 28/04/2017.
   */
 case class Splitter(root: TreeDecomposition) {
-  val separator: TreeDecomposition = root.getSeparator
+  val splittingBag: TreeDecomposition = root.getSeparator
   val children: List[Splitter] = {
-    val directChildren = separator.getChildes.map(Splitter)
-    if (separator != root) {
-      val rootGeneratedChild: TreeDecomposition = root.remove(separator)
+    val directChildren = splittingBag.getChildes.map(Splitter)
+    if (splittingBag != root) {
+      val rootGeneratedChild: TreeDecomposition = root.remove(splittingBag)
       Splitter(rootGeneratedChild) :: directChildren
     }
     else directChildren
   }
 
-  def getSplittingVertex: Bag = separator.getRoot
+  def getSplittingVertex: Bag = splittingBag.getRoot
 
   override def toString: String = {
     s"(root: $root, children: $children)"

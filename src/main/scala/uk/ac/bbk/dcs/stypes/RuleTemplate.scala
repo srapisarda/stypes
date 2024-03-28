@@ -49,7 +49,7 @@ class RuleTemplate (splitter: Splitter, borderType:Type,  splittingType:Type, ge
     reWriter.makeAtoms( splitter.getSplittingVertex , splittingType) ::: splitter.children.map(generateChildPredicate)
 
 
-  private def createDependentType (newSplitter:Splitter, borderType:Type, splittingTyper:Type):Type = {
+  private def createDependentType (newSplitter:Splitter, borderType:Type, splittingType:Type):Type = {
     val typeUnion = borderType.union(splittingType)
 
     val borderTerms = typeUnion.getDomain.intersect( newSplitter.getAllTerms )
