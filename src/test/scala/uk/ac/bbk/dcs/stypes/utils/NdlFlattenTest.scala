@@ -59,12 +59,21 @@ import uk.ac.bbk.dcs.stypes.ReWriter
       executeTest("example-rew-q15-p3", "p3")
     }
 
+
+
+  }
+
+  describe("IDB thesis flatten test") {
     it("should substitute p15(x0,y2) in example-rew-thesis-01-p15") {
       executeTest("example-rew-thesis-01-p15", "p15")
     }
 
     it("should substitute p14(x7,y5) in example-rew-thesis-01-p14") {
       executeTest("example-rew-thesis-01-p14", "p14")
+    }
+
+    it("should substitute p14(x7,y5) in example-rew-thesis-01-p14-p15.dlp") {
+      executeTest("example-rew-thesis-01-p14-p15", "p15")
     }
 
   }

@@ -218,10 +218,10 @@ object ReWriter {
           visitRewriting(xs, (res._1 :: acc._1, res._2, res._3))
       }
 
-    def removeEmptyClauses(datalog: List[Clause]): List[Clause] = {
+    def removeEmptyClauses(ndl: List[Clause]): List[Clause] = {
 
-      def removalHelper(datalog: List[Clause]): (List[Clause], Boolean) = {
-        val defined = datalog.map(_.head.getPredicate).toSet
+      def removalHelper(clauses: List[Clause]): (List[Clause], Boolean) = {
+        val defined = clauses.map(_.head.getPredicate).toSet
 
         def remove(l: List[Atom]): Boolean = l match {
           case List() => false
@@ -233,22 +233,18 @@ object ReWriter {
           }
         }
 
-        val ret = datalog.
-          filter(rule => !remove(rule.body))
+        val ret = clauses.filter(rule => !remove(rule.body))
+        val hasRemoved = ret.lengthCompare(clauses.size) != 0
 
-        (ret, ret.lengthCompare(datalog.size) != 0)
+        (ret, hasRemoved)
       }
 
-      val removalOutcome = removalHelper(datalog)
+      var removalResult = removalHelper(ndl)
+      while (removalResult._2) {
+        removalResult = removalHelper(removalResult._1)
+      }
 
-      val iterate = removalOutcome._2
-
-      val removalResult = removalOutcome._1
-
-      if (iterate)
-        removalHelper(removalResult)._1
-      else
-        removalResult
+      removalResult._1
     }
 
     def removeDuplicate(datalog: List[Clause]): List[Clause] = datalog.toSet.toList
@@ -390,24 +386,34 @@ object ReWriter {
       datalog
     }
     else {
-      ReWriter.logger.debug(s"datalog rewrite not optimised: $datalog")
+      ReWriter.logger.debug(s"\ndatalog rewrite not optimised:${formatNdlClose(datalog)}")
 
       val removeDuplicateResult  =  removeDuplicate(datalog)
-      ReWriter.logger.debug(s"datalog remove duplicate result: $removeDuplicateResult")
+      ReWriter.logger.debug(s"\ndatalog remove duplicate result:${formatNdlClose(removeDuplicateResult)}")
 
       val removeEmptyClausesResult: List[Clause] = removeEmptyClauses(removeDuplicateResult)
 
-      ReWriter.logger.debug(s"datalog remove empty clauses result: $removeEmptyClausesResult")
+      ReWriter.logger.debug(s"\ndatalog remove empty clauses result:${formatNdlClose(removeEmptyClausesResult)}")
       val predicateSubstitutionRes: List[Clause] = predicateSubstitution(removeEmptyClausesResult)
 
-      ReWriter.logger.debug(s"datalog predicate substitution result: $predicateSubstitutionRes")
+      ReWriter.logger.debug(s"\ndatalog predicate substitution result:${formatNdlClose(predicateSubstitutionRes)}")
 
-      var equalitySubstitutionRes = equalitySubstitution(predicateSubstitutionRes) ::: additionalRules
+      val equalitySubstitutionRes = equalitySubstitution(predicateSubstitutionRes) ::: additionalRules
 
-      ReWriter.logger.debug(s"datalog equality substitution result: $equalitySubstitutionRes")
+      ReWriter.logger.debug(s"\ndatalog equality substitution result:${formatNdlClose(equalitySubstitutionRes)}")
 
       equalitySubstitutionRes
+
+//      val  removeEmptyClausesResult2 =  removeEmptyClauses(equalitySubstitutionRes)
+//
+//      ReWriter.logger.debug(s"\ndatalog remove empty clauses result:${formatNdlClose(removeEmptyClausesResult2)}")
+//
+//      removeEmptyClausesResult2
     }
+  }
+
+  private def formatNdlClose(ndl: => List[Clause]): String = {
+    s"\n${ndl.sortBy(_.head.getPredicate).mkString("\n")}\n"
   }
 
   def generateFlinkScript(datalog: List[Clause], dataSources: Map[String, String]): String = {
