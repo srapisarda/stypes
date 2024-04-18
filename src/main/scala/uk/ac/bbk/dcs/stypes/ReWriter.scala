@@ -404,11 +404,6 @@ object ReWriter {
 
       equalitySubstitutionRes
 
-//      val  removeEmptyClausesResult2 =  removeEmptyClauses(equalitySubstitutionRes)
-//
-//      ReWriter.logger.debug(s"\ndatalog remove empty clauses result:${formatNdlClose(removeEmptyClausesResult2)}")
-//
-//      removeEmptyClausesResult2
     }
   }
 
