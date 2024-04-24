@@ -71,8 +71,11 @@ class RuleTemplate (splitter: Splitter, borderType:Type,  splittingType:Type, ge
   
   def GetAllSubordinateRules:List[RuleTemplate] = splitter.children.flatMap(c =>
     reWriter.generateRewriting(createDependentType(c,borderType,splittingType), c))
-  
-  
+
+
+  override def toString: String = {
+     s"splitter: ${splitter.splittingBag.getRoot}, borderType: ${borderType}, splittingType: ${splittingType}"
+  }
   
 }
 

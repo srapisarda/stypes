@@ -34,7 +34,7 @@ import fr.lirmm.graphik.graal.api.core.Term
 case class Splitter(root: TreeDecomposition) {
   val splittingBag: TreeDecomposition = root.getSeparator
   val children: List[Splitter] = {
-    val directChildren = splittingBag.getChildes.map(Splitter)
+    val directChildren = splittingBag.getChildren.map(Splitter)
     if (splittingBag != root) {
       val rootGeneratedChild: TreeDecomposition = root.remove(splittingBag)
       Splitter(rootGeneratedChild) :: directChildren
@@ -45,9 +45,12 @@ case class Splitter(root: TreeDecomposition) {
   def getSplittingVertex: Bag = splittingBag.getRoot
 
   override def toString: String = {
-    s"(root: $root, children: $children)"
+    s"(splittingBag: $splittingBag, children: $children)"
   }
 
   def getAllTerms : Set[Term] = root.getAllTerms
 
+  def flattenLog(splitter: Splitter = this, parent:Option[TreeDecomposition] = None  ): List[String] = {
+      List(s"splitterBag: ${splitter.splittingBag.getRoot.atoms}, children: ${splitter.children.size}, parent: ${if (parent.isDefined) parent.get.getRoot.atoms else "" }" ) ::: splitter.children.flatMap(flattenLog(_, Some(splitter.splittingBag)))
+  }
 }

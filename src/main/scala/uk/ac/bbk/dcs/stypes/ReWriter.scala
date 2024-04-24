@@ -137,6 +137,12 @@ object ReWriter {
 
   def generateDatalog(rewriting: Seq[RuleTemplate], additionalRules: List[Clause] = List()): List[Clause] = {
 
+    logger.debug(logRewriting(rewriting) )
+
+    def logRewriting( rewriting: Seq[RuleTemplate]): String = {
+      rewriting.zipWithIndex.map { case (ruleTemplate, idx) => s"$idx, $ruleTemplate"}.mkString("\n")
+    }
+
     def getAtomsFromRewrite(ruleTemplate: RuleTemplate, map: Map[Int, Int], currentIndex: Int): (List[Clause], Map[Int, Int], Int) = {
 
       def transformAtom(atom: Atom, map: Map[Int, Int], currentIndex: Int): (Atom, Map[Int, Int], Int) =
@@ -386,7 +392,7 @@ object ReWriter {
       datalog
     }
     else {
-      ReWriter.logger.debug(s"\ndatalog rewrite not optimised:${formatNdlClose(datalog)}")
+      ReWriter.logger.debug(s"\ndatalog rewrite not optimised:${formatNdlClose(datalog, false)}")
 
       val removeDuplicateResult  =  removeDuplicate(datalog)
       ReWriter.logger.debug(s"\ndatalog remove duplicate result:${formatNdlClose(removeDuplicateResult)}")
@@ -407,8 +413,11 @@ object ReWriter {
     }
   }
 
-  private def formatNdlClose(ndl: => List[Clause]): String = {
-    s"\n${ndl.sortBy(_.head.getPredicate).mkString("\n")}\n"
+  private def formatNdlClose(ndl: => List[Clause], sort: Boolean = true): String = {
+    if (sort)
+      s"\n${ndl.sortBy(_.head.getPredicate).mkString("\n")}\n"
+    else
+      s"\n${ndl.mkString("\n")}\n"
   }
 
   def generateFlinkScript(datalog: List[Clause], dataSources: Map[String, String]): String = {
@@ -612,7 +621,6 @@ object ReWriter {
 }
 
 class ReWriter(ontology: List[Rule]) {
-
   val generatingAtoms: List[Atom] = ReWriter.makeGeneratingAtoms(ontology)
   ReWriter.logger.debug(s"generating  canonical models")
   val t1: Long = System.nanoTime()

@@ -488,9 +488,16 @@ class ReWriterTest extends FunSpec {
         TreeDecomposition.getTreeDecomposition(s"$pathToLine/gml/q37.gml", s"$pathToLine/queries/q37.cq")
 
       val answerVariables = result._2
+      val splitter = Splitter(result._1)
+
+      println("Splitter ----------")
+      println(println(splitter.flattenLog().mkString("\n")))
+      println("")
+      
       val datalog = ReWriter.generateDatalog(
         new ReWriter(ontLines)
-          .generateRewriting(Type.getInstance(answerVariables), Splitter(result._1)))
+          .generateRewriting(Type.getInstance(answerVariables), splitter))
+
       printDatalog(datalog.sortBy(p => p.head.getPredicate.toString))
       assert(datalog.lengthCompare(10) == 0)
     }
