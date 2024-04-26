@@ -4,8 +4,9 @@ WORKING_DIR=$1
 JAR_PATH="/Users/salvo.rapisarda/development/uni/stypes/target/scala-2.12/stypes-assembly-1.1.1.jar"
 JAVA_CLASS="uk.ac.bbk.dcs.stypes.utils.NdlUtils"
 
-
 FOLDERS=$(find "$WORKING_DIR"/p* -type d)
+
+echo "filename,idbSet,edbSet,numCloses,numIdb,numEdb,avgClauseBodyLength,avgNumIDB,avgNumEDB"
 
 for FOLD in ${FOLDERS[@]}
 do

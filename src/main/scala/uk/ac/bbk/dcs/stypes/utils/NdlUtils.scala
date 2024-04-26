@@ -90,7 +90,12 @@ object NdlUtils {
   }
 
   case class NdlInfo(idbSet: Set[Predicate], edbSet: Set[Predicate],  numCloses: Int, numIdb: Int,
-                     numEdb: Int, avgClauseBodyLength: Float, avgNumEDB: Float, avgNumIDB: Float){}
+                     numEdb: Int, avgClauseBodyLength: Float, avgNumEDB: Float, avgNumIDB: Float){
+    def toCSVLine(): String = {
+      s"${idbSet.mkString("|")}," +
+        s"${edbSet.mkString("|")},${numCloses},${numIdb},${numEdb},${avgClauseBodyLength},${avgNumIDB},${avgNumEDB}"
+    }
+  }
 
   def getNldInfo(ndl: List[Clause]) = {
 
@@ -125,7 +130,7 @@ object NdlUtils {
         case "goal" => println(getGoalPredicate(ndl))
         case "edb" => println(getEdbPredicates(ndl))
         case "idb" => println(getIdbPredicates(ndl))
-        case "info" => println(getNldInfo(ndl))
+        case "info" => println(getNldInfo(ndl).toCSVLine())
         case "idb-def-count" =>
           val filename = args(0).replaceAll("^.*[/]", "")
           println(getIdbPredicatesDefCount(ndl)
