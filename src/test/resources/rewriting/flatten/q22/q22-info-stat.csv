@@ -1,0 +1,2 @@
+filename,idbSet,edbSet,numCloses,numIdb,numEdb,avgClauseBodyLength,avgNumIDB,avgNumEDB,unions,joins,clauses
+q22-rew.dlp,p1[2]|p3[2]|p12[2],r[2]|a[1]|s[2]|b[1],5,3,4,2.6,2.2,0.4,2,8,5

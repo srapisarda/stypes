@@ -65,7 +65,7 @@ import uk.ac.bbk.dcs.stypes.ReWriter
 
   describe("IDB thesis flatten test") {
     it("should substitute p15(x0,y2) in example-rew-thesis-01-p15") {
-      executeTest("example-rew-thesis-01-p15", "p15")
+      executeTest("example-rew-thesis-01-p15", "p15", true, true)
     }
 
     it("should substitute p14(x7,y5) in example-rew-thesis-01-p14") {
@@ -73,16 +73,26 @@ import uk.ac.bbk.dcs.stypes.ReWriter
     }
 
     it("should substitute p14(x7,y5) in example-rew-thesis-01-p14-p15.dlp") {
-      executeTest("example-rew-thesis-01-p14-p15", "p15")
+      executeTest("example-rew-thesis-01-p14-p15", "p15", true, true)
+    }
+
+    it("should substitute p2 in thesis-example-flattening-multi-occurrence.dlp") {
+      executeTest("thesis-example-flattening-multi-occurrence", "p2", true, true)
+    }
+
+    it("should substitute p2 in thesis-example-flattening-y-occurrence.dlp") {
+      executeTest("thesis-example-flattening-y-occurrence", "p2", true, true)
     }
 
   }
 
-  private def executeTest(fileTest:String, predicateIdentifier: String, printLog:Boolean = false) = {
+  private def executeTest(fileTest:String, predicateIdentifier: String, printLog:Boolean = false, two:Boolean= false) = {
     val folderPathTest = "src/test/resources/rewriting/substitution/"
     val ndlExpected = ReWriter.getDatalogRewriting(s"$folderPathTest$fileTest-res.dlp")
     val ndl = ReWriter.getDatalogRewriting(s"$folderPathTest$fileTest.dlp")
-    val actual = NdlFlatten.idbPredicateFlatten(ndl, predicateIdentifier)
+    val actual =
+      if (two) NdlFlatten.idbPredicateFlatten2(ndl, predicateIdentifier)
+      else  NdlFlatten.idbPredicateFlatten(ndl, predicateIdentifier)
 
     if ( printLog ) {
       println(s"begin substituting file test: $fileTest")

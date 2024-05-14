@@ -90,10 +90,10 @@ object NdlUtils {
   }
 
   case class NdlInfo(idbSet: Set[Predicate], edbSet: Set[Predicate],  numCloses: Int, numIdb: Int,
-                     numEdb: Int, avgClauseBodyLength: Float, avgNumEDB: Float, avgNumIDB: Float){
+                     numEdb: Int, avgClauseBodyLength: Float, avgNumEDB: Float, avgNumIDB: Float, unions: Int){
     def toCSVLine(): String = {
       s"${idbSet.mkString("|")}," +
-        s"${edbSet.mkString("|")},${numCloses},${numIdb},${numEdb},${avgClauseBodyLength},${avgNumIDB},${avgNumEDB}"
+        s"${edbSet.mkString("|")},${numCloses},${numIdb},${numEdb},${avgClauseBodyLength},${avgNumIDB},${avgNumEDB},${unions}"
     }
   }
 
@@ -116,8 +116,8 @@ object NdlUtils {
 
     val avgNumEDB = getAvgPredicateOccur(edbSet)
     val avgNumIDB = getAvgPredicateOccur(idbSet)
-
-    NdlInfo(idbSet, edbSet, numCloses, numIdb, numEdb, avgClauseBodyLength, avgNumIDB, avgNumEDB)
+    val unions = ndl.groupBy(_.head).map(_._2.size-1).sum
+    NdlInfo(idbSet, edbSet, numCloses, numIdb, numEdb, avgClauseBodyLength, avgNumIDB, avgNumEDB, unions)
 
   }
 

@@ -601,14 +601,7 @@ object ReWriter {
     val clauses = dlgpParser.asScala.toList
     clauses.map {
       case rule: Rule =>
-        val head: Atom = {
-          val atom = rule.getHead.asScala.head
-          if (atom.getTerms.size == 1 &&
-            (atom.getTerm(0).getType.equals(Term.Type.LITERAL) ||
-              atom.getTerm(0).getType.equals(Term.Type.CONSTANT)))
-            new DefaultAtom(new Predicate(atom.getPredicate.getIdentifier.toString, 0))
-          else atom
-        }
+        val head: Atom = rule.getHead.asScala.head
         val body: List[Atom] = rule.getBody.asScala.toList
         Clause(head, body)
     }

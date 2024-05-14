@@ -60,6 +60,11 @@ case class Clause(head: Atom, body: List[Atom]) extends DatalogRule {
 }
 
 
+case class SplitClause(head: Atom, processedBody: List[Atom], unprocessedBody: List[Atom]) {
+  def toClause = Clause(head, processedBody.distinct)
+}
+
+
 trait BinaryOperator {
   def t1: Any
 
