@@ -137,10 +137,10 @@ object ReWriter {
 
   def generateDatalog(rewriting: Seq[RuleTemplate], additionalRules: List[Clause] = List()): List[Clause] = {
 
-    logger.debug(logRewriting(rewriting) )
+    logger.debug(logRewriting(rewriting))
 
-    def logRewriting( rewriting: Seq[RuleTemplate]): String = {
-      rewriting.zipWithIndex.map { case (ruleTemplate, idx) => s"$idx, $ruleTemplate"}.mkString("\n")
+    def logRewriting(rewriting: Seq[RuleTemplate]): String = {
+      rewriting.zipWithIndex.map { case (ruleTemplate, idx) => s"$idx, $ruleTemplate" }.mkString("\n")
     }
 
     def getAtomsFromRewrite(ruleTemplate: RuleTemplate, map: Map[Int, Int], currentIndex: Int): (List[Clause], Map[Int, Int], Int) = {
@@ -192,22 +192,28 @@ object ReWriter {
     def OpenUpBrackets(body: List[Any], acc: List[List[Atom]] = List()): List[List[Atom]] = {
       body match {
         case List() => List()
-        case head :: tail => head match {
-          case x: Atom =>
-            if (tail.isEmpty) List(List(x))
-            else OpenUpBrackets(tail).map(a => x :: a)
-          case x: Seq[Any] =>
-            x.head match {
-              case y: Seq[Any] =>
-                y.head match {
-                  case _@(_: Term, _: Term) =>
-                    if (tail.isEmpty)
-                      x.toList.map(coe => EqualityAtomConjunction(coe.asInstanceOf[Seq[(Term, Term)]].toList))
-                    else
-                      cartesianProduct(x.asInstanceOf[Seq[Seq[(Term, Term)]]], OpenUpBrackets(tail))
-                }
-            }
-        }
+        case head :: tail =>
+          head match {
+            case Nil =>
+              logger.debug("Empty list in OpenUpBrackets")
+              List()
+            case x: Atom =>
+              if (tail.isEmpty) List(List(x))
+              else OpenUpBrackets(tail).map(a => x :: a)
+            case x: Seq[Any] =>
+              x.head match {
+                //              case Nil =>
+                //                 logger.info("Empty list in OpenUpBrackets")
+                case y: Seq[Any] =>
+                  y.head match {
+                    case _@(_: Term, _: Term) =>
+                      if (tail.isEmpty)
+                        x.toList.map(coe => EqualityAtomConjunction(coe.asInstanceOf[Seq[(Term, Term)]].toList))
+                      else
+                        cartesianProduct(x.asInstanceOf[Seq[Seq[(Term, Term)]]], OpenUpBrackets(tail))
+                  }
+              }
+          }
       }
     }
 
@@ -394,7 +400,7 @@ object ReWriter {
     else {
       ReWriter.logger.debug(s"\ndatalog rewrite not optimised:${formatNdlClose(datalog, false)}")
 
-      val removeDuplicateResult  =  removeDuplicate(datalog)
+      val removeDuplicateResult = removeDuplicate(datalog)
       ReWriter.logger.debug(s"\ndatalog remove duplicate result:${formatNdlClose(removeDuplicateResult)}")
 
       val removeEmptyClausesResult: List[Clause] = removeEmptyClauses(removeDuplicateResult)

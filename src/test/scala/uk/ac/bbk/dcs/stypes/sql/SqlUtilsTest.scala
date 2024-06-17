@@ -107,6 +107,11 @@ class SqlUtilsTest extends FunSpec {
         new Predicate("p1", 2), useWith = true)
     }
 
+    it("should return a statement for q15-rew-n_test.dlp using with") {
+      commonAssertions("src/test/resources/rewriting/q15-rew-n.dlp",
+        new Predicate("p1", 2), useWith = true, List("x", "y"), true, isForThesis = true)
+    }
+
     it("should return a statement for q22-rew_test.dlp") {
       commonAssertions("src/test/resources/rewriting/q22-rew_test.dlp")
     }
