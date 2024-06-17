@@ -183,10 +183,11 @@ class TreeDecomposition {
     CentroidDecomposition.getCentroid(this)
   }
 
+  @deprecated
   def  getSeparator : TreeDecomposition =
     getSplitter(this, this.getSize)
 
-  @tailrec
+  @deprecated @tailrec
   private def getSplitter(t: TreeDecomposition, rootSize: Int) : TreeDecomposition = {
 
     @tailrec

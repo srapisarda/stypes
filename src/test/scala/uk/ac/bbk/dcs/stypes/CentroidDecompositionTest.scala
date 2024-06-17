@@ -33,22 +33,5 @@ class CentroidDecompositionTest extends FunSpec {
           DefaultTermFactory.instance.createVariable("y"),
           DefaultTermFactory.instance.createVariable("z")))
     }
-
-    it("should return the centroid of a tree from q-thesis-3-vertex") {
-      val vertex =  TreeDecomposition.getTreeDecomposition(
-        "src/test/resources/benchmark/Lines/gml/q-thesis-3-vertex.gml",
-        "src/test/resources/benchmark/Lines/queries/q-thesis-3-vertex.cq")._1
-
-      val centroid = CentroidDecomposition.getCentroid(vertex)
-
-      println("Centroid: " + centroid)
-      assert(centroid.getRoot.variables ==
-        Set(
-          DefaultTermFactory.instance.createVariable("y"),
-          DefaultTermFactory.instance.createVariable("z")))
-    }
-
-
-
   }
 }

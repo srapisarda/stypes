@@ -47,7 +47,7 @@ class TreeDecompositionTest extends FunSpec {
       Assert.assertEquals(2, t.getChildren.size)
       Assert.assertEquals(7, t.getSize)
       //      // assert splitter atoms's terms
-      val separator: TreeDecomposition = t.getSeparator
+      val separator: TreeDecomposition = t.getCentroid
       separator.getRoot.variables.foreach(term =>
         assert(Set("X3", "X4").contains(term.getIdentifier.asInstanceOf[String])))
 

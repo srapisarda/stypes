@@ -39,6 +39,7 @@ object NdlFlatten {
     0 until z1.getTerms.size() map (i => (z1.getTerm(i), y.getTerm(i))) toList
   }
 
+  @tailrec
   private def getMGUForGroup(sigma: Map[Term, Term], list: List[(Term, Term)], yk: Term): Map[Term, Term] = list match {
     case List() => sigma
     case (_, y) :: tail => getMGUForGroup(sigma + (y -> yk), tail, yk)
@@ -69,6 +70,7 @@ object NdlFlatten {
 
     val predicateToSubstitute = xi.head.head.getPredicate.getIdentifier
 
+    @tailrec
     def getSubstitutionsH(F: List[SplitClause], index: Int): List[SplitClause] = {
       if (F.isEmpty || F.head.unprocessedBody.isEmpty) {
         F
@@ -124,12 +126,11 @@ object NdlFlatten {
           .groupBy(_._1)
           .filter(_._2.size > 1)
           .flatten {
-            case (_, value) => {
+            case (_, value) =>
               val last = value.last._2
               value
                 .filterNot(_._2 == last)
                 .map(v => (v._2, last))
-            }
           }.toMap
 
       def applySubstitution(sigma: Map[Term, Term], atom: Atom, clause: Clause) = {
@@ -144,7 +145,7 @@ object NdlFlatten {
         clause
       }
 
-      def applySubstitutionToList(sigma: Map[Term, Term], atom: Atom, body: List[Atom]) = {
+      def applySubstitutionToList(sigma: Map[Term, Term], body: List[Atom]) = {
         sigma.foreach {
           case (t2, t1) =>
             body.filter(_.contains(t2))
@@ -170,7 +171,7 @@ object NdlFlatten {
             val newClause = Clause(clauseResult.head, clauseResult.body ::: substitutionCloseBody)
             logger.debug(s"   newClause: $newClause")
             logger.debug(s"   sigma: $sigma")
-            val equalitySubstitutionTail = applySubstitutionToList(sigma, atom, tail)
+            val equalitySubstitutionTail = applySubstitutionToList(sigma, tail)
             logger.debug(s"   tail: $equalitySubstitutionTail")
             val equalitySubstitutionResult = applySubstitution(sigma, atom, newClause)
             logger.debug(s"   newResult: $equalitySubstitutionResult")
@@ -191,7 +192,7 @@ object NdlFlatten {
     substitutionClauses.map(clauseSubstitutionH)
   }
 
-  def idbPredicateFlatten2(ndl: List[Clause], predicateIdentifier: String): List[Clause] = {
+  def idbPredicateFlatten(ndl: List[Clause], predicateIdentifier: String): List[Clause] = {
     val iDbPredicates = ndl.groupBy(_.head.getPredicate)
     val idbSubstitutionOption = iDbPredicates.find(_._1.getIdentifier.toString == predicateIdentifier)
     logger.debug(s"idbSubstitutionOption: $idbSubstitutionOption")
@@ -212,7 +213,8 @@ object NdlFlatten {
     }
   }
 
-  def idbPredicateFlatten(ndl: List[Clause], predicateIdentifier: String): List[Clause] = {
+  @deprecated
+  def idbPredicateFlattenOld(ndl: List[Clause], predicateIdentifier: String): List[Clause] = {
     val iDbPredicates = ndl.groupBy(_.head.getPredicate)
     val idbSubstitutionOption = iDbPredicates.find(_._1.getIdentifier.toString == predicateIdentifier)
     logger.debug(s"idbSubstitutionOption: $idbSubstitutionOption")
