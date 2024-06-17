@@ -24,6 +24,7 @@ import com.tinkerpop.blueprints.Direction.{IN, OUT}
 import com.tinkerpop.blueprints.impls.tg.TinkerGraph
 import com.tinkerpop.blueprints.util.io.gml.GMLReader
 import com.tinkerpop.blueprints.{Edge, Graph, Vertex}
+import com.typesafe.scalalogging.Logger
 import fr.lirmm.graphik.graal.api.core._
 import fr.lirmm.graphik.graal.api.factory.TermFactory
 import fr.lirmm.graphik.graal.core.DefaultAtom
@@ -44,13 +45,13 @@ import scala.util.matching.Regex
   * on 30/03/2017.
   */
 class TreeDecomposition {
-
+  private val logger = Logger(this.getClass)
   private var mapCqAtoms: Map[Predicate, Atom] = _
   private var root: Bag = _
   private var children: List[TreeDecomposition] = _
   private var cqAtoms: Set[Atom] = _
 
-  def this(cqAtoms: Set[Atom], graph: Graph, v: Vertex, mode: Boolean = false) {
+  def this(cqAtoms: Set[Atom], graph: Graph, v: Vertex, mode: Boolean = false, edgesVisited: Set[Edge]= Set()) {
     this()
 
     // checks preconditions
@@ -66,14 +67,25 @@ class TreeDecomposition {
 
     root =  if (mode) getBagFromVertexTD(vertex) else getBagFromVertexHTD(vertex)
 
+    val edgesOut = vertex.getEdges(OUT).asScala filterNot edgesVisited.contains
+    val edgesIn = vertex.getEdges(IN).asScala filterNot edgesVisited.contains
+    logger.debug(s"tree-decomposition-${this.hashCode()} creating, vertex: $vertex, edges out: $edgesOut, edges in: $edgesIn ")
 
-    // TODO:  review this
-    this.children = vertex.getEdges(OUT)
-      .asScala.map(edge =>
-          new TreeDecomposition(cqAtoms,
-                getSubGraph(graph, vertex, edge),
-                edge.getVertex(IN), mode))
+    val childrenOut = edgesOut.map(edge =>
+      new TreeDecomposition(cqAtoms,
+        getSubGraph(graph, vertex, edge),
+        edge.getVertex(IN), mode, edgesVisited ++ edgesOut ++ edgesIn))
       .toList
+
+    val childrenIn = edgesIn.map(edge =>
+      new TreeDecomposition(cqAtoms,
+        getSubGraph(graph, vertex, edge),
+        edge.getVertex(OUT), mode, edgesVisited ++ edgesOut ++ edgesIn))
+      .toList
+
+    this.children = childrenOut ::: childrenIn
+
+    logger.debug(s"tree-decomposition-${this.hashCode()} created, root: $root, children-size: ${children.size}")
 
   }
 
@@ -87,17 +99,19 @@ class TreeDecomposition {
 
   def getSubGraph(graph: Graph, vertex: Vertex, edge: Edge): TinkerGraph = {
     val g = new TinkerGraph
-    graph.getVertices.asScala.foreach(
-      v => {
-        if (!vertex.equals(v) ) {
-          val vertex1 = g.addVertex(v.getId)
-          vertex1.setProperty("label", v.getProperty("label"))
-        }
+    graph.getEdges.asScala.foreach((e: Edge) => {
+      if (!edge.equals( e)) {
+        g.addEdge(e.getId, e.getVertex(OUT), e.getVertex(IN), e.getLabel)
+      }
     })
 
-    graph.getEdges.asScala.foreach((e: Edge) => {
-      if (!edge.equals( e))
-        g.addEdge(e.getId, e.getVertex(OUT), e.getVertex(IN), e.getLabel)
+    val vertices = g.getEdges.asScala
+      .flatMap(edge => List(edge.getVertex(OUT),edge.getVertex(IN))).toSet + vertex
+
+    vertices.foreach(
+      v => {
+          val vertex1 = g.addVertex(v.getId)
+          vertex1.setProperty("label", v.getProperty("label"))
     })
 
     g
@@ -130,7 +144,7 @@ class TreeDecomposition {
     if (predicateAndVariables.length != 2) throw new RuntimeException("Incorrect vertex label.")
     val variables: Set[String] = getSpittedItems(predicateAndVariables(1)).map(_.replace("?", "")).toSet
     val atoms: Set[Atom] =
-      cqAtoms.filter(atom =>{
+      cqAtoms.filter(atom => {
         val atomVariables =  atom.getTerms.asScala.toList.distinct.sorted.map(_.getIdentifier.toString).toSet
         variables.intersect(atomVariables) == atomVariables  })
 
@@ -163,33 +177,41 @@ class TreeDecomposition {
 
   def getRoot: Bag = root
 
-  def getChildes: List[TreeDecomposition] = children
+  def getChildren: List[TreeDecomposition] = children
 
-  def  getSeparator : TreeDecomposition = getSplitter(this, this.getSize)
+  def getCentroid: TreeDecomposition = {
+    CentroidDecomposition.getCentroid(this)
+  }
 
-  @tailrec
+  @deprecated
+  def  getSeparator : TreeDecomposition =
+    getSplitter(this, this.getSize)
+
+  @deprecated @tailrec
   private def getSplitter(t: TreeDecomposition, rootSize: Int) : TreeDecomposition = {
 
     @tailrec
-    def visitChildes( maxsize:Int, childes:List[TreeDecomposition], child:TreeDecomposition  ): TreeDecomposition = childes match {
+    def visitChildren(maxsize:Int, children:List[TreeDecomposition], child:TreeDecomposition  ): TreeDecomposition = children match {
       case  List() => child
       case  x :: xs =>
         val size = x.getSize
-        if (size > maxsize) visitChildes(size, xs, x )
-        else visitChildes(maxsize, xs, child)
+        if (size > maxsize) visitChildren(size, xs, x )
+        else visitChildren(maxsize, xs, child)
     }
-
-    if (t.getSize <= (rootSize / 2) + 1) t
+    val tsz= t.getSize
+    if ((tsz == rootSize & t.children.size == tsz-1 ) // is already balanced
+      || t.getSize <= (rootSize / 2) + 1) {
+      t
+    }
     else {
-      val child: TreeDecomposition = visitChildes(-1, t.children, null)
+      val child: TreeDecomposition = visitChildren(-1, t.children, null)
       getSplitter(child, rootSize)
     }
-
   }
 
   def remove(s: TreeDecomposition): TreeDecomposition = {
-    val childes = this.children.filter(c => c != s ).map(c => c.remove(s)  )
-    new TreeDecomposition(mapCqAtoms, root, childes )
+    val children = this.children.filter(c => c != s ).map(c => c.remove(s)  )
+    new TreeDecomposition(mapCqAtoms, root, children )
   }
 
   def getAllTerms: Set[Term] =  getAllTerms(this.children) ++ this.root.variables
@@ -210,7 +232,7 @@ class TreeDecomposition {
   }
 
   override def toString : String = {
-    s"(root: $root, childes: $children, mapCqAtoms: $mapCqAtoms, )"
+    s"(root: $root, children: $children, mapCqAtoms: $mapCqAtoms, )"
   }
 
 

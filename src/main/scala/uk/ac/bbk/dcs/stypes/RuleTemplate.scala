@@ -35,7 +35,7 @@ import scala.collection.JavaConverters._
   *
   * on 25/07/2017.
   */
-class RuleTemplate (splitter: Splitter, borderType:Type,  splittingType:Type, generatingAtoms:List [Atom], reWriter: ReWriter) {
+  class RuleTemplate (splitter: Splitter, borderType:Type,  splittingType:Type, generatingAtoms:List [Atom], reWriter: ReWriter) {
 
   type RulePredicate = (Splitter, Type)
 
@@ -71,8 +71,11 @@ class RuleTemplate (splitter: Splitter, borderType:Type,  splittingType:Type, ge
   
   def GetAllSubordinateRules:List[RuleTemplate] = splitter.children.flatMap(c =>
     reWriter.generateRewriting(createDependentType(c,borderType,splittingType), c))
-  
-  
+
+
+  override def toString: String = {
+     s"splitter: ${splitter.splittingBag.getRoot}, borderType: ${borderType}, splittingType: ${splittingType}"
+  }
   
 }
 

@@ -20,6 +20,7 @@ package uk.ac.bbk.dcs.stypes
  * #L%
  */
 
+import com.typesafe.scalalogging.Logger
 import fr.lirmm.graphik.graal.api.core.Term
 
 
@@ -32,9 +33,14 @@ import fr.lirmm.graphik.graal.api.core.Term
   * on 28/04/2017.
   */
 case class Splitter(root: TreeDecomposition) {
-  val splittingBag: TreeDecomposition = root.getSeparator
+  private val logger = Logger(this.getClass)
+  logger.debug(s"Splitter creating with root: $root")
+
+  val splittingBag: TreeDecomposition = root.getCentroid // root.getSeparator
+  logger.debug(s"Splitting bag ${splittingBag.hashCode()} : ${splittingBag.getRoot} ")
+
   val children: List[Splitter] = {
-    val directChildren = splittingBag.getChildes.map(Splitter)
+    val directChildren = splittingBag.getChildren.map(Splitter)
     if (splittingBag != root) {
       val rootGeneratedChild: TreeDecomposition = root.remove(splittingBag)
       Splitter(rootGeneratedChild) :: directChildren
@@ -42,12 +48,19 @@ case class Splitter(root: TreeDecomposition) {
     else directChildren
   }
 
+  logger.debug(s"Splitter ${splittingBag.hashCode()} Children : $children")
+
+  logger.debug(s"Splitter created: $this")
+
   def getSplittingVertex: Bag = splittingBag.getRoot
 
   override def toString: String = {
-    s"(root: $root, children: $children)"
+    s"(hash: ${splittingBag.hashCode()} splittingBag: $splittingBag, children: $children)"
   }
 
   def getAllTerms : Set[Term] = root.getAllTerms
 
+  def flattenLog(splitter: Splitter = this, parent:Option[TreeDecomposition] = None  ): List[String] = {
+      List(s"splitterBag: ${splitter.splittingBag.getRoot.atoms}, children: ${splitter.children.size}, parent: ${if (parent.isDefined) parent.get.getRoot.atoms else "" }" ) ::: splitter.children.flatMap(flattenLog(_, Some(splitter.splittingBag)))
+  }
 }

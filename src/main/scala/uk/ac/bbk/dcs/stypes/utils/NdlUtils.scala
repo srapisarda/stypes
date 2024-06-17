@@ -90,7 +90,12 @@ object NdlUtils {
   }
 
   case class NdlInfo(idbSet: Set[Predicate], edbSet: Set[Predicate],  numCloses: Int, numIdb: Int,
-                     numEdb: Int, avgClauseBodyLength: Float, avgNumEDB: Float, avgNumIDB: Float){}
+                     numEdb: Int, avgClauseBodyLength: Float, avgNumEDB: Float, avgNumIDB: Float, unions: Int){
+    def toCSVLine(): String = {
+      s"${idbSet.mkString("|")}," +
+        s"${edbSet.mkString("|")},${numCloses},${numIdb},${numEdb},${avgClauseBodyLength},${avgNumIDB},${avgNumEDB},${unions}"
+    }
+  }
 
   def getNldInfo(ndl: List[Clause]) = {
 
@@ -111,8 +116,8 @@ object NdlUtils {
 
     val avgNumEDB = getAvgPredicateOccur(edbSet)
     val avgNumIDB = getAvgPredicateOccur(idbSet)
-
-    NdlInfo(idbSet, edbSet, numCloses, numIdb, numEdb, avgClauseBodyLength, avgNumIDB, avgNumEDB)
+    val unions = ndl.groupBy(_.head).map(_._2.size-1).sum
+    NdlInfo(idbSet, edbSet, numCloses, numIdb, numEdb, avgClauseBodyLength, avgNumIDB, avgNumEDB, unions)
 
   }
 
@@ -125,7 +130,7 @@ object NdlUtils {
         case "goal" => println(getGoalPredicate(ndl))
         case "edb" => println(getEdbPredicates(ndl))
         case "idb" => println(getIdbPredicates(ndl))
-        case "info" => println(getNldInfo(ndl))
+        case "info" => println(getNldInfo(ndl).toCSVLine())
         case "idb-def-count" =>
           val filename = args(0).replaceAll("^.*[/]", "")
           println(getIdbPredicatesDefCount(ndl)

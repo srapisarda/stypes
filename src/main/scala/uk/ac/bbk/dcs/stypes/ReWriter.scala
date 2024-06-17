@@ -137,6 +137,12 @@ object ReWriter {
 
   def generateDatalog(rewriting: Seq[RuleTemplate], additionalRules: List[Clause] = List()): List[Clause] = {
 
+    logger.debug(logRewriting(rewriting))
+
+    def logRewriting(rewriting: Seq[RuleTemplate]): String = {
+      rewriting.zipWithIndex.map { case (ruleTemplate, idx) => s"$idx, $ruleTemplate" }.mkString("\n")
+    }
+
     def getAtomsFromRewrite(ruleTemplate: RuleTemplate, map: Map[Int, Int], currentIndex: Int): (List[Clause], Map[Int, Int], Int) = {
 
       def transformAtom(atom: Atom, map: Map[Int, Int], currentIndex: Int): (Atom, Map[Int, Int], Int) =
@@ -186,22 +192,28 @@ object ReWriter {
     def OpenUpBrackets(body: List[Any], acc: List[List[Atom]] = List()): List[List[Atom]] = {
       body match {
         case List() => List()
-        case head :: tail => head match {
-          case x: Atom =>
-            if (tail.isEmpty) List(List(x))
-            else OpenUpBrackets(tail).map(a => x :: a)
-          case x: Seq[Any] =>
-            x.head match {
-              case y: Seq[Any] =>
-                y.head match {
-                  case _@(_: Term, _: Term) =>
-                    if (tail.isEmpty)
-                      x.toList.map(coe => EqualityAtomConjunction(coe.asInstanceOf[Seq[(Term, Term)]].toList))
-                    else
-                      cartesianProduct(x.asInstanceOf[Seq[Seq[(Term, Term)]]], OpenUpBrackets(tail))
-                }
-            }
-        }
+        case head :: tail =>
+          head match {
+            case Nil =>
+              logger.debug("Empty list in OpenUpBrackets")
+              List()
+            case x: Atom =>
+              if (tail.isEmpty) List(List(x))
+              else OpenUpBrackets(tail).map(a => x :: a)
+            case x: Seq[Any] =>
+              x.head match {
+                //              case Nil =>
+                //                 logger.info("Empty list in OpenUpBrackets")
+                case y: Seq[Any] =>
+                  y.head match {
+                    case _@(_: Term, _: Term) =>
+                      if (tail.isEmpty)
+                        x.toList.map(coe => EqualityAtomConjunction(coe.asInstanceOf[Seq[(Term, Term)]].toList))
+                      else
+                        cartesianProduct(x.asInstanceOf[Seq[Seq[(Term, Term)]]], OpenUpBrackets(tail))
+                  }
+              }
+          }
       }
     }
 
@@ -218,10 +230,10 @@ object ReWriter {
           visitRewriting(xs, (res._1 :: acc._1, res._2, res._3))
       }
 
-    def removeEmptyClauses(datalog: List[Clause]): List[Clause] = {
+    def removeEmptyClauses(ndl: List[Clause]): List[Clause] = {
 
-      def removalHelper(datalog: List[Clause]): (List[Clause], Boolean) = {
-        val defined = datalog.map(_.head.getPredicate).toSet
+      def removalHelper(clauses: List[Clause]): (List[Clause], Boolean) = {
+        val defined = clauses.map(_.head.getPredicate).toSet
 
         def remove(l: List[Atom]): Boolean = l match {
           case List() => false
@@ -233,22 +245,18 @@ object ReWriter {
           }
         }
 
-        val ret = datalog.
-          filter(rule => !remove(rule.body))
+        val ret = clauses.filter(rule => !remove(rule.body))
+        val hasRemoved = ret.lengthCompare(clauses.size) != 0
 
-        (ret, ret.lengthCompare(datalog.size) != 0)
+        (ret, hasRemoved)
       }
 
-      val removalOutcome = removalHelper(datalog)
+      var removalResult = removalHelper(ndl)
+      while (removalResult._2) {
+        removalResult = removalHelper(removalResult._1)
+      }
 
-      val iterate = removalOutcome._2
-
-      val removalResult = removalOutcome._1
-
-      if (iterate)
-        removalHelper(removalResult)._1
-      else
-        removalResult
+      removalResult._1
     }
 
     def removeDuplicate(datalog: List[Clause]): List[Clause] = datalog.toSet.toList
@@ -390,24 +398,32 @@ object ReWriter {
       datalog
     }
     else {
-      ReWriter.logger.debug(s"datalog rewrite not optimised: $datalog")
+      ReWriter.logger.debug(s"\ndatalog rewrite not optimised:${formatNdlClose(datalog, false)}")
 
-      val removeDuplicateResult  =  removeDuplicate(datalog)
-      ReWriter.logger.debug(s"datalog remove duplicate result: $removeDuplicateResult")
+      val removeDuplicateResult = removeDuplicate(datalog)
+      ReWriter.logger.debug(s"\ndatalog remove duplicate result:${formatNdlClose(removeDuplicateResult)}")
 
       val removeEmptyClausesResult: List[Clause] = removeEmptyClauses(removeDuplicateResult)
 
-      ReWriter.logger.debug(s"datalog remove empty clauses result: $removeEmptyClausesResult")
+      ReWriter.logger.debug(s"\ndatalog remove empty clauses result:${formatNdlClose(removeEmptyClausesResult)}")
       val predicateSubstitutionRes: List[Clause] = predicateSubstitution(removeEmptyClausesResult)
 
-      ReWriter.logger.debug(s"datalog predicate substitution result: $predicateSubstitutionRes")
+      ReWriter.logger.debug(s"\ndatalog predicate substitution result:${formatNdlClose(predicateSubstitutionRes)}")
 
-      var equalitySubstitutionRes = equalitySubstitution(predicateSubstitutionRes) ::: additionalRules
+      val equalitySubstitutionRes = equalitySubstitution(predicateSubstitutionRes) ::: additionalRules
 
-      ReWriter.logger.debug(s"datalog equality substitution result: $equalitySubstitutionRes")
+      ReWriter.logger.debug(s"\ndatalog equality substitution result:${formatNdlClose(equalitySubstitutionRes)}")
 
       equalitySubstitutionRes
+
     }
+  }
+
+  private def formatNdlClose(ndl: => List[Clause], sort: Boolean = true): String = {
+    if (sort)
+      s"\n${ndl.sortBy(_.head.getPredicate).mkString("\n")}\n"
+    else
+      s"\n${ndl.mkString("\n")}\n"
   }
 
   def generateFlinkScript(datalog: List[Clause], dataSources: Map[String, String]): String = {
@@ -591,14 +607,7 @@ object ReWriter {
     val clauses = dlgpParser.asScala.toList
     clauses.map {
       case rule: Rule =>
-        val head: Atom = {
-          val atom = rule.getHead.asScala.head
-          if (atom.getTerms.size == 1 &&
-            (atom.getTerm(0).getType.equals(Term.Type.LITERAL) ||
-              atom.getTerm(0).getType.equals(Term.Type.CONSTANT)))
-            new DefaultAtom(new Predicate(atom.getPredicate.getIdentifier.toString, 0))
-          else atom
-        }
+        val head: Atom = rule.getHead.asScala.head
         val body: List[Atom] = rule.getBody.asScala.toList
         Clause(head, body)
     }
@@ -611,7 +620,6 @@ object ReWriter {
 }
 
 class ReWriter(ontology: List[Rule]) {
-
   val generatingAtoms: List[Atom] = ReWriter.makeGeneratingAtoms(ontology)
   ReWriter.logger.debug(s"generating  canonical models")
   val t1: Long = System.nanoTime()

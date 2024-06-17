@@ -1,2 +1,4 @@
-q(X, Y) :- a(X), b(X), r(X, Y), a(Y), b(Y).
-q(X, Y) :- a(X), s(X), r(X, Y), s(Y), b(Y).
+q(X,Y) :- a(X), b(X), r(X,Y), a(Y), b(Y).
+q(X,Y) :- a(X), b(X), r(X,Y), s(Y), b(Y).
+q(X,Y) :- a(X), s(X), r(X,Y), a(Y), b(Y).
+q(X,Y) :- a(X), s(X), r(X,Y), s(Y), b(Y).

@@ -178,7 +178,6 @@ class ReWriterTest extends FunSpec {
       assert(result.lengthCompare(7) == 0)
     }
 
-
     it("should rewrite the query for ont-2") {
       val t: TreeDecomposition = TreeDecomposition.getHyperTreeDecomposition("src/test/resources/Q7.gml", "src/test/resources/Q7.cq")
       val result: Seq[RuleTemplate] = new ReWriter(ontology2).generateRewriting(Type(new TreeMapSubstitution()), Splitter(t))
@@ -190,7 +189,6 @@ class ReWriterTest extends FunSpec {
       assert(datalog.lengthCompare(2) == 0)
     }
 
-
     it("should rewrite the query for q-3") {
       val t: TreeDecomposition = TreeDecomposition.getHyperTreeDecomposition("src/test/resources/Q3.gml", "src/test/resources/Q3.cq")
       val result: Seq[RuleTemplate] = new ReWriter(ontology2).generateRewriting(Type(new TreeMapSubstitution()), Splitter(t))
@@ -201,7 +199,6 @@ class ReWriterTest extends FunSpec {
       printDatalog(datalog)
       assert(datalog.lengthCompare(3) == 0)
     }
-
 
     it("should rewrite the query for q-3 with ont-3") {
       val t: TreeDecomposition = TreeDecomposition.getHyperTreeDecomposition("src/test/resources/Q3.gml", "src/test/resources/Q3.cq")
@@ -225,7 +222,6 @@ class ReWriterTest extends FunSpec {
       assert(datalog.lengthCompare(7) == 0)
 
     }
-
 
     it("should rewrite the query for q-3-1 with ont-4") {
       val t: TreeDecomposition = TreeDecomposition.getHyperTreeDecomposition("src/test/resources/Q3-1.gml", "src/test/resources/Q3-1.cq")
@@ -253,7 +249,6 @@ class ReWriterTest extends FunSpec {
 
     }
 
-
     it("should rewrite the query for Q-car with ont-car") {
       val t: TreeDecomposition = TreeDecomposition.getHyperTreeDecomposition("src/test/resources/Q-car.gml", "src/test/resources/Q-car.cq")
 
@@ -266,8 +261,6 @@ class ReWriterTest extends FunSpec {
       assert(datalog.lengthCompare(2) == 0)
 
     }
-
-
   }
 
   describe("Substitution tests cases") {
@@ -422,12 +415,20 @@ class ReWriterTest extends FunSpec {
       val result: (TreeDecomposition, List[Variable]) =
         TreeDecomposition.getTreeDecomposition(s"src/test/resources/q15.gml", "src/test/resources/q15.cq")
 
+      val splitter = Splitter(result._1)
+
+      println("Splitter ----------")
+      println(println(splitter.flattenLog().mkString("\n")))
+      println("")
+
       val answerVariables = result._2
       val datalog = ReWriter.generateDatalog(
         new ReWriter(ontLines)
           .generateRewriting(Type.getInstance(answerVariables), Splitter(result._1)))
       printDatalog(datalog)
-      assert(datalog.lengthCompare(26) == 0)
+
+
+      assert(datalog.length == 26)
     }
 
     it("should rewrite query q22.cq  using  lines.dlp") {
@@ -467,7 +468,7 @@ class ReWriterTest extends FunSpec {
         new ReWriter(ontLines)
           .generateRewriting(Type.getInstance(answerVariables), Splitter(result._1)))
       printDatalog(datalog)
-      assert(datalog.lengthCompare(11) == 0)
+      assert(datalog.length == 12)
     }
 
 
@@ -482,6 +483,107 @@ class ReWriterTest extends FunSpec {
       printDatalog(datalog.sortBy(p => p.head.getPredicate.toString))
       assert(datalog.lengthCompare(30) == 0)
     }
+
+    it("should rewrite query q37.cq  using  lines.dlp") {
+      val result: (TreeDecomposition, List[Variable]) =
+        TreeDecomposition.getTreeDecomposition(s"$pathToLine/gml/q37.gml", s"$pathToLine/queries/q37.cq")
+
+      val answerVariables = result._2
+      val splitter = Splitter(result._1)
+
+      println("Splitter ----------")
+      println(println(splitter.flattenLog().mkString("\n")))
+      println("")
+      
+      val datalog = ReWriter.generateDatalog(
+        new ReWriter(ontLines)
+          .generateRewriting(Type.getInstance(answerVariables), splitter))
+
+      printDatalog(datalog.sortBy(p => p.head.getPredicate.toString))
+      assert(datalog.length == 9)
+    }
+
+    it("should rewrite query q-thesis-3-vertex using  lines.dlp") {
+
+      val result: (TreeDecomposition, List[Variable]) =
+        TreeDecomposition.getTreeDecomposition(s"$pathToLine/gml/q-thesis-3-vertex.gml", s"$pathToLine/queries/q-thesis-3-vertex.cq")
+
+      val answerVariables = result._2
+      val splitter = Splitter(result._1)
+
+      println("Splitter ----------")
+      println(println(splitter.flattenLog().mkString("\n")))
+      println("")
+
+      val datalog = ReWriter.generateDatalog(
+        new ReWriter(ontLines)
+          .generateRewriting(Type.getInstance(answerVariables), splitter))
+
+      printDatalog(datalog.sortBy(p => p.head.getPredicate.toString))
+      assert(datalog.length == 1)
+    }
+
+    it("should rewrite query q-thesis-1 using  lines.dlp") {
+
+      val result: (TreeDecomposition, List[Variable]) =
+        TreeDecomposition.getTreeDecomposition(s"$pathToLine/gml/q-thesis-1.gml", s"$pathToLine/queries/q-thesis-1.cq")
+
+      val answerVariables = result._2
+      val splitter = Splitter(result._1)
+
+      println("Splitter ----------")
+      println(println(splitter.flattenLog().mkString("\n")))
+      println("")
+
+      val datalog = ReWriter.generateDatalog(
+        new ReWriter(ontLines)
+          .generateRewriting(Type.getInstance(answerVariables), splitter))
+
+      printDatalog(datalog.sortBy(p => p.head.getPredicate.toString))
+      assert(datalog.length == 9)
+    }
+
+
+    it("should rewrite query q-thesis.cq  using  lines.dlp") {
+
+      val result: (TreeDecomposition, List[Variable]) =
+        TreeDecomposition.getTreeDecomposition(s"$pathToLine/gml/q-thesis-1.multivar.gml", s"$pathToLine/queries/q-thesis-1.cq")
+
+      val answerVariables = result._2
+      val splitter = Splitter(result._1)
+
+      println("Splitter ----------")
+      println(println(splitter.flattenLog().mkString("\n")))
+      println("")
+
+      val datalog = ReWriter.generateDatalog(
+        new ReWriter(ontLines)
+          .generateRewriting(Type.getInstance(answerVariables), splitter))
+
+      printDatalog(datalog.sortBy(p => p.head.getPredicate.toString))
+      assert(datalog.length == 9)
+    }
+
+    it("should rewrite query q-thesis-2.cq  using  lines.dlp") {
+
+      val result: (TreeDecomposition, List[Variable]) =
+        TreeDecomposition.getTreeDecomposition(s"$pathToLine/gml/q-thesis-2.gml", s"$pathToLine/queries/q-thesis-2.cq")
+
+      val answerVariables = result._2
+      val splitter = Splitter(result._1)
+
+      println("Splitter ----------")
+      println(println(splitter.flattenLog().mkString("\n")))
+      println("")
+
+      val datalog = ReWriter.generateDatalog(
+        new ReWriter(ontLines)
+          .generateRewriting(Type.getInstance(answerVariables), splitter))
+
+      printDatalog(datalog.sortBy(p => p.head.getPredicate.toString))
+      assert(datalog.length == 7)
+    }
+
 
     it("should rewrite query q30.cq  using  lines.dlp") {
       val result: (TreeDecomposition, List[Variable]) =
@@ -583,29 +685,6 @@ class ReWriterTest extends FunSpec {
 
       assert(res != null)
       print(s"\nFlink Class:\n\n$res")
-    }
-
-
-    it("should rewrite the query for queries for NDL-SQL") {
-      //      val test:TreeDecompositionTest  = new TreeDecompositionTest
-
-
-      assert(ontBenchmarkNDL_SQL.nonEmpty)
-      //      val t:TreeDecomposition = test.buildTestTreeDecomposition(s"$pathToBenchmarkNDL_SQL/queries/queries.gml",
-      // s"$pathToBenchmarkNDL_SQL/queries/queries.cq")
-      //
-      //      val result: Seq[RuleTemplate] = new ReWriter(ontBenchmark300Dep).generateRewriting(Type(new TreeMapSubstitution()) , Splitter(t))
-      //      println(result)
-      //      assert( result.size == 80 ) // verify this result
-      //
-      //      val datalog=  ReWriter.generateDatalog(result )
-      //     printDatalog(datalog)
-      //      assert(datalog.size== 11)
-
-    }
-
-    it("should chase the the ontology") {
-
     }
 
     it("has to read a clause") {

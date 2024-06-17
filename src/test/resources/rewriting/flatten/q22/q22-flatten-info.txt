@@ -1,0 +1,2 @@
+q22-rew_flatten_p12.dlp,NdlInfo(Set(p1[2], p3[2]),Set(r[2], s[2], b[1], a[1]),4,2,4,3.5,0.5,3.0)
+q22-rew_flatten_p3.dlp,NdlInfo(Set(p1[2], p12[2]),Set(a[1], r[2], s[2], b[1]),4,2,4,3.5,0.5,3.0)
