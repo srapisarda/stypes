@@ -670,7 +670,7 @@ class ReWriterTest extends FunSpec {
         new ReWriter(ontBenchmark100All).
           generateRewriting(Type.getInstance(answerVariables), Splitter(result._1))
 
-      assert(datalog.lengthCompare(22) == 0)
+      assert(datalog.length == 22)
     }
 
 

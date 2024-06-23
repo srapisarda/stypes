@@ -141,7 +141,8 @@ class TreeDecomposition {
   private def getBagFromVertexTD(vertex: Vertex): Bag = {
     val label: String = vertex.getProperty("label")
     val predicateAndVariables: Array[String] = label.split(" {4}")
-    if (predicateAndVariables.length != 2) throw new RuntimeException("Incorrect vertex label.")
+    if (predicateAndVariables.length != 2)
+      throw new RuntimeException("Incorrect vertex label.")
     val variables: Set[String] = getSpittedItems(predicateAndVariables(1)).map(_.replace("?", "")).toSet
     val atoms: Set[Atom] =
       cqAtoms.filter(atom => {
