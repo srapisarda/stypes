@@ -10,7 +10,8 @@ object CentroidDecomposition {
 
   case class TreeInfo(size: Int, degree: Int = 0)
 
-  def getCentroid(vertex: TreeDecomposition, visited: Set[TreeDecomposition] = Set(), subtreeSize: mutable.Map[TreeDecomposition, TreeInfo] = mutable.Map()): TreeDecomposition = {
+  def getCentroid(vertex: TreeDecomposition, visited: Set[TreeDecomposition] = Set(),
+                  subtreeSize: mutable.Map[TreeDecomposition, TreeInfo] = mutable.Map()): TreeDecomposition = {
 
     def dfs(vertex: TreeDecomposition, parent: TreeDecomposition): Int = {
       var size = 1
@@ -20,7 +21,7 @@ object CentroidDecomposition {
       }
       subtreeSize.contains(parent)
       val degree = if (parent == null) 0  else vertex.getChildren.size + 1
-      logger.debug(s"Vertex ${vertex.hashCode()}: ${vertex.getRoot.atoms}, size: $size, degree: $degree")
+      // logger.debug(s"Vertex ${vertex.hashCode()}: ${vertex.getRoot.atoms}, size: $size, degree: $degree")
       subtreeSize.put(vertex, TreeInfo(size, degree))
       size
     }
