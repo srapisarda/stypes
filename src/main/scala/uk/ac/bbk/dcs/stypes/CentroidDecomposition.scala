@@ -41,9 +41,7 @@ object CentroidDecomposition {
         }
       }
 
-      if ((isCentroid && n - subtreeSize(vertex).size <= n / 2)
-        || subtreeSize(vertex).degree > 2
-      )
+      if (isCentroid && n - subtreeSize(vertex).size <= n / 2)
         vertex
       else
         findCentroid(heaviest.get, vertex, visited + vertex, n)

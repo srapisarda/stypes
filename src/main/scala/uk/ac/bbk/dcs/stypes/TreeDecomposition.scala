@@ -33,6 +33,7 @@ import fr.lirmm.graphik.graal.io.dlp.DlgpParser
 
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
+import scala.collection.immutable
 import scala.io.Source
 import scala.reflect.io.File
 import scala.util.matching.Regex
@@ -235,8 +236,9 @@ class TreeDecomposition {
     if (v.root == this.root) {
       directChildren
     } else {
-      val rootGeneratedChild: TreeDecomposition = this.remove(v)
-      updateParent(rootGeneratedChild, None) :: directChildren
+      val rootGeneratedChild = TreeDecomposition.revert(v.parent.get, Some(v))
+      val children = updateParent(rootGeneratedChild, None) :: directChildren
+      children
     }
 
 
@@ -355,12 +357,43 @@ object TreeDecomposition {
 
   def getLastCommonVertex(cPath: List[TreeDecomposition], bPath: List[TreeDecomposition]): TreeDecomposition = {
     val bPathRoot = bPath.map(c => c.root)
-    val vertex =  cPath
-      .map(c=> c.root)
+    val vertex = cPath
+      .map(c => c.root)
       .filter(r =>
         bPathRoot.contains(r))
       .last
     cPath.filter(c => c.root == vertex).last
+  }
+
+  def copy(t: TreeDecomposition): TreeDecomposition = {
+    val newChildren = t.children.map(c => copy(c))
+    val newTreeDecomposition = new TreeDecomposition(t.mapCqAtoms, t.root, newChildren, t.parent)
+    newTreeDecomposition
+  }
+
+  def revert(t: TreeDecomposition, childrenToRemove: Option[TreeDecomposition]): TreeDecomposition = {
+
+    @tailrec
+    def getRevertedTree(t: TreeDecomposition, newRoot: TreeDecomposition, newParent: Option[TreeDecomposition] = None): TreeDecomposition = {
+      val oldParent = t.parent
+      // Remove the child that is the new parent
+      if (newParent.isDefined) {
+        t.children = t.children.filter(c => c.root != newParent.get.root)
+        newParent.get.children = t :: newParent.get.children
+        t.parent = newParent
+      }
+      if (oldParent.isEmpty) {
+        newRoot
+      } else {
+        getRevertedTree(oldParent.get, newRoot, Some(t))
+      }
+    }
+
+    val treeCopy = copy(t)
+    // remove the children that are not in the reverted tree
+    treeCopy.children = treeCopy.children.filter(c => c.root != childrenToRemove.get.root)
+    getRevertedTree(treeCopy, treeCopy)
+
   }
 
 }

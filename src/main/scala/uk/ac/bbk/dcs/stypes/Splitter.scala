@@ -35,7 +35,7 @@ case class Splitter(root: TreeDecomposition, boundaryRoot: Option[TreeDecomposit
   logger.debug(s"b Splitter creating: ${root.getRoot}, boundaryRoot: ${boundaryRoot.map(_.getRoot)}, boundaryLeaf: ${boundaryLeaf.map(_.getRoot)}")
 
   val splittingBag: TreeDecomposition = //root.getCentroid//root.getCentroid
-    if (boundaryLeaf.isEmpty ) {
+    if (boundaryLeaf.isEmpty) {
       logger.debug(s"\tcalling centroid")
       root.getCentroid
     } else {
@@ -44,21 +44,17 @@ case class Splitter(root: TreeDecomposition, boundaryRoot: Option[TreeDecomposit
       val centroid = root.getCentroid
       val cPath = root.getPathTo(centroid)
       val bPath = root.getPathTo(boundaryLeaf.get)
-      if ( cPath.size <= 2 && cPath.size > bPath.size) {
-        logger.debug(s"\t\tcentroid cPath.size: ${cPath.size} bPath.size: ${bPath.size}")
-        centroid
-      }
-      else {
-        logger.debug(s"\t\tlast common vertex  cPath.size: ${cPath.size} bPath.size: ${bPath.size}")
-        TreeDecomposition.getLastCommonVertex(cPath, bPath)
-      }
+      logger.debug(s"\t\tlast common vertex  cPath.size: ${cPath.size} bPath.size: ${bPath.size}")
+      TreeDecomposition.getLastCommonVertex(cPath, bPath)
     }
   // root.getSeparator
   logger.debug(s"\tSplitting bag ${splittingBag.hashCode()} : ${splittingBag.getRoot} ")
 
   val children: List[Splitter] = root.split(splittingBag).map(subSplitter)
 
-//  logger.debug(s"Splitter ${splittingBag.hashCode()} Children : $children")
+  //  logger.debug(s"Splitter ${splittingBag.hashCode()} Children : $children")
+
+
 
   logger.debug(s"e Splitter created: $this")
 
@@ -74,20 +70,20 @@ case class Splitter(root: TreeDecomposition, boundaryRoot: Option[TreeDecomposit
   }
 
   override def toString: String = {
-    s"(hash: ${splittingBag.hashCode()} splittingBag: ${splittingBag.getRoot.atoms}, children: ${children.map( _.root.getRoot.atoms)}), " +
+    s"(hash: ${splittingBag.hashCode()} splittingBag: ${splittingBag.getRoot.atoms}, children: ${children.map(_.root.getRoot.atoms)}), " +
       s"boundaryRoot: ${if (boundaryRoot.isDefined) boundaryRoot.get.getRoot.atoms else Set()}" +
       s", boundaryLeaf: ${if (boundaryLeaf.isDefined) boundaryLeaf.get.getRoot.atoms else Set()}"
   }
 
-  def getAllTerms: Set[Term] = root.getAllTerms
+  def getAllTerms: Set[Term] = root.getAllTerms ++ children.flatMap(_.getAllTerms)
 
   def flattenLog(splitter: Splitter = this, parent: Option[TreeDecomposition] = None,
                  boundaryRoot: Option[TreeDecomposition] = None,
-                 boundaryLeaf: Option[TreeDecomposition] = None ): List[String] = {
+                 boundaryLeaf: Option[TreeDecomposition] = None): List[String] = {
     List(s"splitterBag: ${splitter.splittingBag.getRoot.atoms}, children: ${splitter.children.size}, " +
       s"parent: ${if (parent.isDefined) parent.get.getRoot.atoms else ""}" +
       s", boundaryRoot: ${if (boundaryRoot.isDefined) boundaryRoot.get.getRoot.atoms else "null"}" +
       s", boundaryLeaf: ${if (boundaryLeaf.isDefined) boundaryLeaf.get.getRoot.atoms else "null"}") :::
-      splitter.children.flatMap(t =>flattenLog(t, Some(splitter.splittingBag),t.boundaryRoot,t.boundaryLeaf))
+      splitter.children.flatMap(t => flattenLog(t, Some(splitter.splittingBag), t.boundaryRoot, t.boundaryLeaf))
   }
 }

@@ -58,10 +58,33 @@ class SplitterTest extends FunSpec {
     val branches = treeDecomposition._1.split(centroid)
 
     assert(branches.size == 2)
+
+    val leftRoot = branches.head
+    // should not revert
+    assert(leftRoot.getRoot.atoms.map(_.getPredicate.getIdentifier.toString).contains("p21"))
+
+    val leftCentroid =   leftRoot.getCentroid
+
+    //should revert
+    val leftBranches =  leftRoot.split(leftCentroid)
+    val revertedLeftBranches = Array ( ("p23", ""), ("p22", "p23"), ("p21", "p22") )
+    val vertexToCheck = Array(leftBranches.head, leftBranches.head.getChildren.head, leftBranches.head.getChildren.head.getChildren.head)
+
+    for( i <- vertexToCheck.indices) {
+      assert( vertexToCheck(i).getRoot.atoms.map(_.getPredicate.getIdentifier.toString).contains(revertedLeftBranches(i)._1))
+      if(revertedLeftBranches(i)._2.nonEmpty) {
+        assert( vertexToCheck(i).getParent.get.getRoot.atoms.map(_.getPredicate.getIdentifier.toString).contains(revertedLeftBranches(i)._2))
+      }else{
+        vertexToCheck(1).getParent.isEmpty
+      }
+    }
+
+    assert(leftBranches.size == 2)
+
   }
 
 
-    it("should calculate the correct degree in q-thesis-deg-ex-02") {
+  it("should calculate the correct degree in q-thesis-deg-ex-02") {
     val treeDecomposition = TreeDecomposition.
       getTreeDecomposition(s"$pathToLine/gml/q-thesis-deg-ex-02.gml", s"$pathToLine/queries/q-thesis-deg-ex-02.cq")
     val splitter = Splitter(treeDecomposition._1)
