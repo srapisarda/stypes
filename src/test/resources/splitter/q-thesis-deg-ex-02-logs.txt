@@ -1,0 +1,15 @@
+splitterBag: Set(p1[2](x0,x1)), children: 2, parent: , boundaryRoot: null, boundaryLeaf: null
+splitterBag: Set(p3[2](x4,x5)), children: 2, parent: Set(p1[2](x0,x1)), boundaryRoot: Set(p21[2](x1,x2)), boundaryLeaf: null
+splitterBag: Set(p22[2](x2,x3)), children: 2, parent: Set(p3[2](x4,x5)), boundaryRoot: Set(p23[2](x3,x4)), boundaryLeaf: Set(p21[2](x1,x2))
+splitterBag: Set(p23[2](x3,x4)), children: 0, parent: Set(p22[2](x2,x3)), boundaryRoot: Set(p23[2](x3,x4)), boundaryLeaf: Set(p23[2](x3,x4))
+splitterBag: Set(p21[2](x1,x2)), children: 0, parent: Set(p22[2](x2,x3)), boundaryRoot: Set(p21[2](x1,x2)), boundaryLeaf: Set(p21[2](x1,x2))
+splitterBag: Set(p42[2](x6,x7)), children: 2, parent: Set(p3[2](x4,x5)), boundaryRoot: Set(p41[2](x5,x6)), boundaryLeaf: null
+splitterBag: Set(p41[2](x5,x6)), children: 0, parent: Set(p42[2](x6,x7)), boundaryRoot: Set(p41[2](x5,x6)), boundaryLeaf: Set(p41[2](x5,x6))
+splitterBag: Set(p43[2](x7,x8)), children: 0, parent: Set(p42[2](x6,x7)), boundaryRoot: Set(p43[2](x7,x8)), boundaryLeaf: null
+splitterBag: Set(p6[2](x11,x12)), children: 2, parent: Set(p1[2](x0,x1)), boundaryRoot: Set(p51[2](x0,x9)), boundaryLeaf: null
+splitterBag: Set(p52[2](x9,x10)), children: 2, parent: Set(p6[2](x11,x12)), boundaryRoot: Set(p53[2](x10,x11)), boundaryLeaf: Set(p51[2](x0,x9))
+splitterBag: Set(p53[2](x10,x11)), children: 0, parent: Set(p52[2](x9,x10)), boundaryRoot: Set(p53[2](x10,x11)), boundaryLeaf: Set(p53[2](x10,x11))
+splitterBag: Set(p51[2](x0,x9)), children: 0, parent: Set(p52[2](x9,x10)), boundaryRoot: Set(p51[2](x0,x9)), boundaryLeaf: Set(p51[2](x0,x9))
+splitterBag: Set(p72[2](x13,x14)), children: 2, parent: Set(p6[2](x11,x12)), boundaryRoot: Set(p71[2](x12,x13)), boundaryLeaf: null
+splitterBag: Set(p71[2](x12,x13)), children: 0, parent: Set(p72[2](x13,x14)), boundaryRoot: Set(p71[2](x12,x13)), boundaryLeaf: Set(p71[2](x12,x13))
+splitterBag: Set(p73[2](x14,x15)), children: 0, parent: Set(p72[2](x13,x14)), boundaryRoot: Set(p73[2](x14,x15)), boundaryLeaf: null
