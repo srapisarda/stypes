@@ -33,7 +33,6 @@ import fr.lirmm.graphik.graal.io.dlp.DlgpParser
 
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
-import scala.collection.immutable
 import scala.io.Source
 import scala.reflect.io.File
 import scala.util.matching.Regex
@@ -89,7 +88,7 @@ class TreeDecomposition {
 
     this.children = childrenOut ::: childrenIn
 
-    logger.debug(s"tree-decomposition-${this.hashCode()} created, root: $root, children-size: ${children.size}, parent: ${parent},    children: $children")
+    logger.debug(s"tree-decomposition-${this.hashCode()} created, root: $root, children-size: ${children.size}, parent: $parent,    children: $children")
 
   }
 
@@ -100,7 +99,6 @@ class TreeDecomposition {
     this.children = children
     this.parent = parent
   }
-
 
   def getSubGraph(graph: Graph, vertex: Vertex, edge: Edge): TinkerGraph = {
     val g = new TinkerGraph
@@ -164,7 +162,6 @@ class TreeDecomposition {
     val newPredicateName = pattern.replaceAllIn(atom.getPredicate.getIdentifier.toString, "")
     new DefaultAtom(new Predicate(newPredicateName, atom.getPredicate.getArity), atom.getTerms())
   }
-
 
   /**
     * This method returns the size of the {{{@link TreeDecomposition}}}
@@ -236,8 +233,9 @@ class TreeDecomposition {
     if (v.root == this.root) {
       directChildren
     } else {
-      val rootGeneratedChild = TreeDecomposition.revert(v.parent.get, Some(v))
-      val children = updateParent(rootGeneratedChild, None) :: directChildren
+//      val rootGeneratedChild = this.remove(v)
+      val reverted = TreeDecomposition.revert(v.parent.get, Some(v))
+      val children = updateParent(reverted, None) :: directChildren
       children
     }
 
@@ -391,7 +389,9 @@ object TreeDecomposition {
 
     val treeCopy = copy(t)
     // remove the children that are not in the reverted tree
-    treeCopy.children = treeCopy.children.filter(c => c.root != childrenToRemove.get.root)
+    if (childrenToRemove.isDefined ) {
+      treeCopy.children = treeCopy.children.filter(c => c.root != childrenToRemove.get.root)
+    }
     getRevertedTree(treeCopy, treeCopy)
 
   }

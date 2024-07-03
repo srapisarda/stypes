@@ -34,7 +34,7 @@ case class Splitter(root: TreeDecomposition, boundaryRoot: Option[TreeDecomposit
   private val logger = Logger(this.getClass)
   logger.debug(s"b Splitter creating: ${root.getRoot}, boundaryRoot: ${boundaryRoot.map(_.getRoot)}, boundaryLeaf: ${boundaryLeaf.map(_.getRoot)}")
 
-  val splittingBag: TreeDecomposition = //root.getCentroid//root.getCentroid
+  val splittingBag: TreeDecomposition =
     if (boundaryLeaf.isEmpty) {
       logger.debug(s"\tcalling centroid")
       root.getCentroid
@@ -51,11 +51,6 @@ case class Splitter(root: TreeDecomposition, boundaryRoot: Option[TreeDecomposit
   logger.debug(s"\tSplitting bag ${splittingBag.hashCode()} : ${splittingBag.getRoot} ")
 
   val children: List[Splitter] = root.split(splittingBag).map(subSplitter)
-
-  //  logger.debug(s"Splitter ${splittingBag.hashCode()} Children : $children")
-
-
-
   logger.debug(s"e Splitter created: $this")
 
   def getSplittingVertex: Bag = splittingBag.getRoot
