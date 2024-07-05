@@ -11,7 +11,7 @@ import scala.reflect.io.File
 class SplitterTest extends FunSpec {
 
   private val pathToLine = "src/test/resources/benchmark/Lines"
-  private val pathToExpectedSplitterLogs = "src/test/resources/splitter";
+  private val pathToExpectedSplitterLogs = "src/test/resources/splitter"
 
   describe("Splitter") {
 
@@ -107,7 +107,7 @@ class SplitterTest extends FunSpec {
     assert(splitter.getAllTerms.size == 36)
   }
 
-  def checkFlattenLogs(flattenLogs:String, expectedLogfilePah:String ) = {
+  private def checkFlattenLogs(flattenLogs:String, expectedLogfilePah:String ): Unit = {
     val expected = getLogFile(expectedLogfilePah)
     for (i <- expected.indices) {
       assert(flattenLogs.contains(expected(i)), s"Expected: ${expected(i)}")

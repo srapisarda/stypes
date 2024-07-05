@@ -12,7 +12,7 @@ object App {
     App.executeRewriting(args(0), args(1), args(2)  )
   }
 
-  private def executeRewriting (cqPath:String, gmlPath:String, ontologyPath:String) = {
+  private def executeRewriting (cqPath:String, gmlPath:String, ontologyPath:String): Unit = {
     val ontology = ReWriter.getOntology(ontologyPath)
     val decomposedQuery: (TreeDecomposition, List[Variable]) =
       TreeDecomposition.getTreeDecomposition( gmlPath, cqPath)

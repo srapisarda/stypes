@@ -23,6 +23,8 @@ package uk.ac.bbk.dcs.stypes
 import org.junit.Assert
 import org.scalatest.FunSpec
 
+import scala.annotation.tailrec
+
 /**
   * Created by Salvatore Rapisarda on 27/04/2017.
   */
@@ -139,6 +141,34 @@ class TreeDecompositionTest extends FunSpec {
 
     }
 
+    it("should correctly revert a vertex") {
+      @tailrec
+      def  getHeadAtoms(t:TreeDecomposition, acc: List[String]) : List[String] = {
+        if (t.getChildren.isEmpty) {
+          acc
+        } else {
+          val  head = t.getChildren.head
+          val newAcc = acc :+ head.getRoot.atoms.head.getPredicate.getIdentifier.toString
+            getHeadAtoms(head, newAcc)
+        }
+      }
+
+      // given a tree t with a centroid p3 and its parent p23
+      val t = buildTestTreeDecomposition("src/test/resources/benchmark/Lines/gml/q-thesis-deg-ex-02.gml", "src/test/resources/benchmark/Lines/queries/q-thesis-deg-ex-02.cq")
+      val v =  t.getChildren.head.getCentroid
+      assert(v.getRoot.atoms.head.getPredicate.getIdentifier.toString == "p3")
+      assert(v.getParent.get.getRoot.atoms.head.getPredicate.getIdentifier.toString == "p23")
+
+      // revert the parent of the vertex p3 which is p23 without splitting the tree t on p3
+      val reverted = TreeDecomposition.revert(v.getParent.get, Some(v))
+      // get the path to the head of the reverted tree
+      val path = getHeadAtoms(reverted, List(reverted.getRoot.atoms.head.getPredicate.getIdentifier.toString)).mkString(",")
+      val expected = "p23,p22,p21,p1,p51,p52,p53,p6,p71,p72,p73"
+
+      // should return the correct path
+      assert(path == expected)
+    }
+
     it("should get the path to child of child") {
       val t = buildTestTreeDecomposition("src/test/resources/benchmark/Lines/gml/q-thesis-deg-ex-01.gml", "src/test/resources/benchmark/Lines/queries/q-thesis-deg-ex-01.cq")
 
@@ -189,7 +219,6 @@ class TreeDecompositionTest extends FunSpec {
 
       assert(commonVertex==two)
     }
-
 
   }
 

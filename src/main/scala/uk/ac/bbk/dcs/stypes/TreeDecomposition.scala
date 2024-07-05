@@ -233,7 +233,6 @@ class TreeDecomposition {
     if (v.root == this.root) {
       directChildren
     } else {
-//      val rootGeneratedChild = this.remove(v)
       val reverted = TreeDecomposition.revert(v.parent.get, Some(v))
       val children = updateParent(reverted, None) :: directChildren
       children
