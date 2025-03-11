@@ -1,0 +1,7 @@
+splitterBag: Set(p1[2](x0,x1)), children: 2, parent: , boundaryRoot: null, boundaryLeaf: null
+splitterBag: Set(p3[2](x2,x3)), children: 2, parent: Set(p1[2](x0,x1)), boundaryRoot: Set(p2[2](x1,x2)), boundaryLeaf: null
+splitterBag: Set(p2[2](x1,x2)), children: 0, parent: Set(p3[2](x2,x3)), boundaryRoot: Set(p2[2](x1,x2)), boundaryLeaf: Set(p2[2](x1,x2))
+splitterBag: Set(p4[2](x3,x4)), children: 0, parent: Set(p3[2](x2,x3)), boundaryRoot: Set(p4[2](x3,x4)), boundaryLeaf: null
+splitterBag: Set(p6[2](x5,x6)), children: 2, parent: Set(p1[2](x0,x1)), boundaryRoot: Set(p5[2](x0,x5)), boundaryLeaf: null
+splitterBag: Set(p5[2](x0,x5)), children: 0, parent: Set(p6[2](x5,x6)), boundaryRoot: Set(p5[2](x0,x5)), boundaryLeaf: Set(p5[2](x0,x5))
+splitterBag: Set(p7[2](x6,x7)), children: 0, parent: Set(p6[2](x5,x6)), boundaryRoot: Set(p7[2](x6,x7)), boundaryLeaf: null
