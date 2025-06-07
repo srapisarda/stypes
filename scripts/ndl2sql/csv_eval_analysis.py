@@ -68,7 +68,7 @@ def __main(spark: SparkSession):
         .withColumn('tmi',
                     round((df['tasks'] - df_not_flatten['nf-tasks']) * 100 / df_not_flatten['nf-tasks'], 2)) \
         .select('job-parallelism', 'data-set', 'evaluation', df['duration'], df['tasks'], 'dmi',
-                'tmi', 'duration_stddev') \
+                'tmi', df['duration_stddev']) \
         .orderBy( 'data-set', 'evaluation', 'job-parallelism')
 
     df_with_stats.show()

@@ -21,10 +21,11 @@ def __get_header_a(columns: list, parallelism: list):
     return ','.join(
         list(map(lambda par: ','.join(list(map(lambda col: f'{col}-{par}', columns))), parallelism)))
 
+parallelism = [1, 3, 5, 10, 15, 20]
+columns = ['duration', 'tasks', 'dp', 'tp', 'stddev']
 
 def __print_header(match_columns):
-    columns = ['duration', 'tasks', 'dp', 'tp']
-    parallelism = [1, 3, 5, 10, 15, 20]
+
     if match_columns:
         header = __get_header_b(columns, parallelism)
     else:
@@ -33,6 +34,8 @@ def __print_header(match_columns):
 
 
 def __pivot_csv(csv_file: str, match_columns: bool):
+    parallelism_dic = {1: 0, 3: 1, 5: 2, 10: 3, 15: 4, 20: 5}
+
     with open(csv_file, newline='') as csvfile:
         reader = csv.reader(csvfile, delimiter=',')
         __print_header(match_columns)
@@ -47,16 +50,21 @@ def __pivot_csv(csv_file: str, match_columns: bool):
                 if evaluation != "":
                     __print_row(row_pivot, match_columns)
                 evaluation = row[2]
-                row_pivot = []
-                row_pivot.extend(row[1:])
-            else:
-                row_pivot.extend(row[3:])
+                row_pivot = [row[1], row[2]]
+                row_pivot.extend(['' for _ in range(len(parallelism) * len(columns))])  # Initialize with dashes for each parallelism
+
+            columns_parallelism = parallelism_dic[int(row[0])]
+            for idx, value in enumerate(row[3:]):
+                pos  =  idx * len(parallelism) + columns_parallelism + 2
+                row_pivot[pos] = value
+
+
         __print_row(row_pivot, match_columns)
 
 
 def __print_row(row_pivot, match_columns):
-    if match_columns:
-        row_pivot = __get_reordered_row(row_pivot)
+#     if match_columns:
+#         row_pivot = __get_reordered_row(row_pivot)
     print(','.join(row_pivot))
 
 
