@@ -23,21 +23,22 @@ package uk.ac.bbk.dcs.stypes
 import fr.lirmm.graphik.graal.api.core._
 import fr.lirmm.graphik.graal.core.term.DefaultTermFactory
 import fr.lirmm.graphik.graal.core.{DefaultAtom, TreeMapSubstitution}
-import org.scalatest.{BeforeAndAfter, FunSpec}
+import org.scalatest.BeforeAndAfter
+import org.scalatest.funspec.AnyFunSpec
 
 /**
   * Created by
   *   Salvatore Rapisarda on 26/04/2017.
   */
-class TypeTest extends FunSpec with BeforeAndAfter {
-  private var type1:Type= _
-  private var type2:Type = _
+class TypeTest extends AnyFunSpec with BeforeAndAfter {
+  private var type1:Type= null
+  private var type2:Type = null
 
-  private var tx:Variable = _
-  private var ty:Variable = _
+  private var tx:Variable = null
+  private var ty:Variable = null
 
-  private var  atom1:Atom =_
-  private var atom2:Atom = _
+  private var  atom1:Atom = null
+  private var atom2:Atom = null
   // todo: this test should be reviewed using ConstantType instead of using string (for example "epsilon")
   def setUp(): Unit = {
     val s1 = new TreeMapSubstitution
@@ -74,6 +75,12 @@ class TypeTest extends FunSpec with BeforeAndAfter {
   }
 
   describe("The Typse basic test") {
+    it("should preserve the substitution when unioned with null") {
+      val actual = type1.union(null)
+      assert(actual.homomorphism eq type1.homomorphism)
+      assert(actual.getDomain == type1.getDomain)
+    }
+
     it("should have a domain contained 3 terms after union"){
 //      println("union test")
 //      println(s"type1:  $type1")

@@ -7,14 +7,14 @@ import fr.lirmm.graphik.graal.core.term.DefaultTermFactory
 import net.sf.jsqlparser.parser.CCJSqlParserUtil
 import net.sf.jsqlparser.util.validation.feature.DatabaseType
 import net.sf.jsqlparser.util.validation.Validation
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 import uk.ac.bbk.dcs.stypes.ReWriter
 import uk.ac.bbk.dcs.stypes.utils.NdlUtils
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.io.Source
 
-class SqlUtilsTest extends FunSpec {
+class SqlUtilsTest extends AnyFunSpec {
   describe("sql util tests") {
 
     it("should return a correct list of IDB predicate dependencies for qw01-rew_test.dlp") {

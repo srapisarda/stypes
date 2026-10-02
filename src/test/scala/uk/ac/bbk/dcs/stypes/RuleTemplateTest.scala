@@ -19,7 +19,7 @@ package uk.ac.bbk.dcs.stypes
  * #L%
  */
 
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 
 /**
   * Created by
@@ -28,7 +28,7 @@ import org.scalatest.FunSpec
   *
   *   on 25/07/2017.
   */
-class RuleTemplateTest  extends FunSpec {
+class RuleTemplateTest  extends AnyFunSpec {
 
   describe("RuleTemplate implementation"){
 

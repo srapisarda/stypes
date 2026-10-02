@@ -3,11 +3,11 @@ package uk.ac.bbk.dcs.stypes
 import fr.lirmm.graphik.graal.api.core.{Atom, Predicate, Term}
 import fr.lirmm.graphik.graal.core.DefaultAtom
 import fr.lirmm.graphik.graal.core.term.DefaultTermFactory
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
-class SplitterTest extends FunSpec {
+class SplitterTest extends AnyFunSpec {
 
   describe("Splitter") {
 

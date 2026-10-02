@@ -27,7 +27,7 @@ import fr.lirmm.graphik.graal.core.factory.ConjunctiveQueryFactory
 import fr.lirmm.graphik.graal.homomorphism.StaticHomomorphism
 
 import scala.annotation.tailrec
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 /**
   * Created by
@@ -122,7 +122,7 @@ case class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Vector[Ato
   }
 
   private def extend( atom: Atom,  answers: List[Substitution], canonicalModelIndex:Int, atoms: List[Atom] ): List[TypeExtender] = {
-     @tailrec
+    @tailrec
     def extendH( answers: List[Substitution], acc: List[TypeExtender]): List[TypeExtender] = answers match {
       case List() => acc
       case x::xs =>
@@ -226,7 +226,7 @@ case class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Vector[Ato
       */
     def isGoodRespectToCanonicalModel(atom: Atom): Boolean = {
       @tailrec
-      def areAllEqualCanonicalModelIndex(canonicalModelIndex:Int, terms:Seq[Term], ret:Boolean = true): Boolean = terms.toList match {
+      def areAllEqualCanonicalModelIndex(canonicalModelIndex:Int, terms:scala.collection.Seq[Term], ret:Boolean = true): Boolean = terms.toList match {
         case Nil => ret
         case x::xs =>
            // x.asInstanceOf[ConstantType].identifier._1==canonicalModelIndex && areAllEqualCanonicalModelIndex(canonicalModelIndex, xs, ret )
@@ -271,5 +271,3 @@ case class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Vector[Ato
   }
 
 }
-
-

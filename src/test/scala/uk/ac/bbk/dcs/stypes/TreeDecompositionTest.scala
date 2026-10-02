@@ -21,12 +21,12 @@ package uk.ac.bbk.dcs.stypes
  */
 
 import org.junit.Assert
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 
 /**
   * Created by Salvatore Rapisarda on 27/04/2017.
   */
-class TreeDecompositionTest extends FunSpec {
+class TreeDecompositionTest extends AnyFunSpec {
 
   describe("Tree decomposition commons ") {
 

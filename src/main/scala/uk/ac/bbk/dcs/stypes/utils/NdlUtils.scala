@@ -18,13 +18,13 @@ object NdlUtils {
 
   def getEdbPredicates(ndl: List[Clause], optIDbPredicates: Option[Set[Predicate]] = None): Set[Predicate] = {
     val iDbPredicates = optIDbPredicates.getOrElse(getIdbPredicates(ndl))
-    ndl.flatten(_.body.map(_.getPredicate).distinct)
+    ndl.flatMap(_.body.map(_.getPredicate).distinct)
       .filter(!iDbPredicates.contains(_)).toSet
   }
 
   def getGoalPredicate(ndl: List[Clause]): Predicate = {
     val iDBs = getIdbPredicates(ndl)
-    val predicatesClauseBodyContains = ndl.flatten(clause => clause.body.map(atom => atom.getPredicate).toSet)
+    val predicatesClauseBodyContains = ndl.flatMap(clause => clause.body.map(atom => atom.getPredicate).toSet)
     iDBs.find(predicate => !predicatesClauseBodyContains.contains(predicate))
       .getOrElse(throw new RuntimeException("The NDL does not contains any goal predicate"))
   }
@@ -76,7 +76,8 @@ object NdlUtils {
           increment(map, piHead, 1, isHead = true)
         }
 
-        val pisBody = clause.body.map(_.getPredicate).groupBy(identity).mapValues(_.size)
+        val pisBody = clause.body.map(_.getPredicate).groupBy(identity)
+          .map { case (predicate, atoms) => predicate -> atoms.size }
         pisBody.foreach {
           case (predicate: Predicate, value: Int) =>
             if (iDBs.contains(predicate)) {

@@ -28,12 +28,13 @@ import fr.lirmm.graphik.graal.api.factory.TermFactory
 import fr.lirmm.graphik.graal.core.DefaultAtom
 import fr.lirmm.graphik.graal.core.term.DefaultTermFactory
 import org.scalatest._
+import org.scalatest.funspec.AnyFunSpec
 
 
 /**
   * Created by Salvatore Rapisarda on 24/04/2017.
   */
-class BagTest extends FunSpec {
+class BagTest extends AnyFunSpec {
 
   val tf: TermFactory = DefaultTermFactory.instance
   val rterms: util.List[Term] = new util.ArrayList[Term]

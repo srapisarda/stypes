@@ -23,7 +23,7 @@ package uk.ac.bbk.dcs.stypes
 import fr.lirmm.graphik.graal.api.core.{Atom, Predicate, Term}
 import fr.lirmm.graphik.graal.core.DefaultAtom
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 /**
   *
@@ -82,4 +82,3 @@ object Equality {
 }
 
 case class DatalogPredicate(identifier: Any, arity: Int, isGoalPredicate: Boolean = false) extends Predicate(identifier, arity)
-

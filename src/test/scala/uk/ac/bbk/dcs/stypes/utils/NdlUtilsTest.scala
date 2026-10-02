@@ -1,12 +1,12 @@
 package uk.ac.bbk.dcs.stypes.utils
 
 import fr.lirmm.graphik.graal.api.core.Predicate
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 import uk.ac.bbk.dcs.stypes.ReWriter
 
 import scala.language.postfixOps
 
-class NdlUtilsTest extends FunSpec {
+class NdlUtilsTest extends AnyFunSpec {
   val folderPathTest = "src/test/resources/rewriting/"
 
   describe("Ndl Utils: get goal predicate") {

@@ -25,7 +25,7 @@ import fr.lirmm.graphik.graal.core.TreeMapSubstitution
 import uk.ac.bbk.dcs.stypes.ConstantType.EPSILON
 
 import scala.annotation.tailrec
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 /**
   * Created by
@@ -71,15 +71,13 @@ case class Type(homomorphism: Substitution) {
     * @return a { @link Type}
     */
   def union(t: Type): Type = {
-    if (t == null)
+    if (t == null) {
       Type(this.homomorphism)
-
-    // val genAtoms = this.genAtoms ++ t.genAtoms //  genAtomBuilder.build
-
-    val substitution = new TreeMapSubstitution(homomorphism)
-    substitution.put(t.homomorphism)
-
-    Type(substitution)
+    } else {
+      val substitution = new TreeMapSubstitution(homomorphism)
+      substitution.put(t.homomorphism)
+      Type(substitution)
+    }
   }
 
   /**

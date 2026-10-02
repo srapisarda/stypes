@@ -1,9 +1,9 @@
 package uk.ac.bbk.dcs.stypes
 
 import fr.lirmm.graphik.graal.core.term.DefaultTermFactory
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 
-class CentroidDecompositionTest extends FunSpec {
+class CentroidDecompositionTest extends AnyFunSpec {
   describe("Centroid Decomposition Test") {
 
     it("should return the centroid of a tree from q-thesis-2") {

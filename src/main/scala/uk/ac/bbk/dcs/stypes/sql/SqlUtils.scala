@@ -11,7 +11,7 @@ import uk.ac.bbk.dcs.stypes.{Clause, ReWriter}
 import uk.ac.bbk.dcs.stypes.utils.NdlUtils
 
 import scala.annotation.tailrec
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 object SqlUtils {
   val logger = Logger(this.getClass)
@@ -49,7 +49,7 @@ object SqlUtils {
     val iDBs = optionIDBs.getOrElse(NdlUtils.getIdbPredicates(ndl))
       val mapPredicateToIdbPredicateBody = ndl.groupBy(_.head)
       .map(group => group._1.getPredicate ->
-        group._2.flatten(clause => clause.body.filter(atom => iDBs.contains(atom.getPredicate)).map(_.getPredicate)).distinct)
+        group._2.flatMap(clause => clause.body.filter(atom => iDBs.contains(atom.getPredicate)).map(_.getPredicate)).distinct)
 
     logger.debug( mapPredicateToIdbPredicateBody.mkString("\n").replace("[2]", ""))
 
@@ -109,7 +109,7 @@ object SqlUtils {
   def minInFront(body: List[Atom]): List[Atom] = {
     if (body.isEmpty) body
     else {
-      val term = body.flatten(_.getTerms().asScala).min
+      val term = body.flatMap(_.getTerms().asScala).min
       val front = body.filter(_.contains(term)).sortBy(_.getTerms.size())
       val back = body.filter(!_.contains(term))
       front ::: back
@@ -145,7 +145,7 @@ object SqlUtils {
 
       }.filterNot { case (_, listAtoms) => listAtoms == Nil }
         .groupBy { case (term, _) => term }
-        .map { case (term, tupleTermListAtoms) => (term, tupleTermListAtoms.flatten(_._2).distinct.sortBy(_._2)) }
+        .map { case (term, tupleTermListAtoms) => (term, tupleTermListAtoms.flatMap(_._2).distinct.sortBy(_._2)) }
     }
 
     def getSelectFromBody(atom: Atom, aliasIndex: Int): FromItem = {
@@ -248,7 +248,7 @@ object SqlUtils {
                   atomIndexedInSelect, (lastInSelect, List()))
 
               getSelectBodyH(head, tail, mapOfCommonTermsToBodyAtomsIndexed, lastItemAndCurrentJoins._2 ::: joins,
-                mapFiltered ::: mappedClauseBodyIndex, atomIndexedInSelect ++ mapFiltered.flatten(_._2),
+                mapFiltered ::: mappedClauseBodyIndex, atomIndexedInSelect ++ mapFiltered.flatMap(_._2),
                 lastItemAndCurrentJoins._1, selectBody)
             }
         }

@@ -4,7 +4,7 @@ import fr.lirmm.graphik.graal.api.core.{Atom, Predicate}
 import fr.lirmm.graphik.graal.io.dlp.DlgpParser
 
 import java.io.File
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 case class EDBCatalog(tables: Set[Atom]) {
   private lazy val predicateMapToAtom: Map[Predicate, Atom] = tables.map(atom => (atom.getPredicate, atom)).toMap

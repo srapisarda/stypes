@@ -1,14 +1,14 @@
 package uk.ac.bbk.dcs.stypes.utils
 
-object UtilRunner extends App {
+object UtilRunner {
 
-  println(s"args.length: ${args.length}")
+  def main(args: Array[String]): Unit = {
+    println(s"args.length: ${args.length}")
 
-  if(args.length > 1) {
+    if(args.length > 1) {
       println(args(0))
       println("***********")
       println(args(1))
+    }
   }
-
-
 }

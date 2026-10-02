@@ -32,9 +32,8 @@ import fr.lirmm.graphik.graal.core.term.DefaultTermFactory
 import fr.lirmm.graphik.graal.io.dlp.DlgpParser
 
 import scala.annotation.tailrec
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.io.Source
-import scala.reflect.io.File
 import scala.util.matching.Regex
 
 /**
@@ -46,12 +45,12 @@ import scala.util.matching.Regex
   */
 class TreeDecomposition {
   private val logger = Logger(this.getClass)
-  private var mapCqAtoms: Map[Predicate, Atom] = _
-  private var root: Bag = _
-  private var children: List[TreeDecomposition] = _
-  private var cqAtoms: Set[Atom] = _
+  private var mapCqAtoms: Map[Predicate, Atom] = null
+  private var root: Bag = null
+  private var children: List[TreeDecomposition] = null
+  private var cqAtoms: Set[Atom] = null
 
-  def this(cqAtoms: Set[Atom], graph: Graph, v: Vertex, mode: Boolean = false, edgesVisited: Set[Edge]= Set()) {
+  def this(cqAtoms: Set[Atom], graph: Graph, v: Vertex, mode: Boolean = false, edgesVisited: Set[Edge]= Set()) = {
     this()
 
     // checks preconditions
@@ -89,7 +88,7 @@ class TreeDecomposition {
 
   }
 
-  private[TreeDecomposition] def this(cqAtoms: Map[Predicate, Atom], root: Bag, children: List[TreeDecomposition]) {
+  private[TreeDecomposition] def this(cqAtoms: Map[Predicate, Atom], root: Bag, children: List[TreeDecomposition]) = {
     this()
     this.mapCqAtoms = cqAtoms
     this.root = root
@@ -153,7 +152,7 @@ class TreeDecomposition {
 
   }
 
- private def renameAtom(atom:Atom) : Atom={
+  private def renameAtom(atom:Atom) : Atom={
     val pattern = "(__\\d+__)".r
     val newPredicateName =  pattern.replaceAllIn( atom.getPredicate.getIdentifier.toString, "" )
     new DefaultAtom( new Predicate( newPredicateName, atom.getPredicate.getArity), atom.getTerms() )
@@ -183,11 +182,11 @@ class TreeDecomposition {
     CentroidDecomposition.getCentroid(this)
   }
 
-  @deprecated
+  @deprecated("Use getCentroid instead.", "")
   def  getSeparator : TreeDecomposition =
     getSplitter(this, this.getSize)
 
-  @deprecated @tailrec
+  @deprecated("Use CentroidDecomposition.getCentroid instead.", "") @tailrec
   private def getSplitter(t: TreeDecomposition, rootSize: Int) : TreeDecomposition = {
 
     @tailrec
@@ -248,17 +247,17 @@ object TreeDecomposition{
           .findAllIn(line)
           .flatMap(p => p.split(","))
           .toList.map(_.trim)
-        val terms = termss.map(tf.createVariable(_))
+        val terms: List[Term] = termss.map(tf.createVariable(_))
 
         val predicateName = line.split('(').head
         val predicate: Predicate = new Predicate(predicateName, terms.length)
 
-        new DefaultAtom(predicate, terms: _*)
+        new DefaultAtom(predicate, terms.asJava)
       }
     )
 
     val graph: Graph = new TinkerGraph
-    val in = File(fileGML).inputStream()
+    val in = new java.io.FileInputStream(fileGML)
 
     GMLReader.inputGraph(graph, in)
     new TreeDecomposition(atoms.toSet, graph, null, false)
@@ -267,7 +266,7 @@ object TreeDecomposition{
 
   def getTreeDecomposition(fileGML: String, fileCQWithHead: String): ( TreeDecomposition , List[Variable] ) = {
 
-    val textQueries = File(fileCQWithHead).lines()
+    val textQueries = Source.fromFile(fileCQWithHead).getLines()
       .map( line  =>  line .replaceAll( "<-", ":-" ).replace("?", "") ).mkString("\n")
 
     val rules:List[Rule] = new DlgpParser(textQueries).asScala.toList.map{
@@ -283,7 +282,7 @@ object TreeDecomposition{
 
 
     val graph: Graph = new TinkerGraph
-    val in = File(fileGML).inputStream()
+    val in = new java.io.FileInputStream(fileGML)
 
     GMLReader.inputGraph(graph, in)
     (new TreeDecomposition(atoms.toSet, graph, null, mode = true),
