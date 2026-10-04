@@ -26,7 +26,7 @@ libraryDependencies ++= Seq( "fr.lirmm.graphik" % "graal-core" % graalVersion
                 ,"com.github.jsqlparser" % "jsqlparser" % "4.0"
                 ,"ch.qos.logback" % "logback-classic" % logbackVersion
                 ,"ch.qos.logback" % "logback-core" % logbackVersion
-                ,"org.slf4j" % "slf4j-api" % "2.0.7"
+                ,"org.slf4j" % "slf4j-api" % "2.0.20"
                 // test
                 ,"org.scalatest" %% "scalatest" % "3.2.20" % "test"
                 ,"junit" % "junit" % "4.10" % "test"
