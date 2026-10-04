@@ -1,9 +1,9 @@
 package uk.ac.bbk.dcs.stypes.utils
 
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 import uk.ac.bbk.dcs.stypes.ReWriter
 
-class NdlFlattenTest extends FunSpec {
+class NdlFlattenTest extends AnyFunSpec {
 
   describe("IDB predicate substitution") {
 

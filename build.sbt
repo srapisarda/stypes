@@ -2,21 +2,18 @@ name := "stypes"
 
 version := "1.1.1"
 
-scalaVersion := "2.12.6"
+scalaVersion := "3.9.0"
 
-crossScalaVersions := Seq("2.11.8", "2.12.6")
+crossScalaVersions := Seq("2.11.12", "2.12.21", "3.9.0")
 
 val graalVersion = "1.2.0"
-val logbackVersion = "1.3.11"
+val logbackVersion = "1.6.5"
 
 //useGpg := false
 
-publishArtifact in Test := false
+Test / publishArtifact := false
 
 pomIncludeRepository := { x => false }
-
-resolvers += Resolver.sonatypeRepo("public")
-
 
 libraryDependencies ++= Seq( "fr.lirmm.graphik" % "graal-core" % graalVersion
                 ,"fr.lirmm.graphik" % "graal-forward-chaining" % graalVersion
@@ -24,19 +21,24 @@ libraryDependencies ++= Seq( "fr.lirmm.graphik" % "graal-core" % graalVersion
                 ,"fr.lirmm.graphik" % "graal-io-dlgp" % graalVersion
                 ,"fr.lirmm.graphik" % "graal-store-rdbms" % graalVersion
                 ,"fr.lirmm.graphik" % "graal-homomorphism" % graalVersion
-                ,"com.typesafe.scala-logging" %% "scala-logging" % "3.9.5"
+                ,"com.typesafe.scala-logging" %% "scala-logging" % "3.9.6"
                 ,"com.tinkerpop.blueprints" % "blueprints-core" % "2.6.0"
-                ,"com.github.jsqlparser" % "jsqlparser" % "4.0"
+                ,"com.github.jsqlparser" % "jsqlparser" % "5.4"
                 ,"ch.qos.logback" % "logback-classic" % logbackVersion
                 ,"ch.qos.logback" % "logback-core" % logbackVersion
-                ,"org.slf4j" % "slf4j-api" % "2.0.7"
+                ,"org.slf4j" % "slf4j-api" % "2.0.20"
                 // test
-                ,"org.scalatest" %% "scalatest" % "3.0.4" % "test"
-                ,"junit" % "junit" % "4.10" % "test"
+                ,"org.scalatest" %% "scalatest" % "3.2.20" % "test"
+                ,"junit" % "junit" % "4.13.2" % "test"
 )
 
+libraryDependencies ++= {
+  if (scalaBinaryVersion.value == "3") Seq.empty
+  else Seq("org.scala-lang.modules" %% "scala-collection-compat" % "2.14.0")
+}
 
-assemblyMergeStrategy in assembly := {
+assembly / assemblyMergeStrategy := {
+  case PathList("META-INF", "services", _ @ _*) => MergeStrategy.concat
   case PathList("META-INF", xs @ _*) => MergeStrategy.discard
   case x => MergeStrategy.first
 }
@@ -68,9 +70,9 @@ publishMavenStyle := true
 
 
 lazy val buildSettings =  Seq(
-  organization := (organization in ThisBuild).value,
+  organization := (ThisBuild / organization).value,
   // use the same value as in the build scope, so it can be overriden by stampVersion
-  version := (version in ThisBuild).value
+  version := (ThisBuild / version).value
 )
 
 publishTo := {

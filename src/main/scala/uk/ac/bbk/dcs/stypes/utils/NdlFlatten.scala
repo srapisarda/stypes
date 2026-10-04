@@ -7,7 +7,7 @@ import fr.lirmm.graphik.graal.core.DefaultAtom
 import uk.ac.bbk.dcs.stypes.{Clause, ReWriter, SplitClause}
 
 import scala.annotation.tailrec
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.language.postfixOps
 
 
@@ -47,7 +47,7 @@ object NdlFlatten {
 
   private def getMgu(list: List[(Term, Term)]): Map[Term, Term] = {
     list.groupBy(_._1)
-      .flatten {
+      .flatMap {
         case (z1, list) =>
           val lastTerm = list.last._2
           getMGUForGroup(Map(z1 -> lastTerm), list, lastTerm)
@@ -103,7 +103,8 @@ object NdlFlatten {
   private def clauseSubstitution(substitutionClauses: List[Clause], clause: Clause) = {
 
     def clauseSubstitutionH(substitutionClause: Clause) = {
-      val zipTermsWithIndexSubstitution = ((Stream from 0) zip substitutionClause.head.getTerms.asScala) toMap
+      val zipTermsWithIndexSubstitution = substitutionClause.head.getTerms.asScala.zipWithIndex
+        .map { case (term, index) => index -> term }.toMap
 
       def getSubstitutionList(atom: Atom) = atom.getTerms.asScala
         .zipWithIndex
@@ -125,7 +126,7 @@ object NdlFlatten {
         substitutionList
           .groupBy(_._1)
           .filter(_._2.size > 1)
-          .flatten {
+          .flatMap {
             case (_, value) =>
               val last = value.last._2
               value
@@ -213,7 +214,7 @@ object NdlFlatten {
     }
   }
 
-  @deprecated
+  @deprecated("Use idbPredicateFlatten instead.", "")
   def idbPredicateFlattenOld(ndl: List[Clause], predicateIdentifier: String): List[Clause] = {
     val iDbPredicates = ndl.groupBy(_.head.getPredicate)
     val idbSubstitutionOption = iDbPredicates.find(_._1.getIdentifier.toString == predicateIdentifier)
@@ -222,7 +223,7 @@ object NdlFlatten {
       val substitutionClauses = idbSubstitutionOption.get._2
       logger.debug(s"substitutionClauses: $substitutionClauses")
       ndl.filterNot(_.head.getPredicate.getIdentifier.toString == predicateIdentifier)
-        .flatten(clause => {
+        .flatMap(clause => {
           if (clause.body.exists(_.getPredicate.getIdentifier.toString == predicateIdentifier)) {
             clauseSubstitution(substitutionClauses, clause)
           } else {

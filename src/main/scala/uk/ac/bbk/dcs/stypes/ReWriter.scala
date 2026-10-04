@@ -32,7 +32,7 @@ import fr.lirmm.graphik.graal.io.dlp.DlgpParser
 import uk.ac.bbk.dcs.stypes.ConstantType.EPSILON
 
 import scala.annotation.tailrec
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.io.Source
 
 
@@ -382,8 +382,6 @@ object ReWriter {
 
         val body = removeEqualityWithSameTerms(clause.body.map(substituteAtom), List())
 
-        Clause(head, body)
-
         if (substitutionSetMap.isEmpty) Clause(head, body)
         else equalityClauseSubstitution(Clause(head, body))
 
@@ -690,7 +688,7 @@ class ReWriter(ontology: List[Rule]) {
       case List() => acc.reverse
       case currentAtom :: xs =>
         // All epsilon
-        if (theType.areAllEpsilon(currentAtom)) visitBagAtoms(xs, getTypedAtom(currentAtom, QueryTerm) :: acc)
+        if (theType.areAllEpsilon(currentAtom)) visitBagAtoms(xs, getTypedAtom(currentAtom, QueryTerm.apply) :: acc)
         // All anonymous
         else if (theType.areAllAnonymous(currentAtom)) {
           theType.homomorphism.createImageOf(currentAtom.getTerm(0)) match {
@@ -699,7 +697,7 @@ class ReWriter(ontology: List[Rule]) {
               if (index < arrayGeneratingAtoms.length) {
                 val atom = arrayGeneratingAtoms(index)
                 visitBagAtoms(xs,
-                  markAtom(getTypedAtom(atom, OntologyTerm),
+                  markAtom(getTypedAtom(atom, OntologyTerm.apply),
                     getFirstAnonymousTerm(currentAtom.getTerms.asScala.toList)) :: acc)
               } else {
                 visitBagAtoms(xs, acc)

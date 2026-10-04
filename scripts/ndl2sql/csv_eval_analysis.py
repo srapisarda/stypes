@@ -3,8 +3,7 @@ import re
 from pathlib import Path
 from shutil import rmtree
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import input_file_name, regexp_replace, regexp_extract, avg, round, max, min
-
+from pyspark.sql.functions import input_file_name, regexp_replace, regexp_extract, avg, round, max, min, stddev
 
 def __main(spark: SparkSession):
     parser = argparse.ArgumentParser()
@@ -12,7 +11,7 @@ def __main(spark: SparkSession):
                         type=str)
     args = parser.parse_args()
     csv_file_path = re.search('([^\/]+$)', args.folder_path).group(0)
-    csv_file_path = f'{args.folder_path}/{csv_file_path}_analysis_2'
+    csv_file_path = f'{args.folder_path}/{csv_file_path}_analysis_3'
 
     if Path(csv_file_path).exists():
         rmtree(csv_file_path)
@@ -28,7 +27,11 @@ def __main(spark: SparkSession):
     df = df.select(df['duration'], df['total'].alias('tasks'), df['job-parallelism'], df['data-set'], df['evaluation']) \
         .filter(df['state'] == 'FINISHED') \
         .groupBy('job-parallelism', 'data-set', 'evaluation') \
-        .agg(round(avg('duration'), 0).alias('duration'), round(avg('tasks'), 0).alias('tasks')) \
+        .agg(
+            round(avg('duration'), 0).alias('duration'),
+            round(avg('tasks'), 0).alias('tasks'),
+            round(stddev('duration'), 2).alias('duration_stddev')
+        ) \
         .orderBy('data-set', 'job-parallelism', 'evaluation')
 
     df.show()
@@ -65,7 +68,7 @@ def __main(spark: SparkSession):
         .withColumn('tmi',
                     round((df['tasks'] - df_not_flatten['nf-tasks']) * 100 / df_not_flatten['nf-tasks'], 2)) \
         .select('job-parallelism', 'data-set', 'evaluation', df['duration'], df['tasks'], 'dmi',
-                'tmi') \
+                'tmi', 'duration_stddev') \
         .orderBy( 'data-set', 'evaluation', 'job-parallelism')
 
     df_with_stats.show()

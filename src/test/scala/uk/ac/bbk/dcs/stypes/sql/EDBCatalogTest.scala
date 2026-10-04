@@ -4,9 +4,9 @@ import fr.lirmm.graphik.graal.api.core.Predicate
 import fr.lirmm.graphik.graal.api.factory.TermFactory
 import fr.lirmm.graphik.graal.core.DefaultAtom
 import fr.lirmm.graphik.graal.core.term.DefaultTermFactory
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 
-class EDBCatalogTest extends FunSpec {
+class EDBCatalogTest extends AnyFunSpec {
   describe("EDBCatalog Tests") {
 
     val tf: TermFactory = DefaultTermFactory.instance

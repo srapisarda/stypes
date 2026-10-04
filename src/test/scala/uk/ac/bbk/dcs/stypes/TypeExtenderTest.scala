@@ -24,12 +24,12 @@ import fr.lirmm.graphik.graal.api.core.{Atom, Predicate, Term}
 import fr.lirmm.graphik.graal.core.term.DefaultTermFactory
 import fr.lirmm.graphik.graal.core.{DefaultAtom, TreeMapSubstitution}
 import fr.lirmm.graphik.graal.io.dlp.DlgpWriter
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 
 /**
   * Created by rapissal on 26/06/2017.
   */
-class TypeExtenderTest extends FunSpec {
+class TypeExtenderTest extends AnyFunSpec {
 
   describe("TypeExtender  decomposition commons ") {
 

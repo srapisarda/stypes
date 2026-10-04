@@ -28,9 +28,9 @@ import fr.lirmm.graphik.graal.core.{DefaultAtom, TreeMapSubstitution}
 import fr.lirmm.graphik.graal.forward_chaining.DefaultChase
 import fr.lirmm.graphik.graal.io.dlp.DlgpParser
 import fr.lirmm.graphik.util.DefaultURI
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.io.Source
 
 /**
@@ -41,7 +41,7 @@ import scala.io.Source
   *
   * on 09/05/2017.
   */
-class ReWriterTest extends FunSpec {
+class ReWriterTest extends AnyFunSpec {
 
   // 0 - Create a Dlgp writer and a structure to store rules.
   private val pathToBenchmark100 = "src/test/resources/benchmark/100"
@@ -142,7 +142,7 @@ class ReWriterTest extends FunSpec {
         val el = chase.next()
         println(el)
       }
-      assert(chase != Nil)
+      assert(chase ne null)
 
     }
 
@@ -289,7 +289,7 @@ class ReWriterTest extends FunSpec {
   describe("Benchmark tests cases") {
 
     def transform2Dlp(pin: String, pout: String): Unit = {
-      val lines = Source.fromFile(pin).getLines.toList
+      val lines = Source.fromFile(pin).getLines().toList
 
       val datalog = lines.map(line => {
         val sentence = line.split("->")
@@ -688,7 +688,7 @@ class ReWriterTest extends FunSpec {
     }
 
     it("has to read a clause") {
-      val cq = Source.fromFile(s"$pathToBenchmark100/queries/q01-t.cq").getLines.reduce(_ + _)
+      val cq = Source.fromFile(s"$pathToBenchmark100/queries/q01-t.cq").getLines().reduce(_ + _)
 
       val headBody = cq.split(":-")
 
@@ -741,7 +741,7 @@ class ReWriterTest extends FunSpec {
       def ffilter(ft: String, line: String): Boolean = line.contains(s"<$ft>")
 
       def repalcing(line: String): Array[String] =
-        line replace("<", "") replace(">", "") replace(".", "") split " "
+        line.replace("<", "").replace(">", "").replace(".", "").split(" ")
 
       def fmap(ft: String, args: Array[String]): String = ft match {
         case "R" =>
@@ -771,5 +771,3 @@ class ReWriterTest extends FunSpec {
     }
   }
 }
-
-

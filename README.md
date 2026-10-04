@@ -17,6 +17,7 @@ to be evaluated in an high parallelizable environments as Apache Flink.
 In order to execute  STypeS in local environment, 
 it is necessary to build the application by including all the 
 dependencies. 
+The build is compatible with JDK 25. It uses Scala 3.9.0 by default and cross-builds for Scala 2.11.12 and 2.12.21.
 From terminal command line execute the following:
 
 ```
@@ -25,7 +26,7 @@ cd stypes
 sbt 'set test in assembly := {}' clean assembly 
 ```
 
-The command  above  will create a jar file in "./target/scala-2.12/stypes-assembly-1.1.0.jar"
+The command above will create a jar file in "./target/scala-3.9.0/stypes-assembly-1.1.1.jar".
 
 STypeS takes three inputs:
 * an ontology **O**, which is a set of linear tgds of the form :
@@ -40,11 +41,11 @@ A tree decomposition of a CQ **q** with variables **var(q)** is a pair **(T, λ)
  
 
 In order to execute the NDL-rewriting algorithm we need to use and execute 
-the jar created above:  ***java -cp stypes-assembly-1.1.0.jar (CQ) (GML) (O)***
+the jar created above:  ***java -cp stypes-assembly-1.1.1.jar (CQ) (GML) (O)***
 
 example:
 ```
-cd ./target/scala-2.12/
+cd ./target/scala-3.9.0/
 java -cp  stypes-assembly-1.1.1.jar uk.ac.bbk.dcs.stypes.App \
          ../../src/test/resources/q09.cq \
          ../../src/test/resources/q09.gml \
@@ -127,7 +128,5 @@ Apache Buildr
 ```
 'com.github.srapisarda:stypes_2.12:jar:1.1.0'
 ```
-
-
 
 

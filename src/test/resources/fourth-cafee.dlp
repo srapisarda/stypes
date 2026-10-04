@@ -1,0 +1,14 @@
+# Customer bought a product
+bought_product(C, P) :- places_order(C, O), contains_product(O, P).
+
+# Product available in a store
+available_in_store(P, S) :- sells_product(S, P).
+
+# Supplier associated with a store through products
+supplier_for_store(Sup, S) :- supplies_product(Sup, P), sells_product(S, P).
+
+# Customer can obtain product from store
+customer_store(C, S) :- bought_product(C, P), sells_product(S, P).
+
+# Store receives products from supplier
+store_supplier_product(S, Sup, P) :- sells_product(S, P), supplies_product(Sup, P).

@@ -3,15 +3,16 @@ package uk.ac.bbk.dcs.stypes.sql
 import com.typesafe.scalalogging.Logger
 import fr.lirmm.graphik.graal.api.core.{Atom, Predicate, Term}
 import net.sf.jsqlparser.expression.Alias
+import net.sf.jsqlparser.expression.Expression
 import net.sf.jsqlparser.expression.operators.relational.EqualsTo
 import net.sf.jsqlparser.schema.{Column, Table}
 import net.sf.jsqlparser.statement.Statement
-import net.sf.jsqlparser.statement.select.{FromItem, Join, PlainSelect, Select, SelectBody, SelectExpressionItem, SelectItem, SetOperation, SetOperationList, SubSelect, UnionOp, WithItem}
+import net.sf.jsqlparser.statement.select.{FromItem, Join, ParenthesedSelect, PlainSelect, Select, SelectItem, SetOperation, SetOperationList, UnionOp, WithItem}
 import uk.ac.bbk.dcs.stypes.{Clause, ReWriter}
 import uk.ac.bbk.dcs.stypes.utils.NdlUtils
 
 import scala.annotation.tailrec
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 object SqlUtils {
   val logger = Logger(this.getClass)
@@ -49,7 +50,7 @@ object SqlUtils {
     val iDBs = optionIDBs.getOrElse(NdlUtils.getIdbPredicates(ndl))
       val mapPredicateToIdbPredicateBody = ndl.groupBy(_.head)
       .map(group => group._1.getPredicate ->
-        group._2.flatten(clause => clause.body.filter(atom => iDBs.contains(atom.getPredicate)).map(_.getPredicate)).distinct)
+        group._2.flatMap(clause => clause.body.filter(atom => iDBs.contains(atom.getPredicate)).map(_.getPredicate)).distinct)
 
     logger.debug( mapPredicateToIdbPredicateBody.mkString("\n").replace("[2]", ""))
 
@@ -109,7 +110,7 @@ object SqlUtils {
   def minInFront(body: List[Atom]): List[Atom] = {
     if (body.isEmpty) body
     else {
-      val term = body.flatten(_.getTerms().asScala).min
+      val term = body.flatMap(_.getTerms().asScala).min
       val front = body.filter(_.contains(term)).sortBy(_.getTerms.size())
       val back = body.filter(!_.contains(term))
       front ::: back
@@ -145,7 +146,7 @@ object SqlUtils {
 
       }.filterNot { case (_, listAtoms) => listAtoms == Nil }
         .groupBy { case (term, _) => term }
-        .map { case (term, tupleTermListAtoms) => (term, tupleTermListAtoms.flatten(_._2).distinct.sortBy(_._2)) }
+        .map { case (term, tupleTermListAtoms) => (term, tupleTermListAtoms.flatMap(_._2).distinct.sortBy(_._2)) }
     }
 
     def getSelectFromBody(atom: Atom, aliasIndex: Int): FromItem = {
@@ -159,10 +160,10 @@ object SqlUtils {
       }
     }
 
-    def getSubSelect(atom: Atom, aliasIndex: Int): SubSelect = {
+    def getSubSelect(atom: Atom, aliasIndex: Int): ParenthesedSelect = {
 
       val selectBody = if (predicateMapToSelects.contains(atom.getPredicate)) {
-        predicateMapToSelects(atom.getPredicate).getSelectBody()
+        predicateMapToSelects(atom.getPredicate)
       } else {
         val clause = {
 
@@ -170,16 +171,15 @@ object SqlUtils {
             .find(_.head.getPredicate == atom.getPredicate)
             .getOrElse(throw new RuntimeException(s"Atom $atom is not present in select"))
         }
-        getSelect(clause.head.getPredicate).getSelectBody()
+        getSelect(clause.head.getPredicate)
       }
 
-      val subSelect = new SubSelect()
-      subSelect.setSelectBody(selectBody)
+      val subSelect = new ParenthesedSelect().withSelect(selectBody)
       subSelect.setAlias(new Alias(atom.getPredicate.getIdentifier.toString + "_" + aliasIndex))
       subSelect
     }
 
-    def getSelectExpressionItem(termIndexed: (Term, Int), clauseBodyWithIndex: List[(Atom, Int)]) = {
+    def getSelectExpressionItem(termIndexed: (Term, Int), clauseBodyWithIndex: List[(Atom, Int)]): SelectItem[Expression] = {
       val bodyAtomsIndexed: (Atom, Int) = clauseBodyWithIndex
         .find(_._1.contains(termIndexed._1))
         .getOrElse(throw new RuntimeException(s"Term $termIndexed not in body clause!"))
@@ -195,7 +195,7 @@ object SqlUtils {
         sqlTerm.getIdentifier.toString
       }
 
-      val selectExpressionItem = new SelectExpressionItem(new Column(table, columnName))
+      val selectExpressionItem = new SelectItem[Expression](new Column(table, columnName))
       selectExpressionItem.setAlias(new Alias(s"X${termIndexed._2}"))
       selectExpressionItem
     }
@@ -231,10 +231,10 @@ object SqlUtils {
             if (selectBody.getFromItem == null) {
               val fromItem = getSelectFromBody(currentAtom, aliasIndex)
               selectBody.setFromItem(fromItem)
-              val columns: List[SelectItem] = head.getTerms.asScala.zipWithIndex.map(
+              val columns = head.getTerms.asScala.zipWithIndex.map(
                 getSelectExpressionItem(_, clauseBodyWithIndex)
               ).toList
-              selectBody.setSelectItems(columns.asJava)
+              selectBody.addSelectItems(columns.asJava)
               getSelectBodyH(head, tail, mapOfCommonTermsToBodyAtomsIndexed, joins, mappedClauseBodyIndex,
                 Set((currentAtom, aliasIndex)), (currentAtom, aliasIndex), selectBody)
             } else {
@@ -248,7 +248,7 @@ object SqlUtils {
                   atomIndexedInSelect, (lastInSelect, List()))
 
               getSelectBodyH(head, tail, mapOfCommonTermsToBodyAtomsIndexed, lastItemAndCurrentJoins._2 ::: joins,
-                mapFiltered ::: mappedClauseBodyIndex, atomIndexedInSelect ++ mapFiltered.flatten(_._2),
+                mapFiltered ::: mappedClauseBodyIndex, atomIndexedInSelect ++ mapFiltered.flatMap(_._2),
                 lastItemAndCurrentJoins._1, selectBody)
             }
         }
@@ -268,7 +268,7 @@ object SqlUtils {
             val aliasIndex = rightItemOption.head._2
             val rightItem = getRightJoinItem(currentAtom, aliasIndex)
             val onExpression = new EqualsTo()
-            join.setRightItem(rightItem)
+            join.setFromItem(rightItem)
 
             val leftAtom = atomsIndexed.find(_ != (currentAtom, aliasIndex)).get
             val leftTable = new Table(leftAtom._1.getPredicate.getIdentifier.toString)
@@ -280,7 +280,7 @@ object SqlUtils {
             onExpression.setRightExpression(new Column(rightTable, getJoinExpressionColumnName(currentAtom, term)))
             onExpression.setLeftExpression(new Column(leftTable, getJoinExpressionColumnName(leftAtom._1, term)))
 
-            join.setOnExpression(onExpression)
+            join.addOnExpression(onExpression)
 
             val tail = if (rightItemOption.length > 1) mapFiltered else xs
             getCurrentJoin(tail, atomIndexedInSelect + rightItemOption.head, (rightItemOption.head, join :: acc._2))
@@ -314,8 +314,7 @@ object SqlUtils {
         increaseAliasIndex()
         table
       } else {
-        val subSelect = new SubSelect
-        subSelect.setSelectBody(getSelect(atom.getPredicate, addSelectAlias = true).getSelectBody)
+        val subSelect = new ParenthesedSelect().withSelect(getSelect(atom.getPredicate, addSelectAlias = true))
         subSelect.setAlias(new Alias(atom.getPredicate.getIdentifier.toString + "_" + aliasIndex))
         subSelect
       }
@@ -327,24 +326,24 @@ object SqlUtils {
       }
       else {
         //
-        val selects: List[SelectBody] = ndlOrdered
+        val selects: List[Select] = ndlOrdered
           .filter(_.head.getPredicate == predicate)
           .map(clause => getSelectBody(clause))
 
         if (selects.isEmpty)
           throw new RuntimeException(s"head predicate $predicate is not present")
 
-        val select = new Select
-        if (selects.size == 1) {
-          select.setSelectBody(selects.head)
-        } else {
+        val select = if (selects.size == 1) selects.head else {
           val ops: List[SetOperation] = (0 until selects.size - 1).toList.map(_ => new UnionOp())
           val sol = new SetOperationList()
-          sol.withSelects(selects.asJava)
+          val unionSelects = selects.zipWithIndex.map {
+            case (unionSelect, index) =>
+              if (index == 0) unionSelect
+              else new ParenthesedSelect().withSelect(unionSelect)
+          }
+          sol.withSelects(unionSelects.asJava)
           sol.withOperations(ops.asJava)
-          // sol.addBrackets(false)
-          (selects.indices map (_ != 0)).foreach(sol.addBrackets(_))
-          select.setSelectBody(sol)
+          sol
         }
 
         predicateMapToSelects += predicate -> select
@@ -356,11 +355,11 @@ object SqlUtils {
     def getSelectWith(startPredicate: Predicate, selectAlias: List[String]): Select = {
       val idbDependencySpanningTreeList = getIdbTopologicalSorting(startPredicate, ndlOrdered)
 
-      val withItems: List[WithItem] = idbDependencySpanningTreeList.map(predicate => {
-        val withItem = new WithItem()
-        val selectBody = getSelect(predicate).getSelectBody
-        withItem.setSelectBody(selectBody)
-        withItem.setName(predicate.getIdentifier.toString)
+      val withItems = idbDependencySpanningTreeList.map(predicate => {
+        val withItem = new WithItem[ParenthesedSelect]()
+        val selectBody = getSelect(predicate)
+        withItem.setSelect(new ParenthesedSelect().withSelect(selectBody))
+        withItem.setAlias(new Alias(predicate.getIdentifier.toString))
         withItem
       })
 
@@ -373,20 +372,17 @@ object SqlUtils {
 
       val selectAliasVector = selectAlias.toVector
       val selectAliasVectorSize = selectAlias.size
-      val selectItems: List[SelectItem] = startClause.head.getTerms.asScala.zipWithIndex.map(termIndexed => {
-        val selectExpressionItem = new SelectExpressionItem(new Column(fromItem, s"X${termIndexed._2}"))
+      val selectItems = startClause.head.getTerms.asScala.zipWithIndex.map(termIndexed => {
+        val selectExpressionItem = new SelectItem[Expression](new Column(fromItem, s"X${termIndexed._2}"))
         if (selectAliasVector.nonEmpty && termIndexed._2 <= selectAliasVectorSize - 1) {
           selectExpressionItem.setAlias(new Alias(selectAliasVector(termIndexed._2)))
         }
         selectExpressionItem
       }).toList
 
-      selectBody.setSelectItems(selectItems.asJava)
-
-      val select = new Select()
-      select.setSelectBody(selectBody)
-      select.setWithItemsList(withItems.asJava)
-      select
+      selectBody.addSelectItems(selectItems.asJava)
+      selectBody.addWithItemsList(withItems.asJava)
+      selectBody
     }
 
     if (useWith)

@@ -40,7 +40,7 @@ case class Splitter(root: TreeDecomposition) {
   logger.debug(s"Splitting bag ${splittingBag.hashCode()} : ${splittingBag.getRoot} ")
 
   val children: List[Splitter] = {
-    val directChildren = splittingBag.getChildren.map(Splitter)
+    val directChildren = splittingBag.getChildren.map(Splitter.apply)
     if (splittingBag != root) {
       val rootGeneratedChild: TreeDecomposition = root.remove(splittingBag)
       Splitter(rootGeneratedChild) :: directChildren
