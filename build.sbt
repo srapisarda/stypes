@@ -38,6 +38,7 @@ libraryDependencies ++= {
 }
 
 assembly / assemblyMergeStrategy := {
+  case PathList("META-INF", "services", _ @ _*) => MergeStrategy.concat
   case PathList("META-INF", xs @ _*) => MergeStrategy.discard
   case x => MergeStrategy.first
 }
