@@ -23,7 +23,7 @@ libraryDependencies ++= Seq( "fr.lirmm.graphik" % "graal-core" % graalVersion
                 ,"fr.lirmm.graphik" % "graal-homomorphism" % graalVersion
                 ,"com.typesafe.scala-logging" %% "scala-logging" % "3.9.6"
                 ,"com.tinkerpop.blueprints" % "blueprints-core" % "2.6.0"
-                ,"com.github.jsqlparser" % "jsqlparser" % "4.0"
+                ,"com.github.jsqlparser" % "jsqlparser" % "5.4"
                 ,"ch.qos.logback" % "logback-classic" % logbackVersion
                 ,"ch.qos.logback" % "logback-core" % logbackVersion
                 ,"org.slf4j" % "slf4j-api" % "2.0.20"
