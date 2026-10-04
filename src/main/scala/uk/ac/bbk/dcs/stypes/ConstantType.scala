@@ -41,9 +41,7 @@ class ConstantType(var identifier: (Int, String) ) extends AbstractTerm {
   }
 
   // PUBLIC METHODS
-  override def isConstant: Boolean = true
-
-  override def getType: Term.Type = Term.Type.LITERAL
+  override def getType: Term.Type = Term.Type.CONSTANT
 
   override def getIdentifier: (Int, String)  = identifier
 

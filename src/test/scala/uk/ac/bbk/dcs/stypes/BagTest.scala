@@ -65,7 +65,7 @@ class BagTest extends AnyFunSpec {
     }
 
     it ("method toString should returned as expected") {
-      assert(b.toString === "(atoms: Set(r[2](X,Y), s[2](Y,Z)), variables: Set(X, Y, Z))")
+      assert(b.toString === "(atoms: Set(r\\2(X,Y), s\\2(Y,Z)), variables: Set(X, Y, Z))")
     }
   }
 

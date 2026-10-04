@@ -2,6 +2,7 @@ package uk.ac.bbk.dcs.stypes.sql
 
 import fr.lirmm.graphik.graal.api.core.{Atom, Predicate}
 import fr.lirmm.graphik.graal.io.dlp.DlgpParser
+import uk.ac.bbk.dcs.stypes.GraalIterator
 
 import java.io.File
 import scala.jdk.CollectionConverters._
@@ -33,7 +34,7 @@ case class EDBCatalog(tables: Set[Atom]) {
 object EDBCatalog {
   def getEDBCatalogFromFile(filename: String): EDBCatalog = {
     val dlgpParser = new DlgpParser(new File(filename))
-    val clauses: Set[Atom] = dlgpParser.asScala.map { case a: Atom => a }.toSet
+    val clauses: Set[Atom] = GraalIterator.toList(dlgpParser).map { case a: Atom => a }.toSet
     EDBCatalog(clauses)
   }
 

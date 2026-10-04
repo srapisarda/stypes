@@ -26,8 +26,8 @@ import java.util.UUID
 import com.typesafe.scalalogging.Logger
 import fr.lirmm.graphik.graal.api.core._
 import fr.lirmm.graphik.graal.core.DefaultAtom
-import fr.lirmm.graphik.graal.core.atomset.graph.DefaultInMemoryGraphAtomSet
-import fr.lirmm.graphik.graal.forward_chaining.DefaultChase
+import fr.lirmm.graphik.graal.core.atomset.graph.DefaultInMemoryGraphStore
+import fr.lirmm.graphik.graal.forward_chaining.BasicChase
 import fr.lirmm.graphik.graal.io.dlp.DlgpParser
 import uk.ac.bbk.dcs.stypes.ConstantType.EPSILON
 
@@ -58,7 +58,7 @@ object ReWriter {
     def visitRuleSet(rules: List[Rule], acc: List[Atom]): List[Atom] = rules match {
       case List() => acc
       case x :: xs =>
-        if (includeAllAtoms || containsExistentialQuantifier(x)) visitRuleSet(xs, acc ::: x.getBody.asScala.toList)
+        if (includeAllAtoms || containsExistentialQuantifier(x)) visitRuleSet(xs, acc ::: GraalIterator.toList(x.getBody.iterator()))
         else visitRuleSet(xs, acc)
     }
 
@@ -93,7 +93,7 @@ object ReWriter {
 
     def collectRules(generatingAtom: Atom): List[Clause] = {
       val canonicalModel: AtomSet = canonicalModelList(ontology, List(generatingAtom)).head
-      for (atom <- canonicalModel.asScala.toList; if atom != generatingAtom && !atom.getTerms.asScala.exists(isAnonymous))
+      for (atom <- GraalIterator.toList(canonicalModel.iterator()); if atom != generatingAtom && !atom.getTerms.asScala.exists(isAnonymous))
         yield Clause(atom, List(generatingAtom))
     }
 
@@ -119,9 +119,9 @@ object ReWriter {
     }
 
     def buildChase(atom: Atom): AtomSet = {
-      val store: AtomSet = new DefaultInMemoryGraphAtomSet
+      val store: AtomSet = new DefaultInMemoryGraphStore
       store.add(atom)
-      val chase = new DefaultChase(ontology.asJava, store)
+      val chase = new BasicChase[AtomSet](ontology.asJava, store)
       chase.execute()
 
       store
@@ -589,7 +589,7 @@ object ReWriter {
   }
 
   def getOntology(filename: String): List[Rule] = {
-    for (rule <- new DlgpParser(new File(filename)).asScala.toList; if rule.isInstanceOf[Rule])
+    for (rule <- GraalIterator.toList(new DlgpParser(new File(filename))); if rule.isInstanceOf[Rule])
       yield rule.asInstanceOf[Rule]
   }
 
@@ -602,11 +602,11 @@ object ReWriter {
   }
 
   private def getDatalogRewriting(dlgpParser: DlgpParser): List[Clause] = {
-    val clauses = dlgpParser.asScala.toList
+    val clauses = GraalIterator.toList(dlgpParser)
     clauses.map {
       case rule: Rule =>
-        val head: Atom = rule.getHead.asScala.head
-        val body: List[Atom] = rule.getBody.asScala.toList
+        val head: Atom = GraalIterator.toList(rule.getHead.iterator()).head
+        val body: List[Atom] = GraalIterator.toList(rule.getBody.iterator())
         Clause(head, body)
     }
   }
@@ -722,7 +722,7 @@ class ReWriter(ontology: List[Rule]) {
 
           //val sameAreEqual = canonicalModel.asScala.toList.map(atom => isMixed(atom.getTerms().asScala.toList) )
 
-          val expression: Seq[Seq[(Term, Term)]] = canonicalModel.asScala.toList
+          val expression: Seq[Seq[(Term, Term)]] = GraalIterator.toList(canonicalModel.iterator())
             .filter(atom => atom.getPredicate.equals(currentAtom.getPredicate)
               && isMixed(atom.getTerms().asScala.toList)
               && currentAtomCompatible(currentAtom, atom))

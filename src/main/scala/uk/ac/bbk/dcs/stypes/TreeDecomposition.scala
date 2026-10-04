@@ -269,13 +269,13 @@ object TreeDecomposition{
     val textQueries = Source.fromFile(fileCQWithHead).getLines()
       .map( line  =>  line .replaceAll( "<-", ":-" ).replace("?", "") ).mkString("\n")
 
-    val rules:List[Rule] = new DlgpParser(textQueries).asScala.toList.map{
+    val rules:List[Rule] = GraalIterator.toList(new DlgpParser(textQueries)).map{
       case rule:Rule => rule
     }
 
     //val atoms = rules.head.getBody.asScala
 
-    val atoms = rules.head.getBody.asScala.map(atom => {
+    val atoms = GraalIterator.toList(rules.head.getBody.iterator()).map(atom => {
       val terms: List[Term] = atom.getTerms.asScala.toList.map(t => DefaultTermFactory.instance().createVariable(t.getIdentifier))
       new DefaultAtom(atom.getPredicate, terms.asJava)
     })
