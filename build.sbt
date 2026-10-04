@@ -7,7 +7,7 @@ scalaVersion := "3.9.0"
 crossScalaVersions := Seq("2.11.12", "2.12.21", "3.9.0")
 
 val graalVersion = "1.2.0"
-val logbackVersion = "1.3.11"
+val logbackVersion = "1.6.5"
 
 //useGpg := false
 
@@ -21,7 +21,7 @@ libraryDependencies ++= Seq( "fr.lirmm.graphik" % "graal-core" % graalVersion
                 ,"fr.lirmm.graphik" % "graal-io-dlgp" % graalVersion
                 ,"fr.lirmm.graphik" % "graal-store-rdbms" % graalVersion
                 ,"fr.lirmm.graphik" % "graal-homomorphism" % graalVersion
-                ,"com.typesafe.scala-logging" %% "scala-logging" % "3.9.5"
+                ,"com.typesafe.scala-logging" %% "scala-logging" % "3.9.6"
                 ,"com.tinkerpop.blueprints" % "blueprints-core" % "2.6.0"
                 ,"com.github.jsqlparser" % "jsqlparser" % "4.0"
                 ,"ch.qos.logback" % "logback-classic" % logbackVersion
