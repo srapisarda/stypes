@@ -66,8 +66,6 @@ class TypeTerm(term: Term) extends AbstractTerm {
 
   override def getLabel: String = term.getLabel
 
-  override def isConstant: Boolean = term.isConstant
-
   override def getType: Term.Type = term.getType
 
   override def getIdentifier: AnyRef = term.getIdentifier

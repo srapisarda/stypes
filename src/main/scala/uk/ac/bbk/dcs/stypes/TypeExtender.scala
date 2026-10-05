@@ -23,8 +23,8 @@ package uk.ac.bbk.dcs.stypes
 import fr.lirmm.graphik.graal.api.core.{Substitution, _}
 import fr.lirmm.graphik.graal.core.TreeMapSubstitution
 import fr.lirmm.graphik.graal.core.atomset.LinkedListAtomSet
-import fr.lirmm.graphik.graal.core.factory.ConjunctiveQueryFactory
-import fr.lirmm.graphik.graal.homomorphism.StaticHomomorphism
+import fr.lirmm.graphik.graal.core.factory.DefaultConjunctiveQueryFactory
+import fr.lirmm.graphik.graal.homomorphism.SmartHomomorphism
 
 import scala.annotation.tailrec
 import scala.jdk.CollectionConverters._
@@ -38,10 +38,11 @@ import scala.jdk.CollectionConverters._
   *
   */
 case class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Vector[AtomSet],
-                   atomsToBeMapped: List[Atom], variableToBeMapped:List[Term] ) {
+                   atomsToBeMapped: List[Atom], variableToBeMapped: List[Variable]) {
 
   def this(bag: Bag, hom: Substitution, canonicalModels: Vector[AtomSet] ) = {
-     this(bag, hom, canonicalModels, bag.atoms.toList, bag.variables.filter(p => !hom.getTerms.contains(p)).toList)
+     this(bag, hom, canonicalModels, bag.atoms.toList,
+       TypeExtender.getUnmappedVariables(bag, hom))
   }
 
 
@@ -78,12 +79,12 @@ case class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Vector[Ato
 
   private def getKnownVariables(atom: Atom): Set[Term] = {
     val terms: Set[Term] = atom.getTerms.asScala.toSet
-    val homTerms = hom.getTerms.asScala.toSet
+    val homTerms: Set[Term] = hom.getTerms.asScala.map(variable => variable: Term).toSet
     terms.intersect(homTerms)
   }
 
-  private def getUnknownVariables(atom: Atom): Set[Term] = {
-    val terms: Set[Term] = atom.getTerms.asScala.toSet
+  private def getUnknownVariables(atom: Atom): Set[Variable] = {
+    val terms: Set[Variable] = atom.getTerms.asScala.collect { case variable: Variable => variable }.toSet
     val knownVariables = getKnownVariables(atom)
 
     if (knownVariables.isEmpty)
@@ -137,7 +138,7 @@ case class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Vector[Ato
 
   private def extendSubstitution (atom:Atom, answer :Substitution, canonicalModelIndex: Int):Substitution ={
 
-    def extendVariable(term:Term, answer :Substitution, canonicalModelIndex: Int, modifiedHom: Substitution):Substitution = {
+    def extendVariable(term: Variable, answer :Substitution, canonicalModelIndex: Int, modifiedHom: Substitution):Substitution = {
       if (ReWriter.isAnonymous( answer.createImageOf( term) ) ) {
         modifiedHom.put( term, new  ConstantType( (canonicalModelIndex, answer.createImageOf(term).getLabel ) )  )
       }else{
@@ -147,13 +148,13 @@ case class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Vector[Ato
     }
 
     @tailrec
-    def extendToTheSetOfVariables ( terms:List[Term], modifiedHom: Substitution  ) :Substitution = terms match {
+    def extendToTheSetOfVariables ( terms:List[Variable], modifiedHom: Substitution  ) :Substitution = terms match {
       case List() =>  modifiedHom
       case  x :: xs => extendToTheSetOfVariables( xs,  extendVariable ( x, answer, canonicalModelIndex, modifiedHom ) )
     }
 
     val modifiedHom: Substitution  = new TreeMapSubstitution(hom)
-    val unknownVariables: List[Term] = getUnknownVariables(atom).toList
+    val unknownVariables: List[Variable] = getUnknownVariables(atom).toList
     extendToTheSetOfVariables(unknownVariables, modifiedHom  )
 
   }
@@ -169,8 +170,8 @@ case class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Vector[Ato
         val atomSetAndCanModIndex: Option[AtomSetWithCanonicalModelIndex] = getAtomSetWithCanonicalModelIndex(x)
         // If the atom set is defined then the atom is connected
         if (atomSetAndCanModIndex.isDefined) {
-          val cq = ConjunctiveQueryFactory.instance.create(new LinkedListAtomSet(x))
-          val result: List[Substitution] = StaticHomomorphism.instance.execute(cq, atomSetAndCanModIndex.get._1).asScala.toList
+          val cq = DefaultConjunctiveQueryFactory.instance().create(new LinkedListAtomSet(x))
+          val result: List[Substitution] = GraalIterator.toList(SmartHomomorphism.instance().execute(cq, atomSetAndCanModIndex.get._1))
           val goodSubstitutions: List[Substitution] = result.filter( s => isGoodWithRespectToSubstitution( s, x))
           val extension = extend(x, goodSubstitutions, atomSetAndCanModIndex.get._2, atomsToBeMapped.tail)
           getPossibleConnectedTypesExtensions(List(),  ( true, acc._2:::extension))
@@ -179,7 +180,7 @@ case class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Vector[Ato
 
     }
 
-    def extendToATerm( variable:Term ) : List[TypeExtender] = {
+    def extendToATerm( variable: Variable ) : List[TypeExtender] = {
       //
       def extend( canonicalModelIndex: Int, maxIndex:Int,  acc:List[TypeExtender] ) : List[TypeExtender] = {
         //
@@ -244,8 +245,8 @@ case class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Vector[Ato
         if ( !res) false
         else {
           val cm = canonicalModels(canonicalModelIndex)
-          val generatingTerms = cm.getTerms().asScala.filter( p=> ! ReWriter.isAnonymous( p ) )
-          val anonymousTerms = cm.getTerms().asScala.filter( p=> ReWriter.isAnonymous( p ) )
+          val generatingTerms = cm.getTerms().asScala.collect { case variable: Variable if !ReWriter.isAnonymous(variable) => variable }
+          val anonymousTerms = cm.getTerms().asScala.collect { case variable: Variable if ReWriter.isAnonymous(variable) => variable }
           val s = new TreeMapSubstitution()
           generatingTerms.foreach( p => s.put(p, ConstantType.EPSILON ) )
           anonymousTerms.foreach(p => s.put(p, new ConstantType(canonicalModelIndex, p.getLabel) ))
@@ -269,5 +270,9 @@ case class TypeExtender(bag: Bag, hom: Substitution, canonicalModels: Vector[Ato
     }
 
   }
+}
 
+object TypeExtender {
+  private[stypes] def getUnmappedVariables(bag: Bag, hom: Substitution): List[Variable] =
+    bag.variables.collect { case variable: Variable if !hom.getTerms.contains(variable) => variable }.toList
 }

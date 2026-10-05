@@ -1,12 +1,12 @@
 name := "stypes"
 
-version := "1.1.1"
+version := "1.2.0"
 
 scalaVersion := "3.9.0"
 
 crossScalaVersions := Seq("2.11.12", "2.12.21", "3.9.0")
 
-val graalVersion = "1.2.0"
+val graalVersion = "1.3.1"
 val logbackVersion = "1.6.5"
 
 //useGpg := false

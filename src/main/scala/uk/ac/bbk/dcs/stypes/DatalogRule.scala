@@ -36,18 +36,19 @@ import scala.jdk.CollectionConverters._
 sealed trait DatalogRule {
   def head: Atom
 
-  def name: String = head.getPredicate.toString
+  def name: String = head.getPredicate.getIdentifier.toString
 
   def arity: Int = head.getPredicate.getArity
 
 }
 
 case class Fact(head: Atom) extends DatalogRule {
-  override def toString: String = head.toString
+  override def toString: String = DatalogFormatting.withoutPredicateArities(head.toString)
 }
 
 case class Clause(head: Atom, body: List[Atom]) extends DatalogRule {
-  override def toString: String = s"$head :- ${body.map(a => a).mkString(", ")}.".replaceAll("""\[\d+\]""", "")
+  override def toString: String =
+    DatalogFormatting.withoutPredicateArities(s"$head :- ${body.mkString(", ")}.")
 
   override def equals(obj: Any): Boolean = {
     if (obj == null || !obj.isInstanceOf[Clause])

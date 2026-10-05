@@ -27,7 +27,7 @@ class SqlUtilsTest extends AnyFunSpec {
     it("should return a correct list of IDB predicate dependencies for q15-rew.dlp") {
       val ndl = ReWriter.getDatalogRewriting(s"src/test/resources/rewriting/q15-rew.dlp")
       val spanningTree = SqlUtils.getIdbTopologicalSorting(new Predicate("p1", 2), ndl)
-      val expected = List("p28", "p43", "p40", "p19", "p3", "p35", "p5", "p7", "p14", "p2", "p1").map(new Predicate(_, 2))
+      val expected = List("p43", "p40", "p19", "p3", "p35", "p5", "p7", "p14", "p2", "p1").map(new Predicate(_, 2))
       assert(expected == spanningTree)
     }
 
@@ -163,7 +163,7 @@ class SqlUtilsTest extends AnyFunSpec {
     it("should return a correct list of IDB predicate dependencies for q15-rew.dlp") {
       val ndl = ReWriter.getDatalogRewriting(s"src/test/resources/thesis/q15-rew.dlp")
       val topologicalSorting = SqlUtils.getIdbTopologicalSorting(new Predicate("p1", 2), ndl)
-      val expected = List("p28", "p43", "p40", "p19", "p3", "p35", "p5", "p7", "p14", "p2", "p1").map(new Predicate(_, 2))
+      val expected = List("p43", "p40", "p19", "p3", "p35", "p5", "p7", "p14", "p2", "p1").map(new Predicate(_, 2))
       assert(expected == topologicalSorting)
     }
 

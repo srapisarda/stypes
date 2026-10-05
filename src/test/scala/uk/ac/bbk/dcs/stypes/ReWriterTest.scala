@@ -22,10 +22,10 @@ package uk.ac.bbk.dcs.stypes
 
 import java.io.{BufferedWriter, File, FileWriter, PrintWriter}
 import fr.lirmm.graphik.graal.api.core.{AtomSet, Predicate, Rule, Term, Variable}
-import fr.lirmm.graphik.graal.core.atomset.graph.DefaultInMemoryGraphAtomSet
+import fr.lirmm.graphik.graal.core.atomset.graph.DefaultInMemoryGraphStore
 import fr.lirmm.graphik.graal.core.term.DefaultTermFactory
 import fr.lirmm.graphik.graal.core.{DefaultAtom, TreeMapSubstitution}
-import fr.lirmm.graphik.graal.forward_chaining.DefaultChase
+import fr.lirmm.graphik.graal.forward_chaining.BasicChase
 import fr.lirmm.graphik.graal.io.dlp.DlgpParser
 import fr.lirmm.graphik.util.DefaultURI
 import org.scalatest.funspec.AnyFunSpec
@@ -119,13 +119,13 @@ class ReWriterTest extends AnyFunSpec {
     it("should create the canonical models from 2 atoms") {
       val canonicalModels = ReWriter.canonicalModelList(ontology1)
       assert(canonicalModels.lengthCompare(2) == 0)
-      canonicalModels.foreach(atomSet => assert(atomSet.asScala.size == 4))
+      canonicalModels.foreach(atomSet => assert(GraalIterator.toList(atomSet.iterator()).size == 4))
       //      println(canonicalModels)
     }
 
     it ("should chase the ontology") {
       val ontology = ReWriter.getOntology("src/test/resources/thesis/thesis-example-02.dlp")
-      val store: AtomSet = new DefaultInMemoryGraphAtomSet
+      val store: AtomSet = new DefaultInMemoryGraphStore
       val dataList = List(("S", List("a", "b")), ("S", List("b", "c")), ("R", List("c", "d")))
 
       val facts = dataList.map(p => {
@@ -133,9 +133,9 @@ class ReWriterTest extends AnyFunSpec {
         p._2.zipWithIndex.foreach(p => atom.setTerm(p._2, DefaultTermFactory.instance().createConstant(p._1)))
         atom
       })
-      val data = new DefaultInMemoryGraphAtomSet
+      val data = new DefaultInMemoryGraphStore
       facts.foreach(fact => data.add(fact))
-      val chase = new DefaultChase(ontology.asJava, data)
+      val chase = new BasicChase[AtomSet](ontology.asJava, data)
       chase.execute()
 
       while (chase.hasNext){
@@ -694,7 +694,7 @@ class ReWriterTest extends AnyFunSpec {
 
       assert(headBody.length == 2)
       val dlgpParser = new DlgpParser(new File(s"$pathToBenchmark100/queries/q01-t.cq"))
-      val rules = dlgpParser.asScala.toList.map {
+      val rules = GraalIterator.toList(dlgpParser).map {
         case rule: Rule =>
           rule
       }
@@ -708,7 +708,7 @@ class ReWriterTest extends AnyFunSpec {
 
       def getpairs(terms: List[Term]) = for (t1 <- terms; t2 <- terms; if t1 != t2) yield (t1, t2)
 
-      val edges = rules.head.getBody.asScala.toList.flatMap(a => getpairs(a.getTerms.asScala.toList)) // getTerms.asScala.toList
+      val edges = GraalIterator.toList(rules.head.getBody.iterator()).flatMap(a => getpairs(a.getTerms.asScala.toList))
 
 
       //      val edges =
@@ -756,7 +756,7 @@ class ReWriterTest extends AnyFunSpec {
 
 
   private def printDatalog(datalog: List[Clause], outputToVerify: Option[String] = None): Unit = {
-    val output = s"${datalog.mkString("\n")}".replaceAll("""\[\d+\]""", "")
+    val output = datalog.mkString("\n")
     println(output)
     if (outputToVerify.nonEmpty)
       assert(outputToVerify.get === output)
