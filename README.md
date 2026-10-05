@@ -46,7 +46,7 @@ the jar created above:  ***java -cp stypes-assembly-1.1.1.jar (CQ) (GML) (O)***
 example:
 ```
 cd ./target/scala-3.9.0/
-java -cp  stypes-assembly-1.1.1.jar uk.ac.bbk.dcs.stypes.App \
+java -cp  stypes-assembly-1.2.0.jar uk.ac.bbk.dcs.stypes.App \
          ../../src/test/resources/q09.cq \
          ../../src/test/resources/q09.gml \
          ../../src/test/resources/lines.dlp
