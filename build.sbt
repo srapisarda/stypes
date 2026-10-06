@@ -15,21 +15,21 @@ Test / publishArtifact := false
 
 pomIncludeRepository := { x => false }
 
-libraryDependencies ++= Seq( "fr.lirmm.graphik" % "graal-core" % graalVersion
-                ,"fr.lirmm.graphik" % "graal-forward-chaining" % graalVersion
-                ,"fr.lirmm.graphik" % "graal-backward-chaining" % graalVersion
-                ,"fr.lirmm.graphik" % "graal-io-dlgp" % graalVersion
-                ,"fr.lirmm.graphik" % "graal-store-rdbms" % graalVersion
-                ,"fr.lirmm.graphik" % "graal-homomorphism" % graalVersion
-                ,"com.typesafe.scala-logging" %% "scala-logging" % "3.9.6"
-                ,"com.tinkerpop.blueprints" % "blueprints-core" % "2.6.0"
-                ,"com.github.jsqlparser" % "jsqlparser" % "5.4"
-                ,"ch.qos.logback" % "logback-classic" % logbackVersion
-                ,"ch.qos.logback" % "logback-core" % logbackVersion
-                ,"org.slf4j" % "slf4j-api" % "2.0.20"
-                // test
-                ,"org.scalatest" %% "scalatest" % "3.2.20" % "test"
-                ,"junit" % "junit" % "4.13.2" % "test"
+libraryDependencies ++= Seq("fr.lirmm.graphik" % "graal-core" % graalVersion
+  , "fr.lirmm.graphik" % "graal-forward-chaining" % graalVersion
+  , "fr.lirmm.graphik" % "graal-backward-chaining" % graalVersion
+  , "fr.lirmm.graphik" % "graal-io-dlgp" % graalVersion
+  , "fr.lirmm.graphik" % "graal-store-rdbms" % graalVersion
+  , "fr.lirmm.graphik" % "graal-homomorphism" % graalVersion
+  , "com.typesafe.scala-logging" %% "scala-logging" % "3.9.6"
+  , "com.tinkerpop.blueprints" % "blueprints-core" % "2.6.0"
+  , "com.github.jsqlparser" % "jsqlparser" % "5.4"
+  , "ch.qos.logback" % "logback-classic" % logbackVersion
+  , "ch.qos.logback" % "logback-core" % logbackVersion
+  , "org.slf4j" % "slf4j-api" % "2.0.20"
+  // test
+  , "org.scalatest" %% "scalatest" % "3.2.20" % "test"
+  , "junit" % "junit" % "4.13.2" % "test"
 )
 
 libraryDependencies ++= {
@@ -38,8 +38,8 @@ libraryDependencies ++= {
 }
 
 assembly / assemblyMergeStrategy := {
-  case PathList("META-INF", "services", _ @ _*) => MergeStrategy.concat
-  case PathList("META-INF", xs @ _*) => MergeStrategy.discard
+  case PathList("META-INF", "services", _@_*) => MergeStrategy.concat
+  case PathList("META-INF", xs@_*) => MergeStrategy.discard
   case x => MergeStrategy.first
 }
 
@@ -47,7 +47,7 @@ licenses := Seq("Apache License" -> url("http://www.apache.org/licenses/LICENSE-
 
 homepage := Some(url("https://github.com/srapisarda/stypes"))
 
-organization := "com.github.srapisarda"
+organization := "io.github.srapisarda"
 
 scmInfo := Some(
   ScmInfo(
@@ -59,26 +59,31 @@ scmInfo := Some(
 
 developers := List(
   Developer(
-    id    = "srapis01",
-    name  = "Salvatore Rapisarda",
-    email = "srapis01@dcs.bbk.ac.uk",
-    url   = url("https://www.dcs.bbk.ac.uk/~srapis01")
+    id = "srapis01",
+    name = "Salvatore Rapisarda",
+    email = "srapis01@student.bbk.ac.uk",
+    url = url("https://www.dcs.bbk.ac.uk/~srapis01")
+  ),
+  Developer(
+    id = "salvo",
+    name = "Salvatore Rapisarda",
+    email = "rapisarda.salvatore@gmail.com",
+    url = url("https://github.com/srapisarda")
   )
 )
 
 publishMavenStyle := true
 
 
-lazy val buildSettings =  Seq(
+lazy val buildSettings = Seq(
   organization := (ThisBuild / organization).value,
   // use the same value as in the build scope, so it can be overriden by stampVersion
   version := (ThisBuild / version).value
 )
 
-publishTo := {
-  val nexus = "https://oss.sonatype.org/"
-  if (isSnapshot.value)
-    Some("snapshots" at nexus + "content/repositories/snapshots")
-  else
-    Some("releases"  at nexus + "service/local/staging/deploy/maven2")
+ThisBuild / description := "Nonrecursive Datalog rewriter for linear TGDs and conjunctive queries"
+ThisBuild / publishTo := {
+  val snapshots = "https://central.sonatype.com/repository/maven-snapshots/"
+  if (isSnapshot.value) Some("central-snapshots" at snapshots)
+  else localStaging.value
 }
