@@ -353,6 +353,7 @@ object TreeDecomposition{
 
     GMLReader.inputGraph(graph, in)
     (new TreeDecomposition(atoms.toSet, graph, null, mode = true),
-      rules.head.getHead.getTerms.asScala.toList.map(p=> DefaultTermFactory.instance().createVariable( p.getIdentifier)) )
+      GraalIterator.toList(rules.head.getHead.iterator()).head.getTerms.asScala.toList
+        .map(p => DefaultTermFactory.instance().createVariable(p.getIdentifier)))
   }
 }

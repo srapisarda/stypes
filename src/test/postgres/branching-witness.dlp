@@ -1,0 +1,1 @@
+path(X,Y), edgeq(Y,Z), edger(Y,Z) :- seed(X).

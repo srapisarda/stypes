@@ -778,6 +778,23 @@ class ReWriter(ontology: List[Rule]) {
     val answerVariables = decomposedQuery._2
     val rewriting: Seq[RuleTemplate] = generateRewriting(Type.getInstance(answerVariables), Splitter(treeDecomposition, splitMode))
     val datalog = generateDatalog(rewriting, addAdditionalRules)
-    datalog
+    if (rewriting.isEmpty) datalog
+    else {
+      val goalTerms = rewriting.head.head.getTerms.asScala.toList
+      val answerPositions = answerVariables.map { variable =>
+        val index = goalTerms.indexWhere(_.getIdentifier == variable.getIdentifier)
+        require(index >= 0, s"Answer variable $variable missing from rewriting goal")
+        index
+      }
+      datalog.map { clause =>
+        clause.head.getPredicate match {
+          case predicate: DatalogPredicate if predicate.isGoalPredicate =>
+            val terms = answerPositions.map(clause.head.getTerm)
+            val goal = DatalogPredicate(predicate.identifier, terms.size, isGoalPredicate = true)
+            Clause(new DefaultAtom(goal, terms.asJava), clause.body)
+          case _ => clause
+        }
+      }
+    }
   }
 }

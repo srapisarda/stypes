@@ -65,7 +65,23 @@ java -cp stypes-assembly-1.2.0.jar uk.ac.bbk.dcs.stypes.App \
 
 This strategy converts the supplied tree decomposition to a path decomposition
 whose bags are unions of the active original bags, then splits from a path
-endpoint at each step. The resulting rewriting is linear.
+endpoint at each step. The resulting rewriting is linear. In both splitting
+modes, the rewriting's goal arguments follow the order of the query head,
+including repeated answer variables.
+
+`sbt test` also compares leaf-mode rewritings with the original queries on
+PostgreSQL. Docker and Docker Compose must be installed, and the Docker daemon
+must be running. The tests start an isolated Compose project and remove its
+containers and volumes afterwards. To run just these tests:
+
+```sh
+sbt 'testOnly uk.ac.bbk.dcs.stypes.PostgresLeafIntegrationTest'
+```
+
+The test database is not exposed on a host port. Test data uses temporary tables;
+the tests compare results against an independently written query over a finite
+chase, including cases with existential witnesses. A test-only SQL translator
+executes the generated Datalog; this does not exercise the production SQL translator.
 
 The conjunctive query [**q09.cq**](https://github.com/srapisarda/stypes/blob/master/src/test/resources/q09.cq)  which  has the form:
 ```
@@ -142,4 +158,3 @@ Apache Buildr
 ```
 'com.github.srapisarda:stypes_2.12:jar:1.1.0'
 ```
-
