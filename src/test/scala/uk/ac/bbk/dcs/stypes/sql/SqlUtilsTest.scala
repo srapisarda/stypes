@@ -8,7 +8,7 @@ import net.sf.jsqlparser.parser.CCJSqlParserUtil
 import net.sf.jsqlparser.util.validation.feature.DatabaseType
 import net.sf.jsqlparser.util.validation.Validation
 import org.scalatest.funspec.AnyFunSpec
-import uk.ac.bbk.dcs.stypes.ReWriter
+import uk.ac.bbk.dcs.stypes.{Clause, ReWriter}
 import uk.ac.bbk.dcs.stypes.utils.NdlUtils
 
 import scala.jdk.CollectionConverters._
@@ -27,15 +27,38 @@ class SqlUtilsTest extends AnyFunSpec {
     it("should return a correct list of IDB predicate dependencies for q15-rew.dlp") {
       val ndl = ReWriter.getDatalogRewriting(s"src/test/resources/rewriting/q15-rew.dlp")
       val spanningTree = SqlUtils.getIdbTopologicalSorting(new Predicate("p1", 2), ndl)
-      val expected = List("p43", "p40", "p19", "p3", "p35", "p5", "p7", "p14", "p2", "p1").map(new Predicate(_, 2))
-      assert(expected == spanningTree)
+      assertTopologicalOrder(new Predicate("p1", 2), ndl, spanningTree)
     }
 
     it("should return a correct list of IDB predicate dependencies for q22-rew_test.dlp") {
       val ndl = ReWriter.getDatalogRewriting(s"src/test/resources/rewriting/q22-rew_test.dlp")
       val spanningTree = SqlUtils.getIdbTopologicalSorting(new Predicate("p1", 2), ndl)
-      val expected = List("p12", "p3", "p1").map(new Predicate(_, 2))
-      assert(expected == spanningTree)
+      assertTopologicalOrder(new Predicate("p1", 2), ndl, spanningTree)
+    }
+
+    it("should include dependencies from every clause of a predicate") {
+      val tf = DefaultTermFactory.instance
+      def atom(name: String, variable: String): Atom =
+        new DefaultAtom(new Predicate(name, 1), List(tf.createVariable(variable)).asJava)
+      val ndl = List(
+        Clause(atom("goal", "X"), List(atom("left", "X"))),
+        Clause(atom("goal", "Y"), List(atom("right", "Y"))),
+        Clause(atom("left", "X"), List(atom("base", "X"))),
+        Clause(atom("right", "X"), List(atom("base", "X"))))
+      val goal = new Predicate("goal", 1)
+      val sorted = SqlUtils.getIdbTopologicalSorting(goal, ndl)
+      assert(sorted.toSet == Set(goal, new Predicate("left", 1), new Predicate("right", 1)))
+      assertTopologicalOrder(goal, ndl, sorted)
+    }
+
+    it("should reject recursive IDB dependencies") {
+      val x = DefaultTermFactory.instance.createVariable("X")
+      def atom(name: String): Atom = new DefaultAtom(new Predicate(name, 1), List(x).asJava)
+      val ndl = List(Clause(atom("p"), List(atom("q"))), Clause(atom("q"), List(atom("p"))))
+      val error = intercept[IllegalArgumentException] {
+        SqlUtils.getIdbTopologicalSorting(new Predicate("p", 1), ndl)
+      }
+      assert(error.getMessage.contains("Recursive IDB dependency"))
     }
 
     it("should return the eDBs predicates the NDL contains") {
@@ -163,8 +186,7 @@ class SqlUtilsTest extends AnyFunSpec {
     it("should return a correct list of IDB predicate dependencies for q15-rew.dlp") {
       val ndl = ReWriter.getDatalogRewriting(s"src/test/resources/thesis/q15-rew.dlp")
       val topologicalSorting = SqlUtils.getIdbTopologicalSorting(new Predicate("p1", 2), ndl)
-      val expected = List("p43", "p40", "p19", "p3", "p35", "p5", "p7", "p14", "p2", "p1").map(new Predicate(_, 2))
-      assert(expected == topologicalSorting)
+      assertTopologicalOrder(new Predicate("p1", 2), ndl, topologicalSorting)
     }
 
     it("should return a correct list of IDB predicate dependencies for q-complexity-test.dlp") {
@@ -176,6 +198,26 @@ class SqlUtilsTest extends AnyFunSpec {
 
 
   }
+  private def assertTopologicalOrder(goal: Predicate, ndl: List[Clause], sorted: List[Predicate]): Unit = {
+    val definitions = ndl.groupBy(_.head.getPredicate)
+    def reachable(todo: List[Predicate], seen: Set[Predicate]): Set[Predicate] = todo match {
+      case Nil => seen
+      case predicate :: rest if seen.contains(predicate) => reachable(rest, seen)
+      case predicate :: rest =>
+        val dependencies = definitions(predicate).flatMap(_.body.map(_.getPredicate)).filter(definitions.contains)
+        reachable(dependencies ::: rest, seen + predicate)
+    }
+
+    assert(sorted.distinct == sorted)
+    assert(sorted.toSet == reachable(List(goal), Set.empty))
+    val positions = sorted.zipWithIndex.toMap
+    sorted.foreach { predicate =>
+      definitions(predicate).flatMap(_.body.map(_.getPredicate)).filter(definitions.contains).foreach { dependency =>
+        assert(positions(dependency) < positions(predicate))
+      }
+    }
+  }
+
   private def commonAssertions(datalogFileRewriting: String,
                                goalPredicate: Predicate = new Predicate("p1", 2),
                                useWith: Boolean = false,

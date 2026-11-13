@@ -12,6 +12,7 @@ import uk.ac.bbk.dcs.stypes.{Clause, ReWriter}
 import uk.ac.bbk.dcs.stypes.utils.NdlUtils
 
 import scala.annotation.tailrec
+import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
 object SqlUtils {
@@ -48,63 +49,27 @@ object SqlUtils {
                                optionIDBs: Option[Set[Predicate]] = None): List[Predicate] = {
 
     val iDBs = optionIDBs.getOrElse(NdlUtils.getIdbPredicates(ndl))
-      val mapPredicateToIdbPredicateBody = ndl.groupBy(_.head)
-      .map(group => group._1.getPredicate ->
-        group._2.flatMap(clause => clause.body.filter(atom => iDBs.contains(atom.getPredicate)).map(_.getPredicate)).distinct)
+    val dependencies = ndl.groupBy(_.head.getPredicate).map { case (predicate, clauses) =>
+      predicate -> clauses.flatMap(_.body.map(_.getPredicate).filter(iDBs.contains)).distinct
+    }
+    val visited = mutable.Set.empty[Predicate]
+    val visiting = mutable.Set.empty[Predicate]
+    val sorted = mutable.ListBuffer.empty[Predicate]
 
-    logger.debug( mapPredicateToIdbPredicateBody.mkString("\n").replace("[2]", ""))
-
-    @tailrec
-    def getIdbTopologicalSortingH(toVisit: List[Predicate],
-                                        visited: Set[Predicate],
-                                        acc: List[Predicate]): List[Predicate] =
-      toVisit match {
-        case List() =>
-          logger.debug(s"acc = ${acc.mkString(", ").replace("[2]","")}, toVisit = ${toVisit.mkString(",").replace("[2]","")}, visited = ${visited.mkString(",").replace("[2]","")}")
-          acc
-        case  predicate :: tail =>
-          logger.debug(s"acc = ${acc.mkString(", ").replace("[2]","")}, toVisit = ${toVisit.mkString(",").replace("[2]","")}, visited = ${visited.mkString(",").replace("[2]","")}")
-          if (!visited.contains(predicate)) {
-            val dependenciesVisited = mapPredicateToIdbPredicateBody(predicate).filter(visited(_))
-            val accumulator =
-              if (dependenciesVisited.isEmpty) predicate :: acc
-              else placePredicateAfterDependencies(acc, predicate, dependenciesVisited.toSet)
-            getIdbTopologicalSortingH(
-              mapPredicateToIdbPredicateBody(predicate).filterNot(visited(_)) ::: tail,
-              visited + predicate,
-              accumulator
-            )
-          } else {
-//            logger.debug(s"acc = ${acc.mkString(", ").replace("[2]","")}, toVisit = ${toVisit.mkString(",").replace("[2]","")}, visited = ${visited.mkString(",").replace("[2]","")}")
-            getIdbTopologicalSortingH(tail, visited, acc)
-          }
+    def visit(predicate: Predicate): Unit = {
+      if (!visited.contains(predicate)) {
+        require(!visiting.contains(predicate), s"Recursive IDB dependency involving $predicate")
+        visiting += predicate
+        dependencies.getOrElse(predicate,
+          throw new IllegalArgumentException(s"IDB predicate $predicate has no definition")).foreach(visit)
+        visiting -= predicate
+        visited += predicate
+        sorted += predicate
       }
+    }
 
-    @tailrec
-    def placePredicateAfterDependencies(topologicalSortedList: List[Predicate],
-                                        predicate: Predicate,
-                                        dependencies: Set[Predicate],
-                                        acc: List[Predicate] = Nil): List[Predicate] =
-      topologicalSortedList match {
-        case Nil =>
-          val ret = acc.reverse
-          logger.debug(s"ppad: predicate: ${predicate}, dependencies: ${dependencies.mkString(",")}, acc: ${ret.mkString(",")}")
-          ret
-        case x :: xs =>
-          logger.debug(s"ppad: predicate: ${predicate}, dependencies: ${dependencies.mkString(",")}, acc: ${acc.mkString(",")}")
-          if (dependencies.isEmpty) {
-            logger.debug("dependencies.isEmpty")
-            placePredicateAfterDependencies(Nil, predicate, dependencies, xs.reverse ::: x :: predicate :: acc)
-          } else if (dependencies.contains(x)) {
-            logger.debug(s"dependencies.contains($x)")
-            placePredicateAfterDependencies(xs, predicate, dependencies - x, x :: acc)
-          } else {
-            logger.debug(s"$x visited")
-            placePredicateAfterDependencies(xs, predicate, dependencies, x :: acc)
-          }
-      }
-
-    getIdbTopologicalSortingH(mapPredicateToIdbPredicateBody(statPredicate), Set(statPredicate), List(statPredicate))
+    visit(statPredicate)
+    sorted.toList
   }
 
   def minInFront(body: List[Atom]): List[Atom] = {
