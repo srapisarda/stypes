@@ -1,0 +1,1 @@
+q(?x) <- path(?x, ?y), edgeq(?y, ?z), edger(?y, ?w).

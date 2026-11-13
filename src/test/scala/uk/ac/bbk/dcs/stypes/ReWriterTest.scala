@@ -610,6 +610,37 @@ class ReWriterTest extends AnyFunSpec {
       assert(datalog.lengthCompare(13) == 0)
     }
 
+    it("should produce a linear rewriting in leaf mode") {
+      val decomposedQuery =
+        TreeDecomposition.getTreeDecomposition("src/test/resources/q09.gml", "src/test/resources/q09.cq")
+      val datalog = new ReWriter(ontLines).rewrite(decomposedQuery, splitMode = Leaf)
+
+      assert(datalog.nonEmpty)
+      assert(datalog.forall(_.body.count(_.getPredicate.isInstanceOf[DatalogPredicate]) <= 1))
+    }
+
+    it("should preserve query head order and repeated answer variables") {
+      val (tree, variables) =
+        TreeDecomposition.getTreeDecomposition("src/test/resources/q09.gml", "src/test/resources/q09.cq")
+      assert(variables.map(_.getIdentifier.toString) == List("x0", "x9"))
+      val (duplicateTree, duplicateVariables) =
+        TreeDecomposition.getTreeDecomposition("src/test/resources/q09.gml", "src/test/postgres/ordered-duplicates.cq")
+      assert(duplicateVariables.map(_.getIdentifier.toString) == List("x9", "x0", "x9"))
+
+      for (mode <- List(Centroid, Leaf); query <- List((tree, variables), (duplicateTree, duplicateVariables))) {
+        val datalog = new ReWriter(List.empty).rewrite(query, splitMode = mode)
+        val goals = datalog.filter(_.head.getPredicate match {
+          case p: DatalogPredicate => p.isGoalPredicate
+          case _ => false
+        })
+        assert(goals.nonEmpty)
+        goals.foreach { clause =>
+          assert(clause.head.getTerms.asScala.map(_.getIdentifier.toString).toList ==
+            query._2.map(_.getIdentifier.toString))
+        }
+      }
+    }
+
     it("should rewrite query q1.cq  using  tgds-all.dlp") {
       val decomposedQuery: (TreeDecomposition, List[Variable]) =
         TreeDecomposition.getTreeDecomposition(s"src/test/resources/Q1.gml", "src/test/resources/Q1.cq")

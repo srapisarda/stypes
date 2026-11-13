@@ -32,6 +32,7 @@ import fr.lirmm.graphik.graal.core.term.DefaultTermFactory
 import fr.lirmm.graphik.graal.io.dlp.DlgpParser
 
 import scala.annotation.tailrec
+import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 import scala.io.Source
 import scala.util.matching.Regex
@@ -182,6 +183,72 @@ class TreeDecomposition {
     CentroidDecomposition.getCentroid(this)
   }
 
+  /**
+    * Returns an endpoint of this rooted tree. In leaf mode the decomposition is
+    * first converted to a path, so this selects a path endpoint.
+    */
+  def getLeaf: TreeDecomposition = {
+    @tailrec
+    def findLeaf(t: TreeDecomposition): TreeDecomposition =
+      t.children.headOption match {
+        case Some(child) => findLeaf(child)
+        case None => t
+      }
+
+    findLeaf(this)
+  }
+
+  private[stypes] def asPathDecomposition: TreeDecomposition = {
+    val nodes = mutable.ArrayBuffer.empty[TreeDecomposition]
+    val parents = mutable.Map.empty[TreeDecomposition, Option[TreeDecomposition]]
+
+    def collect(node: TreeDecomposition, parent: Option[TreeDecomposition]): Unit = {
+      nodes += node
+      parents.put(node, parent)
+      node.children.foreach(child => collect(child, Some(node)))
+    }
+
+    collect(this, None)
+
+    val neighbours = nodes.map { node =>
+      node -> (node.children ::: parents(node).toList)
+    }.toMap
+    val start = nodes.find(node => neighbours(node).size <= 1).get
+    val order = mutable.ArrayBuffer.empty[TreeDecomposition]
+
+    def visit(node: TreeDecomposition, previous: Option[TreeDecomposition]): Unit = {
+      order += node
+      neighbours(node).filterNot(previous.contains).foreach(next => visit(next, Some(node)))
+    }
+
+    visit(start, None)
+
+    val positions = order.zipWithIndex.toMap
+    val lastPositions = order.map { node =>
+      val position = positions(node)
+      neighbours(node).map(positions).foldLeft(position)(math.max)
+    }
+    val nodesEndingAt = order.indices.groupBy(lastPositions).map {
+      case (position, indexes) => position -> indexes.map(order)
+    }
+    val activeNodes = mutable.LinkedHashSet.empty[TreeDecomposition]
+    val assignedAtoms = mutable.Set.empty[Atom]
+    val pathBags = order.indices.map { position =>
+      activeNodes += order(position)
+      val atoms = order(position).root.atoms.filter(assignedAtoms.add)
+      val bag = Bag(
+        atoms,
+        activeNodes.flatMap(_.root.variables).toSet
+      )
+      nodesEndingAt.getOrElse(position, Seq.empty).foreach(node => activeNodes -= node)
+      bag
+    }
+
+    pathBags.reverse.foldLeft(Option.empty[TreeDecomposition]) { (child, bag) =>
+      Some(new TreeDecomposition(mapCqAtoms, bag, child.toList))
+    }.get
+  }
+
   @deprecated("Use getCentroid instead.", "")
   def  getSeparator : TreeDecomposition =
     getSplitter(this, this.getSize)
@@ -286,6 +353,7 @@ object TreeDecomposition{
 
     GMLReader.inputGraph(graph, in)
     (new TreeDecomposition(atoms.toSet, graph, null, mode = true),
-      rules.head.getHead.getTerms.asScala.toList.map(p=> DefaultTermFactory.instance().createVariable( p.getIdentifier)) )
+      GraalIterator.toList(rules.head.getHead.iterator()).head.getTerms.asScala.toList
+        .map(p => DefaultTermFactory.instance().createVariable(p.getIdentifier)))
   }
 }
