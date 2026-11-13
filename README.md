@@ -50,8 +50,22 @@ java -cp  stypes-assembly-1.2.0.jar uk.ac.bbk.dcs.stypes.App \
          ../../src/test/resources/q09.cq \
          ../../src/test/resources/q09.gml \
          ../../src/test/resources/lines.dlp
+```
+
+By default, STypeS uses centroid splitting (`b-depth-tw`). To use the
+`b-depth-leaves` strategy, pass `leaf` as a fourth argument:
 
 ```
+java -cp stypes-assembly-1.2.0.jar uk.ac.bbk.dcs.stypes.App \
+         ../../src/test/resources/q09.cq \
+         ../../src/test/resources/q09.gml \
+         ../../src/test/resources/lines.dlp \
+         leaf
+```
+
+This strategy converts the supplied tree decomposition to a path decomposition
+whose bags are unions of the active original bags, then splits from a path
+endpoint at each step. The resulting rewriting is linear.
 
 The conjunctive query [**q09.cq**](https://github.com/srapisarda/stypes/blob/master/src/test/resources/q09.cq)  which  has the form:
 ```
@@ -128,5 +142,4 @@ Apache Buildr
 ```
 'com.github.srapisarda:stypes_2.12:jar:1.1.0'
 ```
-
 

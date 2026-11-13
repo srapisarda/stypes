@@ -27,23 +27,41 @@ import fr.lirmm.graphik.graal.api.core.Term
 
 
 /**
+  * Splitting mode for the Splitter.
+  * - Centroid: uses centroid decomposition (default, for b-depth-tw).
+  * - Leaf: pathifies the decomposition and repeatedly picks an endpoint (for b-depth-leaves).
+  */
+sealed trait SplitMode
+case object Centroid extends SplitMode
+case object Leaf extends SplitMode
+
+/**
   * Created by
   * Salvatore Rapisarda
   * Stanislav Kikot
   * on 28/04/2017.
   */
-case class Splitter(root: TreeDecomposition) {
+case class Splitter(
+    root: TreeDecomposition,
+    mode: SplitMode = Centroid,
+    private val pathPrepared: Boolean = false
+) {
+  private val splittingRoot =
+    if (mode == Leaf && !pathPrepared) root.asPathDecomposition else root
   private val logger = Logger(this.getClass)
-  logger.debug(s"Splitter creating with root: $root")
+  logger.debug(s"Splitter creating with root: $splittingRoot, mode: $mode")
 
-  val splittingBag: TreeDecomposition = root.getCentroid // root.getSeparator
+  val splittingBag: TreeDecomposition = mode match {
+    case Centroid => splittingRoot.getCentroid
+    case Leaf => splittingRoot.getLeaf
+  }
   logger.debug(s"Splitting bag ${splittingBag.hashCode()} : ${splittingBag.getRoot} ")
 
   val children: List[Splitter] = {
-    val directChildren = splittingBag.getChildren.map(Splitter.apply)
-    if (splittingBag != root) {
-      val rootGeneratedChild: TreeDecomposition = root.remove(splittingBag)
-      Splitter(rootGeneratedChild) :: directChildren
+    val directChildren = splittingBag.getChildren.map(c => new Splitter(c, mode, pathPrepared = true))
+    if (splittingBag != splittingRoot) {
+      val rootGeneratedChild: TreeDecomposition = splittingRoot.remove(splittingBag)
+      new Splitter(rootGeneratedChild, mode, pathPrepared = true) :: directChildren
     }
     else directChildren
   }
@@ -58,7 +76,7 @@ case class Splitter(root: TreeDecomposition) {
     s"(hash: ${splittingBag.hashCode()} splittingBag: $splittingBag, children: $children)"
   }
 
-  def getAllTerms : Set[Term] = root.getAllTerms
+  def getAllTerms : Set[Term] = splittingRoot.getAllTerms
 
   def flattenLog(splitter: Splitter = this, parent:Option[TreeDecomposition] = None  ): List[String] = {
       List(s"splitterBag: ${splitter.splittingBag.getRoot.atoms}, children: ${splitter.children.size}, parent: ${if (parent.isDefined) parent.get.getRoot.atoms else "" }" ) ::: splitter.children.flatMap(flattenLog(_, Some(splitter.splittingBag)))

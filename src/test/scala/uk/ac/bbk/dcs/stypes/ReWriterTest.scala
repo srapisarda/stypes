@@ -610,6 +610,15 @@ class ReWriterTest extends AnyFunSpec {
       assert(datalog.lengthCompare(13) == 0)
     }
 
+    it("should produce a linear rewriting in leaf mode") {
+      val decomposedQuery =
+        TreeDecomposition.getTreeDecomposition("src/test/resources/q09.gml", "src/test/resources/q09.cq")
+      val datalog = new ReWriter(ontLines).rewrite(decomposedQuery, splitMode = Leaf)
+
+      assert(datalog.nonEmpty)
+      assert(datalog.forall(_.body.count(_.getPredicate.isInstanceOf[DatalogPredicate]) <= 1))
+    }
+
     it("should rewrite query q1.cq  using  tgds-all.dlp") {
       val decomposedQuery: (TreeDecomposition, List[Variable]) =
         TreeDecomposition.getTreeDecomposition(s"src/test/resources/Q1.gml", "src/test/resources/Q1.cq")

@@ -9,14 +9,16 @@ object App {
 
   /** Main program method */
   def main(args: Array[String]): Unit = {
-    App.executeRewriting(args(0), args(1), args(2)  )
+    val splitMode = if (args.length > 3 && args(3).equalsIgnoreCase("leaf")) Leaf else Centroid
+    App.executeRewriting(args(0), args(1), args(2), splitMode)
   }
 
-  private def executeRewriting (cqPath:String, gmlPath:String, ontologyPath:String) = {
+  private def executeRewriting(cqPath: String, gmlPath: String, ontologyPath: String, splitMode: SplitMode = Centroid) = {
     val ontology = ReWriter.getOntology(ontologyPath)
     val decomposedQuery: (TreeDecomposition, List[Variable]) =
-      TreeDecomposition.getTreeDecomposition( gmlPath, cqPath)
-    val datalog = new ReWriter(ontology).rewrite(decomposedQuery, addAdditionalRules = true)
+      TreeDecomposition.getTreeDecomposition(gmlPath, cqPath)
+    val datalog =
+      new ReWriter(ontology).rewrite(decomposedQuery, addAdditionalRules = true, splitMode = splitMode)
     printDatalog(datalog)
   }
 

@@ -773,10 +773,10 @@ class ReWriter(ontology: List[Rule]) {
       ReWriter.generateDatalog(rewriting)
 
 
-  def rewrite(decomposedQuery: (TreeDecomposition, List[Variable]), addAdditionalRules: Boolean = false): List[Clause] = {
+  def rewrite(decomposedQuery: (TreeDecomposition, List[Variable]), addAdditionalRules: Boolean = false, splitMode: SplitMode = Centroid): List[Clause] = {
     val treeDecomposition = decomposedQuery._1
     val answerVariables = decomposedQuery._2
-    val rewriting: Seq[RuleTemplate] = generateRewriting(Type.getInstance(answerVariables), Splitter(treeDecomposition))
+    val rewriting: Seq[RuleTemplate] = generateRewriting(Type.getInstance(answerVariables), Splitter(treeDecomposition, splitMode))
     val datalog = generateDatalog(rewriting, addAdditionalRules)
     datalog
   }
